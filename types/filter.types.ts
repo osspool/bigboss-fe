@@ -27,16 +27,12 @@ export interface ProductFilterState {
   parentCategory: string | null;
   /** Child/subcategory filter */
   childCategory: string | null;
-  /** Selected sizes */
-  selectedSizes: string[];
-  /** Selected colors */
-  selectedColors: string[];
+  /** Selected tags (e.g., "featured", "new-arrivals", "sale") */
+  selectedTags: string[];
   /** Price range */
   priceRange: PriceRange;
   /** Selected styles */
   selectedStyles?: string[];
-  /** Selected tags */
-  selectedTags?: string[];
   /** Search query */
   searchQuery?: string;
   /** Availability filter */

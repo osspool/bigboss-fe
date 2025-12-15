@@ -3,7 +3,7 @@
 import * as Search from "@/components/shared/search";
 import { DateRangeFilter } from "@/components/form/form-utils/date-range-filter";
 import SelectInput from "@/components/form/form-utils/select-input";
-import { ORDER_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS } from "@/constants/enums/monetization.enum";
+import { ORDER_STATUS_OPTIONS, ORDER_SOURCE_OPTIONS, PAYMENT_STATUS_OPTIONS } from "@/constants/enums/monetization.enum";
 import { useOrderSearch } from "@/hooks/filter/use-order-search";
 
 export function OrdersSearch() {
@@ -38,6 +38,13 @@ export function OrdersSearch() {
             items={ORDER_STATUS_OPTIONS}
             value={searchHook.status}
             onValueChange={searchHook.setStatus}
+            placeholder="All"
+          />
+          <SelectInput
+            label="Source"
+            items={ORDER_SOURCE_OPTIONS}
+            value={searchHook.source}
+            onValueChange={searchHook.setSource}
             placeholder="All"
           />
           <SelectInput

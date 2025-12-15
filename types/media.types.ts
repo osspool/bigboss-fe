@@ -20,9 +20,11 @@ export type MediaFolder =
   | "brands";
 
 /**
- * Image variant names
+ * Image variant names (auto-generated on upload)
+ * - thumbnail: 150×200 (for grids, lists)
+ * - medium: 600×800 (for detail views)
  */
-export type VariantName = "thumbnail" | "medium" | "large";
+export type VariantName = "thumbnail" | "medium";
 
 // ============ Interfaces ============
 

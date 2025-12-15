@@ -10,10 +10,64 @@ Quick reference for implementing checkout flow with order creation.
 
 ```
 1. Shopping  → Add items to cart (POST /api/v1/cart/items)
-2. Checkout  → Fetch cart + platform config
-3. Order     → POST /api/v1/orders with delivery + payment info
-4. Backend   → Processes cart, validates coupon, reserves inventory, creates order, clears cart
+2. Location  → Customer selects delivery area (from bd-areas constants)
+3. Checkout  → Fetch cart + platform config + delivery charge estimate
+4. Order     → POST /api/v1/orders with delivery address (including area info) + payment info
+5. Backend   → Processes cart, validates coupon, creates shipment, reserves inventory, creates order, clears cart
 ```
+
+---
+
+## Step 1: Location Selection
+
+Before checkout, customer selects their delivery area. This determines delivery charges and logistics provider.
+
+### Get Delivery Areas
+
+**For Dhaka Metro (Most Common):**
+```javascript
+import { DHAKA_AREAS, searchAreas } from '@/constants/bd-areas';
+
+// Show autocomplete/dropdown with Dhaka areas
+const areas = DHAKA_AREAS; // Returns all Dhaka metro areas
+
+// Or search by name
+const results = searchAreas('mohammadpur'); // Fuzzy search
+// Returns: [{ id: 1, name: 'Mohammadpur', postCode: '1207', zone: 'dhaka-metro', ... }]
+```
+
+**Response Format:**
+```javascript
+{
+  id: 1,                    // Our internal area ID (save this)
+  name: 'Mohammadpur',      // Display name
+  postCode: '1207',         // Postal code
+  zone: 'dhaka-metro',      // Pricing zone
+  providers: {              // Provider-specific IDs (backend use)
+    redx: 1,
+    pathao: 101
+  }
+}
+```
+
+### Get Delivery Charge Estimate
+
+```javascript
+import { estimateDeliveryCharge } from '@/constants/bd-areas';
+
+// Based on selected area's zone
+const area = DHAKA_AREAS.find(a => a.id === 1); // Mohammadpur
+const estimate = estimateDeliveryCharge(area.zone, orderTotal);
+
+// Returns:
+// {
+//   deliveryCharge: 60,      // Base delivery charge
+//   codCharge: 14,           // COD charge (1% of 1400)
+//   totalCharge: 74          // Total delivery cost
+// }
+```
+
+**⚠️ Note:** These are **estimates only**. Actual charges come from provider API at checkout (if enabled in platform config).
 
 ---
 
@@ -30,13 +84,17 @@ Authorization: Bearer <token>
 {
   "deliveryAddress": {
     "recipientName": "John Doe",          // Optional: For gift orders or different recipient
-    "addressLine1": "123 Main St",
-    "addressLine2": "Apt 4B",             // Optional
-    "city": "Dhaka",
-    "state": "Dhaka Division",            // Optional
-    "postalCode": "1200",                 // Optional
-    "country": "Bangladesh",              // Optional, defaults to Bangladesh
-    "phone": "01712345678"
+    "recipientPhone": "01712345678",      // Required: Contact phone for delivery
+    "addressLine1": "House 12, Road 5",   // Street address
+    "addressLine2": "Mohammadpur",        // Optional: Additional details
+    "areaId": 1,                          // Required: From bd-areas constants
+    "areaName": "Mohammadpur",            // Required: Area name
+    "zoneId": 1,                          // Required: Zone ID for pricing (1-6)
+    "providerAreaIds": { "redx": 1 },     // Optional: Provider-specific area IDs
+    "city": "Dhaka",                      // District/City
+    "division": "Dhaka",                  // Optional: Division
+    "postalCode": "1207",                 // Optional: From area
+    "country": "Bangladesh"               // Optional, defaults to Bangladesh
   },
   "delivery": {
     "method": "standard",                 // From platform config
@@ -58,11 +116,14 @@ Authorization: Bearer <token>
 
 | Field | Required | Notes |
 |-------|----------|-------|
+| `deliveryAddress.recipientPhone` | ✅ Yes | Contact phone for delivery (01XXXXXXXXX) |
 | `deliveryAddress.addressLine1` | ✅ Yes | Street address |
-| `deliveryAddress.city` | ✅ Yes | City name |
-| `deliveryAddress.phone` | ✅ Yes | Contact phone (01XXXXXXXXX) |
+| `deliveryAddress.areaId` | ✅ Yes | Area ID from bd-areas constants |
+| `deliveryAddress.areaName` | ✅ Yes | Area name (e.g., "Mohammadpur") |
+| `deliveryAddress.zoneId` | ✅ Yes | Zone ID for pricing (1-6) |
+| `deliveryAddress.city` | ✅ Yes | City/District name |
 | `delivery.method` | ✅ Yes | Delivery method from platform config |
-| `delivery.price` | ✅ Yes | Delivery price from platform config |
+| `delivery.price` | ✅ Yes | Delivery price from platform config or area estimate |
 | `paymentData.type` | ✅ Yes | cash, bkash, nagad, rocket, bank, card |
 | `paymentData.reference` | ⚠️ Recommended | Transaction ID (helps admin verify) |
 | `paymentData.senderPhone` | ⚠️ Required for wallets | For bkash/nagad/rocket (01XXXXXXXXX) |
@@ -153,7 +214,7 @@ This means you can display order history without extra queries!
 
 ---
 
-## Load Checkout Data
+## Step 2: Load Checkout Data
 
 Before showing checkout page, fetch cart and platform config:
 
@@ -214,9 +275,13 @@ Simplest checkout - customer pays on delivery.
 ```json
 {
   "deliveryAddress": {
-    "addressLine1": "123 Main St, Dhanmondi",
+    "recipientPhone": "01712345678",
+    "addressLine1": "House 45, Road 12",
+    "areaId": 2,
+    "areaName": "Dhanmondi",
+    "zoneId": 1,
     "city": "Dhaka",
-    "phone": "01712345678"
+    "postalCode": "1209"
   },
   "delivery": {
     "method": "standard",
@@ -244,13 +309,17 @@ const merchantBkash = config.data.payment.bkash.walletNumber; // "01712345678"
 ```json
 {
   "deliveryAddress": {
-    "addressLine1": "123 Main St, Dhanmondi",
+    "recipientPhone": "01712345678",
+    "addressLine1": "House 45, Road 12",
+    "areaId": 2,
+    "areaName": "Dhanmondi",
+    "zoneId": 1,
     "city": "Dhaka",
-    "phone": "01712345678"
+    "postalCode": "1209"
   },
   "delivery": {
     "method": "express",
-    "price": 120
+    "price": 80
   },
   "paymentData": {
     "type": "bkash",
@@ -268,9 +337,12 @@ Customer transfers to merchant's bank account.
 ```json
 {
   "deliveryAddress": {
-    "addressLine1": "123 Main St, Dhanmondi",
-    "city": "Dhaka",
-    "phone": "01712345678"
+    "recipientPhone": "01712345678",
+    "addressLine1": "House 45, Road 12",
+    "areaId": 2,
+    "areaName": "Dhanmondi",
+    "zoneId": 1,
+    "city": "Dhaka"
   },
   "delivery": {
     "method": "standard",
@@ -278,7 +350,7 @@ Customer transfers to merchant's bank account.
   },
   "paymentData": {
     "type": "bank",
-    "reference": "FT2025120812345"       // Bank transaction reference
+    "reference": "FT2025120812345"
   }
 }
 ```
@@ -290,10 +362,13 @@ Ordering on behalf of someone else (different recipient).
 ```json
 {
   "deliveryAddress": {
-    "recipientName": "John Doe",         // Gift recipient's name
-    "addressLine1": "456 Park Ave",
-    "city": "Chittagong",
-    "phone": "01798765432"               // Gift recipient's phone
+    "recipientName": "John Doe",
+    "recipientPhone": "01798765432",
+    "addressLine1": "House 23, CDA Avenue",
+    "areaId": 150,
+    "areaName": "Agrabad",
+    "zoneId": 3,
+    "city": "Chittagong"
   },
   "delivery": {
     "method": "express",
@@ -311,13 +386,13 @@ Ordering on behalf of someone else (different recipient).
 
 ---
 
-## Frontend Validation
+## Step 3: Frontend Validation
 
 ```javascript
 function validateCheckout(address, delivery, paymentData) {
   // Required fields
-  if (!address?.addressLine1 || !address?.city || !address?.phone) {
-    return 'Please provide complete delivery address';
+  if (!address?.recipientPhone || !address?.addressLine1 || !address?.areaId || !address?.areaName || !address?.zoneId || !address?.city) {
+    return 'Please provide complete delivery address with area selection';
   }
   if (!delivery?.method || delivery?.price === undefined) {
     return 'Please select a delivery method';
@@ -328,7 +403,7 @@ function validateCheckout(address, delivery, paymentData) {
 
   // Phone validation
   const phoneRegex = /^01[0-9]{9}$/;
-  if (!phoneRegex.test(address.phone)) {
+  if (!phoneRegex.test(address.recipientPhone)) {
     return 'Invalid phone number (use format: 01XXXXXXXXX)';
   }
 
@@ -419,13 +494,20 @@ After successful order creation:
 interface CreateOrderPayload {
   deliveryAddress: {
     recipientName?: string;           // For gift orders
+    recipientPhone: string;           // Contact phone for delivery
     addressLine1: string;
     addressLine2?: string;
-    city: string;
-    state?: string;
-    postalCode?: string;
-    country?: string;
-    phone: string;
+    areaId: number;                   // From bd-areas constants
+    areaName: string;                 // Area display name
+    zoneId: number;                   // Zone ID for pricing (1-6)
+    providerAreaIds?: {               // Provider-specific area IDs
+      redx?: number;
+      pathao?: number;
+    };
+    city: string;                     // District/City
+    division?: string;                // Division
+    postalCode?: string;              // Postal code
+    country?: string;                 // Default: Bangladesh
   };
   delivery: {
     method: string;

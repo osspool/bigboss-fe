@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, ShoppingCart, Gift } from "lucide-react";
@@ -8,17 +8,18 @@ import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   OrderSummary,
-  DeliveryOptions,
   PaymentMethods,
-  DELIVERY_OPTIONS,
 } from "@/components/platform/checkout";
 import { AddressSection } from "@/components/platform/checkout/AddressSection";
 import { useCart } from "@/hooks/query/useCart";
 import { useOrderActions } from "@/hooks/query/useOrders";
 import { usePlatformConfig } from "@/hooks/query/usePlatformConfig";
+import { useDeliveryCharge } from "@/hooks/query/useLogistics";
 import { formatPrice } from "@/lib/constants";
+import { getZoneName, getArea } from "@/lib/logistics-utils";
 import { toast } from "sonner";
 import { calculateCouponDiscount } from "@/lib/commerce-utils";
 import CouponSection from "@/components/platform/checkout/coupon-section";
@@ -37,31 +38,11 @@ export default function CheckoutClient({ token, userId }) {
   const { config, isLoading: isConfigLoading } = usePlatformConfig(null);
   const { createOrder, isCreating } = useOrderActions(token);
 
-  // Selected address state
+  // Selected address state (includes areaId, zoneId, providerAreaIds for shipping)
   const [selectedAddress, setSelectedAddress] = useState(null);
 
   // Order notes
   const [notes, setNotes] = useState("");
-
-  // Delivery state - use platform config delivery options if available
-  // Transform API delivery options to match DeliveryOption type
-  const deliveryOptions = useMemo(() => {
-    if (config?.deliveryOptions?.length > 0) {
-      return config.deliveryOptions
-        .filter((opt) => opt.isActive !== false)
-        .map((opt) => ({
-          id: opt._id,
-          label: opt.name,
-          price: opt.price,
-          days: opt.estimatedDays
-            ? `${opt.estimatedDays} ${opt.estimatedDays === 1 ? 'day' : 'days'}`
-            : opt.region || 'Standard delivery',
-        }));
-    }
-    return DELIVERY_OPTIONS;
-  }, [config?.deliveryOptions]);
-
-  const [delivery, setDelivery] = useState(null);
 
   // Payment state
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cash");
@@ -73,12 +54,28 @@ export default function CheckoutClient({ token, userId }) {
 
   // Gift order state
   const [isGift, setIsGift] = useState(false);
+  const [giftRecipientName, setGiftRecipientName] = useState("");
+
+  // ==================== Delivery Charge from API ====================
+
+  // Determine COD amount (only charge COD fee for cash payments)
+  const codAmount = selectedPaymentMethod === "cash" ? subtotal : 0;
+
+  // Fetch delivery charge from logistics API
+  const {
+    deliveryCharge: apiDeliveryCharge,
+    isLoading: isChargeLoading,
+    isFetching: isChargeFetching,
+  } = useDeliveryCharge({
+    deliveryAreaId: selectedAddress?.areaId,
+    amount: codAmount,
+    enabled: !!selectedAddress?.areaId,
+  });
 
   // ==================== Derived State ====================
 
   const paymentConfig = useMemo(() => {
     if (!config?.payment) {
-      // Default config while loading
       return {
         cash: { enabled: true },
       };
@@ -86,10 +83,12 @@ export default function CheckoutClient({ token, userId }) {
     return config.payment;
   }, [config?.payment]);
 
+  // Calculate shipping cost (apply free shipping threshold)
   const shippingCost = useMemo(() => {
-    if (!delivery) return 0;
-    return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : delivery.price;
-  }, [subtotal, delivery]);
+    if (!selectedAddress?.areaId) return 0;
+    const charge = apiDeliveryCharge || 0;
+    return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : charge;
+  }, [subtotal, apiDeliveryCharge, selectedAddress?.areaId]);
 
   const discount = useMemo(() => {
     return calculateCouponDiscount(appliedCoupon, subtotal);
@@ -103,6 +102,23 @@ export default function CheckoutClient({ token, userId }) {
     return selectedPaymentMethod !== "cash" && paymentConfig[selectedPaymentMethod];
   }, [selectedPaymentMethod, paymentConfig]);
 
+  // Derive zoneId from address or look it up from areaId
+  // (handles older addresses that may not have zoneId saved)
+  const resolvedZoneId = useMemo(() => {
+    if (selectedAddress?.zoneId) return selectedAddress.zoneId;
+    if (selectedAddress?.areaId) {
+      const area = getArea(selectedAddress.areaId);
+      return area?.zoneId || null;
+    }
+    return null;
+  }, [selectedAddress?.zoneId, selectedAddress?.areaId]);
+
+  // Zone name for display
+  const zoneName = useMemo(() => {
+    if (!resolvedZoneId) return null;
+    return getZoneName(resolvedZoneId);
+  }, [resolvedZoneId]);
+
   // ==================== Validation ====================
 
   const validateForm = useCallback(() => {
@@ -111,31 +127,37 @@ export default function CheckoutClient({ token, userId }) {
     // Validate selected address
     if (!selectedAddress) {
       errors.push("Please select or add a delivery address");
+    } else if (!selectedAddress.areaId) {
+      errors.push("Please edit your address to add a delivery area");
+    } else if (!selectedAddress.recipientPhone) {
+      errors.push("Please edit your address to add a phone number");
+    } else if (!resolvedZoneId) {
+      errors.push("Unable to determine delivery zone. Please re-select delivery area.");
     }
 
-    // Validate delivery method
-    if (!delivery) {
-      errors.push("Please select a delivery method");
+    // Validate gift recipient if gift order
+    if (isGift && !giftRecipientName.trim() && !selectedAddress?.recipientName) {
+      errors.push("Please enter a gift recipient name");
     }
 
     return errors;
-  }, [selectedAddress, delivery]);
+  }, [selectedAddress, resolvedZoneId, isGift, giftRecipientName]);
 
   const validatePaymentData = useCallback(() => {
     if (!requiresTransactionDetails) return null;
 
-    if (!transactionId || transactionId.length < 5) {
-      return "Please enter a valid Transaction ID (at least 5 characters)";
-    }
-
-    if (selectedPaymentMethod !== "bank") {
+    // For wallet payments (bkash, nagad, rocket), senderPhone is required
+    const walletMethods = ["bkash", "nagad", "rocket"];
+    if (walletMethods.includes(selectedPaymentMethod)) {
       if (!senderPhone || !/^01[0-9]{9}$/.test(senderPhone)) {
         return "Please enter a valid sender phone number (01XXXXXXXXX)";
       }
     }
 
+    // Reference (TrxID) is optional - admin can verify later
+
     return null;
-  }, [requiresTransactionDetails, transactionId, selectedPaymentMethod, senderPhone]);
+  }, [requiresTransactionDetails, selectedPaymentMethod, senderPhone]);
 
   // ==================== Handlers ====================
 
@@ -144,21 +166,32 @@ export default function CheckoutClient({ token, userId }) {
   }, []);
 
   const buildOrderPayload = useCallback(() => {
+    // Build DeliveryAddress matching CHECKOUT_API_GUIDE format
+    const deliveryAddress = {
+      recipientName: isGift
+        ? (giftRecipientName.trim() || selectedAddress.recipientName)
+        : selectedAddress.recipientName,
+      recipientPhone: selectedAddress.recipientPhone,
+      addressLine1: selectedAddress.addressLine1,
+      addressLine2: selectedAddress.addressLine2 || undefined,
+      // Area info from saved address (from @classytic/bd-areas)
+      areaId: selectedAddress.areaId,
+      areaName: selectedAddress.areaName,
+      zoneId: resolvedZoneId, // Use resolved zoneId (from address or derived from areaId)
+      // Provider area IDs for logistics
+      providerAreaIds: selectedAddress.providerAreaIds || undefined,
+      // Location info
+      city: selectedAddress.city,
+      division: selectedAddress.division || undefined,
+      postalCode: selectedAddress.postalCode || undefined,
+      country: selectedAddress.country || "Bangladesh",
+    };
+
     const basePayload = {
-      deliveryAddress: {
-        label: selectedAddress.label || undefined,
-        addressLine1: selectedAddress.addressLine1,
-        addressLine2: selectedAddress.addressLine2 || undefined,
-        city: selectedAddress.city,
-        state: selectedAddress.state || undefined,
-        postalCode: selectedAddress.postalCode || undefined,
-        country: selectedAddress.country || undefined,
-        phone: selectedAddress.phone,
-        recipientName: selectedAddress.recipientName,
-      },
+      deliveryAddress,
       delivery: {
-        method: delivery.label, // Use label (method name) not id
-        price: delivery.price,
+        method: zoneName || "standard",
+        price: shippingCost,
       },
       isGift: isGift || undefined,
       couponCode: appliedCoupon?.code || undefined,
@@ -178,29 +211,21 @@ export default function CheckoutClient({ token, userId }) {
       type: selectedPaymentMethod,
       reference: transactionId || undefined,
       senderPhone: selectedPaymentMethod !== "bank" ? senderPhone : undefined,
-      paymentDetails:
-        selectedPaymentMethod === "bank"
-          ? {
-              bankName: paymentConfig.bank?.bankName,
-              accountNumber: paymentConfig.bank?.accountNumber,
-            }
-          : {
-              walletNumber: senderPhone,
-              walletType: "personal",
-            },
     };
 
     return { ...basePayload, paymentData };
   }, [
     selectedAddress,
-    delivery,
+    resolvedZoneId,
+    zoneName,
+    shippingCost,
     appliedCoupon,
     selectedPaymentMethod,
     transactionId,
     senderPhone,
-    paymentConfig,
     notes,
     isGift,
+    giftRecipientName,
   ]);
 
   const handleSubmit = useCallback(
@@ -233,7 +258,6 @@ export default function CheckoutClient({ token, userId }) {
         }
       } catch (error) {
         console.error("Order creation failed:", error);
-        // Error toast is handled by useOrderActions
       }
     },
     [validateForm, validatePaymentData, buildOrderPayload, createOrder, router]
@@ -242,7 +266,7 @@ export default function CheckoutClient({ token, userId }) {
   // ==================== Loading & Empty States ====================
 
   if (isCartLoading || isConfigLoading) {
-    return null; // Suspense boundary will show skeleton
+    return null;
   }
 
   if (!items || items.length === 0) {
@@ -298,10 +322,31 @@ export default function CheckoutClient({ token, userId }) {
                     This is a gift order
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Check this if you're ordering on behalf of someone else. The recipient name in the delivery address will be used for the gift recipient.
+                    Send this order as a gift to someone else. We'll include the recipient's name on the delivery.
                   </p>
                 </div>
               </div>
+
+              {/* Gift recipient name input */}
+              {isGift && (
+                <div className="mt-4 pl-6 space-y-2">
+                  <Label htmlFor="giftRecipientName">
+                    Gift Recipient Name
+                    {!selectedAddress?.recipientName && <span className="text-destructive"> *</span>}
+                  </Label>
+                  <Input
+                    id="giftRecipientName"
+                    value={giftRecipientName}
+                    onChange={(e) => setGiftRecipientName(e.target.value)}
+                    placeholder={selectedAddress?.recipientName || "Enter recipient's full name"}
+                  />
+                  {selectedAddress?.recipientName && (
+                    <p className="text-xs text-muted-foreground">
+                      Leave blank to use "{selectedAddress.recipientName}" from saved address
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Order Notes */}
@@ -313,17 +358,6 @@ export default function CheckoutClient({ token, userId }) {
                 placeholder="Any special instructions for delivery..."
                 className="w-full min-h-[100px] p-3 border rounded-md resize-none"
                 rows={4}
-              />
-            </div>
-
-            {/* Delivery Options */}
-            <div className="bg-card border border-border p-6">
-              <DeliveryOptions
-                options={deliveryOptions}
-                selected={delivery}
-                onChange={setDelivery}
-                freeShippingThreshold={FREE_SHIPPING_THRESHOLD}
-                subtotal={subtotal}
               />
             </div>
 
@@ -346,10 +380,12 @@ export default function CheckoutClient({ token, userId }) {
               type="submit"
               size="lg"
               className="w-full h-14 text-base"
-              disabled={isCreating}
+              disabled={isCreating || !selectedAddress?.areaId || isChargeLoading}
             >
               {isCreating ? (
                 "Processing..."
+              ) : isChargeLoading ? (
+                "Calculating delivery..."
               ) : (
                 <>
                   <Lock className="h-4 w-4 mr-2" />
@@ -368,6 +404,7 @@ export default function CheckoutClient({ token, userId }) {
               shippingCost={shippingCost}
               discount={discount}
               total={total}
+              isShippingLoading={isChargeFetching && !!selectedAddress?.areaId}
             />
 
             <CouponSection

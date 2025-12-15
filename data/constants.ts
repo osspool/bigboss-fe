@@ -52,11 +52,11 @@ export const CATEGORIES = {
   
   // Navigation items
   export const NAV_ITEMS = [
-    { label: "New", href: "/products?category=new-arrivals" },
+    { label: "New", href: "/products?tags=new-arrivals" },
     { label: "Men", href: "/products?parentCategory=men" },
     { label: "Women", href: "/products?parentCategory=women" },
     { label: "Kids", href: "/products?parentCategory=kids" },
-    { label: "Sale", href: "/products?category=sale", highlight: true },
+    { label: "Sale", href: "/products?tags=sale", highlight: true },
   ];
   
   // Footer links
@@ -64,11 +64,11 @@ export const CATEGORIES = {
     shop: {
       title: "Shop",
       links: [
-        { label: "New Arrivals", href: "/products?category=new-arrivals" },
-        { label: "Best Sellers", href: "/products?category=best-sellers" },
+        { label: "New Arrivals", href: "/products?tags=new-arrivals" },
+        { label: "Best Sellers", href: "/products?tags=best-sellers" },
         { label: "Men", href: "/products?parentCategory=men" },
         { label: "Women", href: "/products?parentCategory=women" },
-        { label: "Sale", href: "/products?category=sale" },
+        { label: "Sale", href: "/products?tags=sale" },
       ],
     },
     help: {

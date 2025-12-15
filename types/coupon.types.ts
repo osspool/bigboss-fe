@@ -4,7 +4,7 @@
  * Type definitions for discount coupons and promotional codes.
  */
 
-import type { DiscountType } from "./common.types";
+import type { DiscountType, ApiResponse, ListResponse } from "./common.types";
 
 // ==================== Coupon ====================
 
@@ -75,35 +75,9 @@ export type UpdateCouponPayload = Partial<CreateCouponPayload>;
 
 // ==================== Coupon API Responses ====================
 
-/**
- * Coupon list response
- */
-export interface CouponListResponse {
-  success: boolean;
-  data: Coupon[];
-  pagination?: {
-    total: number;
-    page: number;
-    pages: number;
-    limit: number;
-  };
-}
-
-/**
- * Single coupon response
- */
-export interface CouponResponse {
-  success: boolean;
-  data: Coupon;
-}
-
-/**
- * Coupon validation response
- */
-export interface CouponValidationResponse {
-  success: boolean;
-  data: CouponValidationResult;
-}
+export type CouponListResponse = ListResponse<Coupon>;
+export type CouponResponse = ApiResponse<Coupon>;
+export type CouponValidationResponse = ApiResponse<CouponValidationResult>;
 
 // ==================== Coupon Usage ====================
 

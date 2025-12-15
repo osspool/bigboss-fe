@@ -105,6 +105,27 @@ export const data = {
       ],
     },
     {
+      title: "Inventory",
+      items: [
+        {
+          title: "POS",
+          url: "/dashboard/pos",
+          icon: SquareTerminal,
+          isActive: true,
+          items: [],
+          roles: [ "user"],
+        },
+        {
+          title: "Inventory",
+          url: "/dashboard/inventory",
+          icon: Box,
+          isActive: true,
+          items: [],
+          roles: [ "user"],
+        },
+      ],
+    },
+    {
       // title: "Configuration",
       title: "Commerce",
       items: [

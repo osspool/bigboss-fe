@@ -45,7 +45,7 @@ export const homePageSchema = () => ({
           placeholder: "New Arrivals",
         }),
         field.url("hero.secondaryCTA.href", "Secondary Button Link", {
-          placeholder: "/products?category=new-arrivals",
+          placeholder: "/products?tags=new-arrivals",
         }),
         field.url("hero.image", "Hero Image URL", {
           placeholder: "https://images.unsplash.com/...",

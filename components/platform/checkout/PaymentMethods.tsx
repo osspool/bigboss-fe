@@ -198,7 +198,7 @@ function WalletPaymentDetails({
           label="Send Money To"
           value={config.walletNumber}
           copyable
-          onCopy={() => copyToClipboard(config.walletNumber, "number")}
+          onCopy={() => config.walletNumber && copyToClipboard(config.walletNumber, "number")}
           copied={copiedField === "number"}
         />
         <DetailRow label="Account Name" value={config.walletName} />
@@ -274,7 +274,7 @@ function BankPaymentDetails({
           label="Account Number"
           value={config.accountNumber}
           copyable
-          onCopy={() => copyToClipboard(config.accountNumber, "account")}
+          onCopy={() => config.accountNumber && copyToClipboard(config.accountNumber, "account")}
           copied={copiedField === "account"}
         />
         {config.branchName && <DetailRow label="Branch" value={config.branchName} />}
@@ -310,12 +310,14 @@ function DetailRow({
   highlight,
 }: {
   label: string;
-  value: string;
+  value?: string;
   copyable?: boolean;
   onCopy?: () => void;
   copied?: boolean;
   highlight?: boolean;
 }) {
+  if (!value) return null;
+
   return (
     <div className="flex justify-between items-center py-2 border-b border-border/50">
       <span className="text-muted-foreground">{label}</span>

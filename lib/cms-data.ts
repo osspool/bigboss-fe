@@ -29,7 +29,7 @@ export const cmsPages: Record<string, CMSPage> = {
         highlightedWord: 'STYLE',
         description: 'Premium streetwear crafted for those who dare to stand out. Elevate your wardrobe with pieces that make a statement.',
         primaryCTA: { label: 'Shop Collection', href: '/products' },
-        secondaryCTA: { label: 'New Arrivals', href: '/products?category=new-arrivals' },
+        secondaryCTA: { label: 'New Arrivals', href: '/products?tags=new-arrivals' },
         image: 'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800',
         floatingBadge: { value: '30%', label: 'Off First Order' },
       },
@@ -116,7 +116,7 @@ export const cmsPages: Record<string, CMSPage> = {
         headline: 'WINTER SALE',
         subheadline: 'Up to 50% off selected items',
         description: 'Limited time only. Don\'t miss out on our biggest sale of the season.',
-        cta: { label: 'Shop Sale', href: '/products?category=sale' },
+        cta: { label: 'Shop Sale', href: '/products?tags=sale' },
         backgroundImage: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1920',
       },
       lookbook: {

@@ -23,6 +23,7 @@ export function useOrderSearch() {
     },
     filterFields: {
       status: { paramName: "status", type: "string", defaultValue: "" },
+      source: { paramName: "source", type: "string", defaultValue: "" },
       paymentStatus: { paramName: "currentPayment.status", type: "string", defaultValue: "" },
       dateFrom: { paramName: "createdAt[gte]", type: "string", defaultValue: "" },
       dateTo: { paramName: "createdAt[lte]", type: "string", defaultValue: "" },
@@ -34,12 +35,14 @@ export function useOrderSearch() {
 
   // Filter getters
   const status = baseSearch.filters.status || "";
+  const source = baseSearch.filters.source || "";
   const paymentStatus = baseSearch.filters.paymentStatus || "";
   const dateFrom = baseSearch.filters.dateFrom || "";
   const dateTo = baseSearch.filters.dateTo || "";
 
   // Filter setters
   const setStatus = (value) => baseSearch.updateFilter("status", value);
+  const setSource = (value) => baseSearch.updateFilter("source", value);
   const setPaymentStatus = (value) => baseSearch.updateFilter("paymentStatus", value);
   const setDateFrom = (value) => baseSearch.updateFilter("dateFrom", value);
   const setDateTo = (value) => baseSearch.updateFilter("dateTo", value);
@@ -98,6 +101,8 @@ export function useOrderSearch() {
     // Filter state
     status,
     setStatus,
+    source,
+    setSource,
     paymentStatus,
     setPaymentStatus,
     dateFrom,
@@ -116,6 +121,6 @@ export function useOrderSearch() {
 
     // Status
     hasActiveSearch: baseSearch.hasActiveSearch,
-    hasActiveFilters: !!status || !!paymentStatus || !!dateFrom || !!dateTo,
+    hasActiveFilters: !!status || !!source || !!paymentStatus || !!dateFrom || !!dateTo,
   };
 }

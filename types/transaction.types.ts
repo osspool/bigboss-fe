@@ -72,6 +72,12 @@ export interface Transaction {
   referenceModel: TransactionReferenceModel;
   referenceId: string;
 
+  // Source tracking (for channel analytics)
+  source?: 'web' | 'pos' | 'api';
+
+  // Branch reference (for multi-location tracking)
+  branch?: string;
+
   // Payment information
   gateway?: GatewayInfo;
   paymentDetails?: PaymentDetails;
@@ -125,6 +131,8 @@ export interface TransactionPayload {
   currency?: string;
   referenceModel?: TransactionReferenceModel;
   referenceId?: string;
+  source?: 'web' | 'pos' | 'api';
+  branch?: string;
   paymentDetails?: PaymentDetails;
   metadata?: Record<string, unknown>;
   notes?: string;
@@ -151,6 +159,8 @@ export interface TransactionQueryParams {
   method?: PaymentMethod;
   category?: string;
   status?: TransactionStatus;
+  source?: 'web' | 'pos' | 'api';
+  branch?: string;
   transactionDate?: string; // ISO date or range
 
   // Populate

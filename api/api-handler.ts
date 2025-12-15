@@ -155,4 +155,45 @@ export async function handleApiRequest<T = unknown>(
   }
 }
 
+
+
+// ==================== Query String Utilities ====================
+
+// ==================== Query String Utilities ====================
+
+/**
+ * Creates query string from parameters
+ * Supports: ?field=value and arrays as field[in]=value1,value2
+ *
+ * @example
+ * createQueryString({ page: 1, limit: 10, status: 'active' })
+ * // => 'page=1&limit=10&status=active'
+ *
+ * createQueryString({ roles: ['admin', 'user'] })
+ * // => 'roles[in]=admin,user'
+ */
+export function createQueryString<T extends Record<string, unknown>>(params: T = {} as T): string {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === '') return;
+
+    if (Array.isArray(value)) {
+      if (value.length > 1) {
+        searchParams.append(`${key}[in]`, value.join(','));
+      } else if (value.length === 1) {
+        searchParams.append(key, String(value[0]));
+      }
+    } else if (value === null) {
+      searchParams.append(key, 'null');
+    } else {
+      searchParams.append(key, String(value));
+    }
+  });
+
+  return searchParams.toString();
+}
+
+
+
 export { BASE_URL };

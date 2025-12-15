@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, Loader2 } from "lucide-react";
+import { Search, X, Loader2, ArrowRight } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useProducts } from "@/hooks/query/useProducts";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -18,6 +18,7 @@ export function HeaderSearch({ className, onSearch }: HeaderSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -42,6 +43,7 @@ export function HeaderSearch({ className, onSearch }: HeaderSearchProps) {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setIsFocused(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -49,12 +51,14 @@ export function HeaderSearch({ className, onSearch }: HeaderSearchProps) {
   }, []);
 
   // Handle form submit
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback((e?: React.FormEvent) => {
+    e?.preventDefault();
     if (query.trim()) {
       router.push(`/products?search=${encodeURIComponent(query.trim())}`);
       setIsOpen(false);
       setQuery("");
+      setIsFocused(false);
+      inputRef.current?.blur();
       onSearch?.();
     }
   }, [query, router, onSearch]);
@@ -63,6 +67,7 @@ export function HeaderSearch({ className, onSearch }: HeaderSearchProps) {
   const handleSuggestionClick = useCallback(() => {
     setIsOpen(false);
     setQuery("");
+    setIsFocused(false);
     onSearch?.();
   }, [onSearch]);
 
@@ -70,8 +75,14 @@ export function HeaderSearch({ className, onSearch }: HeaderSearchProps) {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
       setIsOpen(false);
+      setIsFocused(false);
       inputRef.current?.blur();
     }
+  }, []);
+
+  const clearQuery = useCallback(() => {
+    setQuery("");
+    inputRef.current?.focus();
   }, []);
 
   const showDropdown = isOpen && query.length >= 2;
@@ -79,90 +90,139 @@ export function HeaderSearch({ className, onSearch }: HeaderSearchProps) {
   return (
     <div ref={containerRef} className={cn("relative", className)}>
       <form onSubmit={handleSubmit}>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+        <div
+          className={cn(
+            "flex items-center gap-2 h-10 pl-3 pr-1 rounded-md border bg-background transition-all duration-200",
+            isFocused
+              ? "border-primary ring-2 ring-primary/20 shadow-sm"
+              : "border-input hover:border-muted-foreground/30"
+          )}
+        >
+          {/* Search Icon */}
+          <Search className="size-4 text-muted-foreground shrink-0" />
+
+          {/* Input */}
+          <input
             ref={inputRef}
-            type="search"
+            type="text"
             placeholder="Search products..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setIsOpen(true);
             }}
-            onFocus={() => setIsOpen(true)}
+            onFocus={() => {
+              setIsOpen(true);
+              setIsFocused(true);
+            }}
+            onBlur={() => setIsFocused(false)}
             onKeyDown={handleKeyDown}
-            className="pl-10 pr-10 h-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary"
+            className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
-          {query && (
+
+          {/* Loading / Clear */}
+          {isLoading ? (
+            <Loader2 className="size-4 animate-spin text-muted-foreground shrink-0" />
+          ) : query ? (
             <button
               type="button"
-              onClick={() => {
-                setQuery("");
-                inputRef.current?.focus();
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={clearQuery}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Clear search"
             >
-              <X className="h-4 w-4" />
+              <X className="size-3.5" />
             </button>
-          )}
+          ) : null}
+
+          {/* Search Button */}
+          <Button
+            type="submit"
+            size="sm"
+            disabled={!query.trim()}
+            className="h-7 rounded px-3 text-xs font-medium"
+          >
+            Search
+          </Button>
         </div>
       </form>
 
       {/* Search Suggestions Dropdown */}
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-lg shadow-lg overflow-hidden z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-200">
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="size-5 animate-spin text-muted-foreground" />
             </div>
           ) : suggestions && suggestions.length > 0 ? (
             <>
-              <div className="max-h-[320px] overflow-y-auto">
+              {/* Results header */}
+              <div className="px-4 py-2.5 border-b border-border bg-muted/30">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Products
+                </p>
+              </div>
+
+              {/* Results list */}
+              <div className="max-h-[340px] overflow-y-auto">
                 {suggestions.map((product: any) => (
                   <Link
                     key={product._id}
                     href={`/products/${product.slug}`}
                     onClick={handleSuggestionClick}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors"
+                    className="group flex items-center gap-4 px-4 py-3 hover:bg-accent/50 transition-colors border-b border-border/50 last:border-0"
                   >
-                    {product.images?.[0] && (
-                      <div className="w-12 h-12 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                    {product.images?.[0] ? (
+                      <div className="size-14 rounded-lg overflow-hidden bg-muted shrink-0 ring-1 ring-border">
                         <img
                           src={product.images[0]}
                           alt={product.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
+                      </div>
+                    ) : (
+                      <div className="size-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                        <Search className="size-5 text-muted-foreground/50" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium truncate group-hover:text-primary transition-colors">
+                        {product.name}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
                         ৳{product.basePrice?.toLocaleString()}
                       </p>
                     </div>
+                    <ArrowRight className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                   </Link>
                 ))}
               </div>
-              <div className="border-t border-border">
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="w-full px-4 py-3 text-sm text-center text-primary hover:bg-accent transition-colors"
-                >
-                  View all results for &quot;{query}&quot;
-                </button>
-              </div>
-            </>
-          ) : debouncedQuery.length >= 2 ? (
-            <div className="px-4 py-8 text-center">
-              <p className="text-sm text-muted-foreground">No products found</p>
+
+              {/* View all link */}
               <button
                 type="button"
-                onClick={handleSubmit}
-                className="mt-2 text-sm text-primary hover:underline"
+                onClick={() => handleSubmit()}
+                className="w-full px-4 py-3.5 text-sm font-medium text-center bg-muted/30 hover:bg-muted/50 text-primary transition-colors flex items-center justify-center gap-2 group"
               >
-                Search for &quot;{query}&quot;
+                View all results for "{query}"
+                <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </>
+          ) : debouncedQuery.length >= 2 ? (
+            <div className="px-6 py-10 text-center">
+              <div className="size-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                <Search className="size-5 text-muted-foreground" />
+              </div>
+              <p className="font-medium mb-1">No products found</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                We couldn't find anything for "{query}"
+              </p>
+              <button
+                type="button"
+                onClick={() => handleSubmit()}
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              >
+                Search anyway
+                <ArrowRight className="size-3.5" />
               </button>
             </div>
           ) : null}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import { formatPrice, getDiscountPercentage } from "@/lib/constants";
 import type { Product } from "@/types";
 
@@ -21,9 +21,10 @@ export function ProductCard({
   className,
   priority = false,
 }: ProductCardProps) {
-  const productId = product._id || product.id;
   const featuredImage = product.featuredImage || product.images?.find((i) => i.isFeatured) || product.images?.[0];
-  const imageUrl = featuredImage?.url || "/placeholder.svg";
+  // Use thumbnail for horizontal (small), medium for other variants
+  const imageSize = variant === "horizontal" ? "thumbnail" : "medium";
+  const imageUrl = getImageUrl(featuredImage, imageSize) || "/placeholder.svg";
   const imageAlt = featuredImage?.alt || product.name;
 
   // Calculate discount - check for discount object or currentPrice virtual

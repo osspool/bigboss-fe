@@ -18,10 +18,8 @@ interface ProductsUIProps {
   initialSearch?: string;
   initialCategory?: string;
   initialParentCategory?: string;
+  initialTags?: string[];
 }
-
-// Available colors (would ideally come from API aggregation)
-const ALL_COLORS = ["Black", "White", "Gray", "Navy", "Olive", "Red", "Blue", "Green"];
 
 export function ProductsUI({
   initialPage = 1,
@@ -29,6 +27,7 @@ export function ProductsUI({
   initialSearch = "",
   initialCategory,
   initialParentCategory,
+  initialTags = [],
 }: ProductsUIProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,8 +45,7 @@ export function ProductsUI({
   const [filters, setFilters] = useState<ProductFilterState>({
     parentCategory: searchParams.get("parentCategory") || initialParentCategory || null,
     childCategory: searchParams.get("category") || initialCategory || null,
-    selectedSizes: searchParams.get("sizes")?.split(",").filter(Boolean) || [],
-    selectedColors: searchParams.get("colors")?.split(",").filter(Boolean) || [],
+    selectedTags: searchParams.get("tags")?.split(",").filter(Boolean) || initialTags,
     priceRange: {
       min: Number(searchParams.get("minPrice")) || DEFAULT_PRICE_LIMIT.min,
       max: Number(searchParams.get("maxPrice")) || DEFAULT_PRICE_LIMIT.max,
@@ -81,18 +79,9 @@ export function ProductsUI({
       params["basePrice[lte]"] = filters.priceRange.max;
     }
 
-    // Size filter (via tags)
-    if (filters.selectedSizes.length > 0) {
-      params["tags[in]"] = filters.selectedSizes.join(",");
-    }
-
-    // Color filter (via tags)
-    if (filters.selectedColors.length > 0) {
-      // If sizes already set, we'd need to combine - for now just override
-      // A better approach would be backend supporting multiple tag filters
-      if (!params["tags[in]"]) {
-        params["tags[in]"] = filters.selectedColors.join(",");
-      }
+    // Tags filter (featured, new-arrivals, best-sellers, sale)
+    if (filters.selectedTags.length > 0) {
+      params.tags = filters.selectedTags;
     }
 
     return params;
@@ -141,21 +130,12 @@ export function ProductsUI({
     setFilters(prev => ({ ...prev, parentCategory: parent, childCategory: child }));
   }, []);
 
-  const handleSizeToggle = useCallback((size: string) => {
+  const handleTagToggle = useCallback((tag: string) => {
     setFilters(prev => ({
       ...prev,
-      selectedSizes: prev.selectedSizes.includes(size)
-        ? prev.selectedSizes.filter(s => s !== size)
-        : [...prev.selectedSizes, size]
-    }));
-  }, []);
-
-  const handleColorToggle = useCallback((color: string) => {
-    setFilters(prev => ({
-      ...prev,
-      selectedColors: prev.selectedColors.includes(color)
-        ? prev.selectedColors.filter(c => c !== color)
-        : [...prev.selectedColors, color]
+      selectedTags: prev.selectedTags.includes(tag)
+        ? prev.selectedTags.filter(t => t !== tag)
+        : [...prev.selectedTags, tag]
     }));
   }, []);
 
@@ -169,8 +149,7 @@ export function ProductsUI({
     updateURL({
       parentCategory: newFilters.parentCategory,
       category: newFilters.childCategory,
-      sizes: newFilters.selectedSizes.length > 0 ? newFilters.selectedSizes.join(",") : null,
-      colors: newFilters.selectedColors.length > 0 ? newFilters.selectedColors.join(",") : null,
+      tags: newFilters.selectedTags.length > 0 ? newFilters.selectedTags.join(",") : null,
       minPrice: newFilters.priceRange.min > DEFAULT_PRICE_LIMIT.min ? newFilters.priceRange.min : null,
       maxPrice: newFilters.priceRange.max < DEFAULT_PRICE_LIMIT.max ? newFilters.priceRange.max : null,
     });
@@ -181,16 +160,14 @@ export function ProductsUI({
     const clearedFilters: ProductFilterState = {
       parentCategory: null,
       childCategory: null,
-      selectedSizes: [],
-      selectedColors: [],
+      selectedTags: [],
       priceRange: DEFAULT_PRICE_LIMIT,
     };
     setFilters(clearedFilters);
     updateURL({
       parentCategory: null,
       category: null,
-      sizes: null,
-      colors: null,
+      tags: null,
       minPrice: null,
       maxPrice: null,
       search: null,
@@ -202,8 +179,7 @@ export function ProductsUI({
     let count = 0;
     if (filters.parentCategory) count++;
     if (filters.childCategory) count++;
-    count += filters.selectedSizes.length;
-    count += filters.selectedColors.length;
+    count += filters.selectedTags.length;
     if (filters.priceRange.min > DEFAULT_PRICE_LIMIT.min || filters.priceRange.max < DEFAULT_PRICE_LIMIT.max) count++;
     return count;
   }, [filters]);
@@ -226,7 +202,6 @@ export function ProductsUI({
               isOpen={mobileFilterOpen}
               onOpenChange={setMobileFilterOpen}
               filters={filters}
-              allColors={ALL_COLORS}
               priceLimit={DEFAULT_PRICE_LIMIT}
               onApplyFilters={applyFilters}
               onClearFilters={clearFilters}
@@ -266,14 +241,11 @@ export function ProductsUI({
               <ProductFilters
                 parentCategory={filters.parentCategory}
                 childCategory={filters.childCategory}
-                selectedSizes={filters.selectedSizes}
-                selectedColors={filters.selectedColors}
-                allColors={ALL_COLORS}
+                selectedTags={filters.selectedTags}
                 priceRange={filters.priceRange}
                 priceLimit={DEFAULT_PRICE_LIMIT}
                 onCategoryChange={handleCategoryChange}
-                onSizeToggle={handleSizeToggle}
-                onColorToggle={handleColorToggle}
+                onTagToggle={handleTagToggle}
                 onPriceRangeChange={handlePriceRangeChange}
               />
             </div>

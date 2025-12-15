@@ -5,26 +5,63 @@
  * These types are extracted from the backend order-api.ts for better organization.
  */
 
+import type { PaymentMethod, PaymentStatus, PaymentGatewayType } from './common.types';
+import type { CurrentPayment } from './payment.types';
+
 // ==================== Enums ====================
 
 export type OrderStatus = 'pending' | 'processing' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-export type PaymentStatus = 'pending' | 'verified' | 'failed' | 'refunded' | 'partially_refunded' | 'cancelled';
-export type PaymentMethod = 'cash' | 'bkash' | 'nagad' | 'rocket' | 'bank';
 export type ShippingProvider = 'redx' | 'pathao' | 'steadfast' | 'paperfly' | 'sundarban' | 'sa_paribahan' | 'dhl' | 'fedex' | 'other';
 export type ShippingStatus = 'pending' | 'requested' | 'picked_up' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'failed_attempt' | 'returned' | 'cancelled';
+export type OrderSource = 'web' | 'pos' | 'api';
+
+// Re-export payment types from common.types for convenience
+export type { PaymentMethod, PaymentStatus } from './common.types';
+
+// Re-export CurrentPayment from payment.types (used in Order.currentPayment)
+export type { CurrentPayment } from './payment.types';
 
 // ==================== Delivery Address ====================
 
+/**
+ * Order Delivery Address
+ *
+ * Full shipping details resolved by FE at checkout using @classytic/bd-areas.
+ * FE gets Area from getArea(internalId) and maps to this structure.
+ *
+ * Supports gift orders where recipient differs from customer:
+ * - recipientName: Name of person receiving the package
+ * - recipientPhone: Phone of person receiving the package
+ */
 export interface DeliveryAddress {
   label?: string;
+  /** Recipient name (can differ from customer for gift orders) */
+  recipientName?: string;
+  /** Recipient phone (can differ from customer for gift orders) */
+  recipientPhone: string;
   addressLine1: string;
   addressLine2?: string;
-  city: string;
-  state?: string;
-  postalCode?: string;
+
+  /** Area internalId from @classytic/bd-areas */
+  areaId: number;
+  /** Area name (e.g., "Mohammadpur") */
+  areaName: string;
+  /** Zone ID for pricing (from area.zoneId, 1-6) */
+  zoneId: number;
+
+  /** Provider-specific area IDs (from area.providers) */
+  providerAreaIds?: {
+    redx?: number;
+    pathao?: number;
+    steadfast?: number;
+  };
+
+  city: string;           // districtName
+  division?: string;      // divisionName
+  postalCode?: string;    // postCode
   country?: string;
-  phone: string;
-  recipientName?: string;
+  /** @deprecated Use recipientPhone instead */
+  phone?: string;
 }
 
 // ==================== Delivery ====================
@@ -35,13 +72,67 @@ export interface Delivery {
   estimatedDays?: number;
 }
 
+// ==================== Parcel (Checkout Snapshot) ====================
+
+export interface ParcelDimensionsCm {
+  length: number;
+  width: number;
+  height: number;
+}
+
+export interface OrderParcel {
+  /** Total order weight in grams (only set when all items have known weights) */
+  weightGrams?: number;
+  /**
+   * Package dimensions in cm (only set when all items have known dimensions).
+   * Current heuristic: max length/width, stacked height.
+   */
+  dimensionsCm?: ParcelDimensionsCm;
+  /** Quantity count missing weight at checkout */
+  missingWeightItems?: number;
+  /** Quantity count missing dimensions at checkout */
+  missingDimensionItems?: number;
+}
+
 // ==================== Payment Data ====================
 
+/**
+ * Payment data for order checkout
+ *
+ * Payment Flow:
+ * 1. **Manual Gateway (default)** - Customer pays externally, provides reference
+ *    - COD (cash): No reference needed, collected on delivery
+ *    - Mobile wallets (bkash/nagad/rocket): Customer sends money, provides TrxID
+ *    - Bank transfer: Customer transfers, provides reference number
+ *
+ * 2. **Automated Gateways (future)** - Redirects to payment provider
+ *    - stripe: Card payments via Stripe Checkout
+ *    - sslcommerz: Bangladesh payment gateway (cards, wallets, bank)
+ *
+ * @example COD (Cash on Delivery)
+ * { type: 'cash' }
+ *
+ * @example bKash (Manual)
+ * { type: 'bkash', reference: 'BGH3K5L90P', senderPhone: '01712345678' }
+ *
+ * @example Stripe (Automated - future)
+ * { type: 'card', gateway: 'stripe' }
+ */
 export interface PaymentData {
+  /** Payment method: cash, bkash, nagad, rocket, bank, card */
   type: PaymentMethod;
-  gateway?: 'manual' | 'stripe' | 'sslcommerz';
+  /**
+   * Payment gateway provider
+   * - 'manual' (default): External payment, admin verifies manually
+   * - 'stripe': Stripe Checkout (automated, future)
+   * - 'sslcommerz': SSLCommerz gateway (automated, future)
+   */
+  gateway?: PaymentGatewayType;
+  /** Transaction reference/TrxID (for manual verification) */
   reference?: string;
+  /** Sender phone number (required for mobile wallets: bkash/nagad/rocket) */
   senderPhone?: string;
+  /** Additional payment details for verification */
   paymentDetails?: {
     walletNumber?: string;
     walletType?: 'personal' | 'merchant';
@@ -50,8 +141,12 @@ export interface PaymentData {
     accountName?: string;
     proofUrl?: string;
   };
+  /** Payment notes from customer */
   notes?: string;
 }
+
+// Re-export PaymentGatewayType for convenience
+export type { PaymentGatewayType } from './common.types';
 
 // ==================== Order Item ====================
 
@@ -59,12 +154,18 @@ export interface OrderItem {
   product: string;
   productName: string;
   productSlug?: string;
+  variantSku?: string; // SKU of the specific variant for inventory tracking
   variations?: Array<{
     name: string;
     option: { value: string; priceModifier?: number };
   }>;
   quantity: number;
   price: number;
+  /**
+   * Cost price snapshot at order time (admin-only field)
+   * Captured when order is created for accurate profit tracking.
+   */
+  costPriceAtSale?: number;
 }
 
 // ==================== Shipping ====================
@@ -97,8 +198,7 @@ export interface CouponApplied {
   coupon: string;
   code: string;
   discountType: 'percentage' | 'fixed';
-  discountValue: number; // Original coupon value (e.g., 10 for 10%, or 50 for ৳50 fixed)
-  discountAmount: number; // Actual discount applied (e.g., 26.5)
+  discountAmount: number;
 }
 
 // ==================== Cancellation ====================
@@ -125,17 +225,16 @@ export interface Order {
   totalAmount: number;
   delivery: Delivery;
   deliveryAddress: DeliveryAddress;
+  parcel?: OrderParcel;
   isGift: boolean; // True if ordering on behalf of someone else
   status: OrderStatus;
-  currentPayment?: {
-    transactionId?: string;
-    amount: number;
-    status: PaymentStatus;
-    method: PaymentMethod;
-    reference?: string;
-    verifiedAt?: string;
-    verifiedBy?: string;
-  };
+  source?: OrderSource; // Order source: web, pos, or api
+
+  // POS-specific fields
+  branch?: string; // Branch/store ID
+  terminalId?: string; // POS terminal identifier
+  cashier?: string; // Staff member who processed (User ID)
+  currentPayment?: CurrentPayment;
   couponApplied?: CouponApplied;
   shipping?: Shipping;
   cancellationRequest?: CancellationRequest;
@@ -155,6 +254,9 @@ export interface Order {
 export interface CreateOrderPayload {
   deliveryAddress: DeliveryAddress;
   delivery: Delivery;
+  /** Payment method shorthand (defaults to 'cash' if not provided) */
+  paymentMethod?: PaymentMethod;
+  /** Detailed payment data for verification (bKash TrxID, bank details, etc.) */
   paymentData?: PaymentData;
   isGift?: boolean; // True if ordering on behalf of someone else
   couponCode?: string;
@@ -190,6 +292,25 @@ export interface RefundOrderPayload {
 
 export interface RequestShippingPayload {
   provider: ShippingProvider;
+  /**
+   * If true, creates shipment via logistics provider API (RedX, Pathao)
+   * If false (default), just records tracking info manually
+   */
+  useProviderApi?: boolean;
+  /** Tracking number (for manual entry) */
+  trackingNumber?: string;
+  /** Consignment/parcel ID from provider */
+  consignmentId?: string;
+  /** Tracking URL */
+  trackingUrl?: string;
+  /** Shipping label URL */
+  labelUrl?: string;
+  /** Estimated delivery date */
+  estimatedDelivery?: string;
+  /** Parcel weight in grams (for API mode) */
+  weight?: number;
+  /** Special instructions (for API mode) */
+  instructions?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -204,26 +325,7 @@ export interface UpdateShippingPayload {
 }
 
 // ==================== API Response Types ====================
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  transaction?: string;
-}
-
-export interface PaginatedResponse<T> {
-  success: boolean;
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
-}
+// Note: order-api.ts imports ApiResponse and PaginatedResponse from api-factory
 
 // ==================== Delivery Options (for checkout UI) ====================
 

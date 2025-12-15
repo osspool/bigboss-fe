@@ -12,9 +12,13 @@ export function getDiscountPercentage(original: number, current: number): number
   return Math.round(((original - current) / original) * 100);
 }
 
-// Available sizes for filtering
-export const SIZES = ["XS", "S", "M", "L", "XL", "XXL"] as const;
-export type Size = (typeof SIZES)[number];
+// Available tag filters for product listing
+export const TAG_OPTIONS = [
+  { label: "Featured", value: "featured" },
+  { label: "New Arrivals", value: "new-arrivals" },
+  { label: "Best Sellers", value: "best-sellers" },
+  { label: "On Sale", value: "sale" },
+] as const;
 
 // Sort options that map to API sort params
 export const SORT_OPTIONS = [

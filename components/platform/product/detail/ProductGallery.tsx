@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { ProductImage } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 
 interface ProductGalleryProps {
   images: ProductImage[];
@@ -66,14 +66,14 @@ export function ProductGallery({
               key={index}
               onClick={() => setSelectedIndex(index)}
               className={cn(
-                "w-20 h-24 bg-muted overflow-hidden border-2 transition-all duration-200 flex-shrink-0 rounded-md relative",
+                "w-20 h-24 bg-muted overflow-hidden border-2 transition-all duration-200 shrink-0 rounded-md relative",
                 selectedIndex === index
                   ? "border-foreground"
                   : "border-transparent opacity-60 hover:opacity-100"
               )}
             >
               <Image
-                src={img.url}
+                src={getImageUrl(img, "thumbnail") || img.url}
                 alt={img.alt || `${productName} thumbnail ${index + 1}`}
                 fill
                 className="object-cover"

@@ -45,8 +45,8 @@ import {
   orderSummarySchema,
   deliveryAddressSchema,
   deliveryMethodSchema,
-  shippingSchema,
 } from "./order-form-schema";
+import { ShippingManager } from "../shipping";
 
 /**
  * Order Edit Form
@@ -637,36 +637,12 @@ export function OrderForm({
       value: "shipping",
       label: "Shipping",
       content: (
-        <div className="space-y-6">
-          <FormGenerator
-            schema={shippingSchema}
-            control={form.control}
-            disabled={isSubmitting}
-          />
-
-          {/* Shipping History (Read-only) */}
-          {order.shipping?.history?.length > 0 && (
-            <FormSection
-              title="Shipping History"
-              description="Status updates from courier"
-              variant="muted"
-            >
-              <div className="space-y-2">
-                {order.shipping.history.map((entry, idx) => (
-                  <div key={idx} className="flex gap-3 text-sm p-2 bg-muted/30 rounded">
-                    <Badge variant="outline" className="capitalize">
-                      {entry.status?.replace(/_/g, ' ')}
-                    </Badge>
-                    <span className="text-muted-foreground flex-1">{entry.note || '-'}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {entry.timestamp ? new Date(entry.timestamp).toLocaleString() : ''}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </FormSection>
-          )}
-        </div>
+        <ShippingManager
+          token={token}
+          order={order}
+          disabled={isSubmitting}
+          onSuccess={onSuccess}
+        />
       ),
     },
     {

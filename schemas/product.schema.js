@@ -65,7 +65,6 @@ const discountSchema = z.object({
  * - name
  * - category
  * - basePrice (min: 0)
- * - quantity (min: 0)
  *
  * Optional fields:
  * - description
@@ -77,6 +76,7 @@ const discountSchema = z.object({
  *
  * System-managed (DO NOT send):
  * - slug (auto-generated from name)
+ * - quantity (managed by inventory service)
  * - totalSales
  * - averageRating
  * - numReviews
@@ -100,9 +100,8 @@ export const productCreateSchema = z.object({
   basePrice: z.coerce.number()
     .min(0, "Price must be a positive number"),
 
-  quantity: z.coerce.number()
-    .int("Quantity must be a whole number")
-    .min(0, "Quantity must be a positive number"),
+  // quantity is system-managed by inventory service - read-only display only
+  quantity: z.coerce.number().int().min(0).optional(),
 
   category: z.string()
     .min(1, "Category is required"),
@@ -156,10 +155,8 @@ export const productUpdateSchema = z.object({
     .min(0, "Price must be a positive number")
     .optional(),
 
-  quantity: z.coerce.number()
-    .int("Quantity must be a whole number")
-    .min(0, "Quantity must be a positive number")
-    .optional(),
+  // quantity is system-managed by inventory service - read-only display only
+  quantity: z.coerce.number().int().min(0).optional(),
 
   category: z.string()
     .min(1, "Category is required")

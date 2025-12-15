@@ -32,7 +32,7 @@ type FetchOptions = Omit<RequestOptions, "token" | "organizationId">;
  *
  * Features:
  * - Auto WebP conversion
- * - Auto variants: thumbnail (150×200), medium (600×800), large (1200×1600)
+ * - Auto variants: thumbnail (150×200), medium (600×800)
  * - Max size: 50MB
  * - S3 storage with CDN
  *

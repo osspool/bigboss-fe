@@ -76,14 +76,18 @@ export const register = async (_: ActionState | null, formData: FormData): Promi
     });
 
     try {
-      const data = await handleApiRequest("POST", "/api/v1/auth/register", {
-        body: {
-          email: validatedData.email,
-          name: validatedData.name,
-          phone: validatedData.phone,
-          password: validatedData.password,
-        },
-      });
+      const data = await handleApiRequest<{ success: boolean; message?: string }>(
+        "POST",
+        "/api/v1/auth/register",
+        {
+          body: {
+            email: validatedData.email,
+            name: validatedData.name,
+            phone: validatedData.phone,
+            password: validatedData.password,
+          },
+        }
+      );
 
       return {
         status: "success",
@@ -98,11 +102,11 @@ export const register = async (_: ActionState | null, formData: FormData): Promi
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const fieldErrors = error.errors.reduce((acc, err) => {
-        const field = err.path[0] as string;
-        acc[field] = err.message;
-        return acc;
-      }, {} as Record<string, string>);
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of error.issues) {
+        const field = issue.path[0] as string;
+        fieldErrors[field] = issue.message;
+      }
 
       return {
         status: "invalid_data",

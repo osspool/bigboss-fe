@@ -1,4 +1,5 @@
 import { CATEGORIES, PRODUCT_STYLES } from "@/data/constants";
+import { TAG_OPTIONS } from "@/lib/constants";
 import { Info, Package, DollarSign, Tags, ImageIcon, Settings, FileText, BarChart3, Layers } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { field, section } from "@/components/form/form-system";
@@ -40,11 +41,11 @@ export const createProductFormSchema = ({
   product = null,
 }) => {
   return {
-    // Define tabs for the form
+    // Define tabs for the form (compact labels for sheet context)
     tabs: [
       {
         id: "basic",
-        label: "Basic Info",
+        label: "Basic",
         icon: <Package className="h-4 w-4" />,
       },
       {
@@ -54,12 +55,12 @@ export const createProductFormSchema = ({
       },
       {
         id: "pricing",
-        label: "Pricing",
+        label: "Price",
         icon: <DollarSign className="h-4 w-4" />,
       },
       {
         id: "variations",
-        label: "Variations",
+        label: "Variants",
         icon: <Layers className="h-4 w-4" />,
       },
       ...(isEdit && product ? [{
@@ -151,14 +152,14 @@ export const createProductFormSchema = ({
           { cols: 2, icon: <Tags className="h-4 w-4" /> }
         ),
 
-        // Tags
+        // Tags (predefined collection tags)
         section(
           "tags-section",
           null,
           [
-            field.tags("tags", "Product Tags", {
-              placeholder: "Add tags (press Enter)...",
-              description: "Add keywords to help customers find this product",
+            field.tagChoice("tags", "Collections", TAG_OPTIONS, {
+              placeholder: "Select collections",
+              description: "Assign this product to one or more collections",
               fullWidth: true,
             }),
           ],
@@ -204,9 +205,10 @@ export const createProductFormSchema = ({
               step: 0.01,
             }),
             field.number("quantity", "Stock Quantity", {
-              placeholder: "50",
-              required: true,
+              placeholder: "0",
               min: 0,
+              disabled: true,
+              description: "Managed by inventory service",
             }),
             field.switch("isActive", "Active", {
               description: "Product is visible and available for purchase",

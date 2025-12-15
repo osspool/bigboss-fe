@@ -13,25 +13,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AreaSelector } from "./AreaSelector";
 
 /**
  * AddressFormDialog Component
- * Dialog for adding or editing delivery addresses
+ *
+ * Dialog for adding or editing customer addresses.
+ * Includes delivery area selection with full area data (areaId, zoneId, providerAreaIds).
+ *
+ * Fields saved match CustomerAddress type:
+ * - recipientName: Name of the recipient
+ * - recipientPhone: Contact phone for delivery (required)
+ * - label: Address label (Home, Office, etc.)
+ * - addressLine1: Street address (required)
+ * - addressLine2: Additional details
+ * - areaId: Area internalId from @classytic/bd-areas (required)
+ * - areaName: Area display name
+ * - zoneId: Delivery zone (1-6) for pricing
+ * - providerAreaIds: Provider-specific area IDs (redx, pathao)
+ * - city: District name (auto-filled from area)
+ * - division: Division name (auto-filled from area)
+ * - postalCode: Postal code (auto-filled from area)
+ * - country: Country (default: Bangladesh)
+ * - isDefault: Whether this is the default address
  */
 export function AddressFormDialog({ open, onOpenChange, address = null, onSave }) {
   const isEdit = !!address;
 
   const [formData, setFormData] = useState({
     label: "",
+    recipientName: "",
+    recipientPhone: "",
     addressLine1: "",
     addressLine2: "",
+    division: "",
     city: "",
-    state: "",
     postalCode: "",
     country: "Bangladesh",
-    phone: "",
-    recipientName: "",
     isDefault: false,
+    // Area fields
+    areaId: null,
+    areaName: "",
+    zoneId: null,
+    providerAreaIds: null,
   });
 
   const [errors, setErrors] = useState({});
@@ -41,29 +65,38 @@ export function AddressFormDialog({ open, onOpenChange, address = null, onSave }
     if (address) {
       setFormData({
         label: address.label || "",
+        recipientName: address.recipientName || "",
+        // Support both old `phone` and new `recipientPhone` field
+        recipientPhone: address.recipientPhone || address.phone || "",
         addressLine1: address.addressLine1 || "",
         addressLine2: address.addressLine2 || "",
+        division: address.division || "",
         city: address.city || "",
-        state: address.state || "",
         postalCode: address.postalCode || "",
         country: address.country || "Bangladesh",
-        phone: address.phone || "",
-        recipientName: address.recipientName || "",
         isDefault: address.isDefault || false,
+        areaId: address.areaId || null,
+        areaName: address.areaName || "",
+        zoneId: address.zoneId || null,
+        providerAreaIds: address.providerAreaIds || null,
       });
     } else {
       // Reset form for new address
       setFormData({
         label: "",
+        recipientName: "",
+        recipientPhone: "",
         addressLine1: "",
         addressLine2: "",
+        division: "",
         city: "",
-        state: "",
         postalCode: "",
         country: "Bangladesh",
-        phone: "",
-        recipientName: "",
         isDefault: false,
+        areaId: null,
+        areaName: "",
+        zoneId: null,
+        providerAreaIds: null,
       });
     }
     setErrors({});
@@ -72,9 +105,35 @@ export function AddressFormDialog({ open, onOpenChange, address = null, onSave }
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error for this field
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const handleAreaChange = (areaSelection) => {
+    if (areaSelection) {
+      setFormData(prev => ({
+        ...prev,
+        areaId: areaSelection.areaId,
+        areaName: areaSelection.areaName,
+        zoneId: areaSelection.zoneId,
+        providerAreaIds: areaSelection.providerAreaIds,
+        // Auto-fill location from area selection
+        division: areaSelection.division,
+        city: areaSelection.city,
+        postalCode: areaSelection.postalCode || prev.postalCode,
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        areaId: null,
+        areaName: "",
+        zoneId: null,
+        providerAreaIds: null,
+      }));
+    }
+    if (errors.areaId) {
+      setErrors(prev => ({ ...prev, areaId: null }));
     }
   };
 
@@ -83,14 +142,12 @@ export function AddressFormDialog({ open, onOpenChange, address = null, onSave }
 
     if (!formData.label?.trim()) newErrors.label = "Label is required";
     if (!formData.addressLine1?.trim()) newErrors.addressLine1 = "Address is required";
-    if (!formData.city?.trim()) newErrors.city = "City is required";
-    if (!formData.postalCode?.trim()) newErrors.postalCode = "Postal code is required";
-    if (!formData.phone?.trim()) {
-      newErrors.phone = "Phone is required";
-    } else if (!/^01[0-9]{9}$/.test(formData.phone)) {
-      newErrors.phone = "Invalid phone number (01XXXXXXXXX)";
+    if (!formData.recipientPhone?.trim()) {
+      newErrors.recipientPhone = "Phone is required";
+    } else if (!/^01[0-9]{9}$/.test(formData.recipientPhone)) {
+      newErrors.recipientPhone = "Invalid phone number (01XXXXXXXXX)";
     }
-    if (!formData.recipientName?.trim()) newErrors.recipientName = "Recipient name is required";
+    if (!formData.areaId) newErrors.areaId = "Delivery area is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -98,11 +155,30 @@ export function AddressFormDialog({ open, onOpenChange, address = null, onSave }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent event from bubbling to parent forms
+    e.stopPropagation();
 
     if (!validate()) return;
 
-    onSave?.(formData);
+    // Build address data matching CustomerAddress type
+    const addressData = {
+      label: formData.label,
+      recipientName: formData.recipientName || undefined,
+      recipientPhone: formData.recipientPhone,
+      addressLine1: formData.addressLine1,
+      addressLine2: formData.addressLine2 || undefined,
+      city: formData.city,
+      division: formData.division,
+      postalCode: formData.postalCode || undefined,
+      country: formData.country,
+      isDefault: formData.isDefault,
+      // Area data (required for delivery)
+      areaId: formData.areaId,
+      areaName: formData.areaName,
+      zoneId: formData.zoneId,
+      providerAreaIds: formData.providerAreaIds,
+    };
+
+    onSave?.(addressData);
   };
 
   return (
@@ -136,35 +212,30 @@ export function AddressFormDialog({ open, onOpenChange, address = null, onSave }
 
             {/* Recipient Name */}
             <div className="space-y-2">
-              <Label htmlFor="recipientName">
-                Recipient Name <span className="text-destructive">*</span>
-              </Label>
+              <Label htmlFor="recipientName">Recipient Name</Label>
               <Input
                 id="recipientName"
                 name="recipientName"
                 value={formData.recipientName}
                 onChange={handleChange}
-                placeholder="Full name"
+                placeholder="Full name (optional)"
               />
-              {errors.recipientName && (
-                <p className="text-xs text-destructive">{errors.recipientName}</p>
-              )}
             </div>
 
-            {/* Phone */}
+            {/* Recipient Phone */}
             <div className="space-y-2">
-              <Label htmlFor="phone">
+              <Label htmlFor="recipientPhone">
                 Phone <span className="text-destructive">*</span>
               </Label>
               <Input
-                id="phone"
-                name="phone"
-                value={formData.phone}
+                id="recipientPhone"
+                name="recipientPhone"
+                value={formData.recipientPhone}
                 onChange={handleChange}
                 placeholder="01XXXXXXXXX"
               />
-              {errors.phone && (
-                <p className="text-xs text-destructive">{errors.phone}</p>
+              {errors.recipientPhone && (
+                <p className="text-xs text-destructive">{errors.recipientPhone}</p>
               )}
             </div>
 
@@ -178,7 +249,7 @@ export function AddressFormDialog({ open, onOpenChange, address = null, onSave }
                 name="addressLine1"
                 value={formData.addressLine1}
                 onChange={handleChange}
-                placeholder="Street address"
+                placeholder="House/Road/Area details"
               />
               {errors.addressLine1 && (
                 <p className="text-xs text-destructive">{errors.addressLine1}</p>
@@ -193,54 +264,63 @@ export function AddressFormDialog({ open, onOpenChange, address = null, onSave }
                 name="addressLine2"
                 value={formData.addressLine2}
                 onChange={handleChange}
-                placeholder="Apartment, suite, etc. (optional)"
+                placeholder="Apartment, floor, landmark (optional)"
               />
             </div>
 
-            {/* City */}
-            <div className="space-y-2">
-              <Label htmlFor="city">
-                City <span className="text-destructive">*</span>
+            {/* Delivery Area - Required for shipping */}
+            <div className="space-y-2 md:col-span-2">
+              <Label>
+                Delivery Area <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="city"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                placeholder="Enter city"
+              <AreaSelector
+                value={formData.areaId}
+                onChange={handleAreaChange}
+                placeholder="Search and select your delivery area..."
+                showZoneBadge={true}
               />
-              {errors.city && (
-                <p className="text-xs text-destructive">{errors.city}</p>
+              {errors.areaId && (
+                <p className="text-xs text-destructive">{errors.areaId}</p>
               )}
+              <p className="text-xs text-muted-foreground">
+                This determines your delivery zone and charges
+              </p>
             </div>
 
-            {/* State */}
-            <div className="space-y-2">
-              <Label htmlFor="state">State / Division</Label>
-              <Input
-                id="state"
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-                placeholder="Enter state (optional)"
-              />
-            </div>
+            {/* Division & City (auto-filled from area, shown for reference) */}
+            {formData.areaId && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="division">Division</Label>
+                  <Input
+                    id="division"
+                    value={formData.division}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">City / District</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+              </>
+            )}
 
             {/* Postal Code */}
             <div className="space-y-2">
-              <Label htmlFor="postalCode">
-                Postal Code <span className="text-destructive">*</span>
-              </Label>
+              <Label htmlFor="postalCode">Postal Code</Label>
               <Input
                 id="postalCode"
                 name="postalCode"
                 value={formData.postalCode}
                 onChange={handleChange}
-                placeholder="Enter postal code"
+                placeholder="Enter postal code (optional)"
               />
-              {errors.postalCode && (
-                <p className="text-xs text-destructive">{errors.postalCode}</p>
-              )}
             </div>
 
             {/* Country */}
@@ -248,10 +328,9 @@ export function AddressFormDialog({ open, onOpenChange, address = null, onSave }
               <Label htmlFor="country">Country</Label>
               <Input
                 id="country"
-                name="country"
                 value={formData.country}
-                onChange={handleChange}
-                placeholder="Bangladesh"
+                disabled
+                className="bg-muted"
               />
             </div>
           </div>

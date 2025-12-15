@@ -22,11 +22,22 @@ Quick reference for frontend integration with the Order API.
 | `PATCH` | `/api/orders/:id/status` | Admin | Update order status |
 | `POST` | `/api/orders/:id/fulfill` | Admin | Ship order |
 | `POST` | `/api/orders/:id/refund` | Admin | Refund order |
-| `POST` | `/api/orders/:id/shipping` | Admin | Request shipping pickup |
+| `POST` | `/api/orders/:id/shipping` | Admin | Record shipping info (manual) |
 | `PATCH` | `/api/orders/:id/shipping` | Admin | Update shipping status |
 | `GET` | `/api/orders/:id/shipping` | User/Admin | Get shipping info |
 | `POST` | `/webhooks/payments/manual/verify` | Superadmin | Verify manual payment (bkash/nagad/bank/cash) |
 | `POST` | `/webhooks/payments/manual/reject` | Superadmin | Reject manual payment (invalid/fraud) |
+
+**Logistics API (RedX Integration)**
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/v1/logistics/pickup-stores` | Admin | List pickup stores from RedX |
+| `POST` | `/api/v1/logistics/shipments` | Admin | Create shipment via RedX API |
+| `GET` | `/api/v1/logistics/shipments/:id` | Admin | Get shipment details |
+| `GET` | `/api/v1/logistics/shipments/:id/track` | Admin | Track shipment via RedX API |
+| `POST` | `/api/v1/logistics/shipments/:id/cancel` | Admin | Cancel shipment |
+| `GET` | `/api/v1/logistics/charge` | Public | Calculate delivery charge |
 
 ---
 
@@ -600,7 +611,9 @@ pending → requested → picked_up → in_transit → out_for_delivery → deli
 | `returned` | Package returned to sender |
 | `cancelled` | Shipment cancelled |
 
-### Request Shipping Pickup
+### Option 1: Manual Entry (Default)
+
+Record tracking info without calling provider API:
 
 ```http
 POST /api/orders/:id/shipping
@@ -609,19 +622,70 @@ Authorization: Bearer <admin_token>
 
 ```json
 {
-  "provider": "pathao",
-  "trackingNumber": "PATHAO123456",
-  "consignmentId": "CN-123456",
-  "trackingUrl": "https://pathao.com/track/PATHAO123456",
-  "labelUrl": "https://api.pathao.com/labels/123456.pdf",
-  "estimatedDelivery": "2025-12-15",
-  "metadata": {
-    "zone": "dhaka-city",
-    "weight": 500,
-    "courierResponse": { ... }
-  }
+  "provider": "redx",
+  "trackingNumber": "REDX123456789",
+  "trackingUrl": "https://track.redx.com.bd/REDX123456789"
 }
 ```
+
+### Option 2: Create Shipment via Logistics API (RedX)
+
+For automated shipment creation via RedX API:
+
+**Step 1: Get pickup stores (from RedX dashboard)**
+```http
+GET /api/v1/logistics/pickup-stores
+Authorization: Bearer <admin_token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "Main Warehouse",
+      "address": "123 Main St, Mohammadpur",
+      "areaId": 1,
+      "areaName": "Mohammadpur(Dhaka)",
+      "phone": "01712345678"
+    }
+  ]
+}
+```
+
+**Step 2: Create shipment with selected pickup store**
+```http
+POST /api/v1/logistics/shipments
+Authorization: Bearer <admin_token>
+```
+
+```json
+{
+  "orderId": "order_id",
+  "pickupStoreId": 1,
+  "weight": 500,
+  "instructions": "Handle with care"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "shipment_id",
+    "trackingId": "21A427TU4BN3R",
+    "provider": "redx",
+    "status": "pending",
+    "order": "order_id"
+  },
+  "message": "Shipment created successfully"
+}
+```
+
+> **Note:** This automatically updates `order.shipping` with tracking info.
 
 ### Update Shipping Status
 
@@ -645,6 +709,31 @@ Authorization: Bearer <admin_token>
 - `picked_up` → Order status becomes `shipped`
 - `delivered` → Order status becomes `delivered`
 
+### Track Shipment via Provider API
+
+```http
+GET /api/v1/logistics/shipments/:id/track
+Authorization: Bearer <admin_token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "shipment": { ... },
+    "tracking": {
+      "trackingId": "21A427TU4BN3R",
+      "status": "in-transit",
+      "timeline": [
+        { "message_en": "Package is created", "time": "2025-12-10T10:00:00Z" },
+        { "message_en": "Package is picked up", "time": "2025-12-10T14:00:00Z" }
+      ]
+    }
+  }
+}
+```
+
 ### Get Shipping Info
 
 ```http
@@ -657,20 +746,32 @@ Authorization: Bearer <token>
 {
   "success": true,
   "data": {
-    "provider": "pathao",
+    "provider": "redx",
     "status": "in_transit",
-    "trackingNumber": "PATHAO123456",
-    "trackingUrl": "https://pathao.com/track/PATHAO123456",
-    "consignmentId": "CN-123456",
+    "trackingNumber": "21A427TU4BN3R",
+    "trackingUrl": "https://track.redx.com.bd/21A427TU4BN3R",
+    "shipmentId": "shipment_id",
     "estimatedDelivery": "2025-12-15T00:00:00.000Z",
     "requestedAt": "2025-12-10T10:00:00.000Z",
     "pickedUpAt": "2025-12-10T14:00:00.000Z",
-    "metadata": { ... },
     "history": [
-      { "status": "requested", "note": "Pickup requested via pathao", "timestamp": "..." },
+      { "status": "requested", "note": "Shipment created via RedX API", "timestamp": "..." },
       { "status": "picked_up", "note": "Courier picked up package", "timestamp": "..." }
     ]
   }
+}
+```
+
+### Cancel Shipment
+
+```http
+POST /api/v1/logistics/shipments/:id/cancel
+Authorization: Bearer <admin_token>
+```
+
+```json
+{
+  "reason": "Customer cancelled order"
 }
 ```
 

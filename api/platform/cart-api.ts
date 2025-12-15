@@ -1,11 +1,12 @@
+import { type ApiResponse } from "../api-factory";
 import { handleApiRequest } from "../api-handler";
-import type { Cart, AddToCartPayload } from "@/types";
+import type { Cart, AddToCartPayload } from "@/types/cart.types";
 
 const ENDPOINT = "/api/v1/cart";
 
 /**
  * Cart API - Following CART_API_GUIDE.md
- * 
+ *
  * Endpoints:
  * - GET /api/v1/cart - Get (or auto-create) current user cart
  * - POST /api/v1/cart/items - Add item
@@ -15,35 +16,35 @@ const ENDPOINT = "/api/v1/cart";
  */
 export const cartApi = {
   getCart: async (token: string): Promise<Cart> => {
-    const response = await handleApiRequest("GET", ENDPOINT, { token });
-    return response?.data || response;
+    const response = await handleApiRequest<ApiResponse<Cart>>("GET", ENDPOINT, { token });
+    return response.data!;
   },
 
   addToCart: async (token: string, data: AddToCartPayload): Promise<Cart> => {
-    const response = await handleApiRequest("POST", `${ENDPOINT}/items`, {
+    const response = await handleApiRequest<ApiResponse<Cart>>("POST", `${ENDPOINT}/items`, {
       token,
       body: data,
     });
-    return response?.data || response;
+    return response.data!;
   },
 
   updateCartItem: async (token: string, itemId: string, quantity: number): Promise<Cart> => {
-    const response = await handleApiRequest("PATCH", `${ENDPOINT}/items/${itemId}`, {
+    const response = await handleApiRequest<ApiResponse<Cart>>("PATCH", `${ENDPOINT}/items/${itemId}`, {
       token,
       body: { quantity },
     });
-    return response?.data || response;
+    return response.data!;
   },
 
   removeCartItem: async (token: string, itemId: string): Promise<Cart> => {
-    const response = await handleApiRequest("DELETE", `${ENDPOINT}/items/${itemId}`, {
+    const response = await handleApiRequest<ApiResponse<Cart>>("DELETE", `${ENDPOINT}/items/${itemId}`, {
       token,
     });
-    return response?.data || response;
+    return response.data!;
   },
 
   clearCart: async (token: string): Promise<Cart> => {
-    const response = await handleApiRequest("DELETE", ENDPOINT, { token });
-    return response?.data || response;
+    const response = await handleApiRequest<ApiResponse<Cart>>("DELETE", ENDPOINT, { token });
+    return response.data!;
   },
 };

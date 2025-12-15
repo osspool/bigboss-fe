@@ -72,8 +72,6 @@ export interface ImageVariants {
  * Generic image structure used across the application
  */
 export interface Image {
-  /** Unique identifier for the image */
-  _id?: string;
   /** Full image URL */
   url: string;
   /** Responsive image variants */
@@ -98,9 +96,9 @@ export type DiscountType = "percentage" | "fixed";
  */
 export interface Discount {
   /** Type of discount calculation */
-  type?: DiscountType;
+  type: DiscountType;
   /** Discount value (percentage or fixed amount) */
-  value?: number;
+  value: number;
   /** Discount start date (ISO string) */
   startDate?: string;
   /** Discount end date (ISO string) */
@@ -132,12 +130,14 @@ export type PaymentGatewayType = "manual" | "stripe" | "sslcommerz";
 
 /**
  * Supported payment methods
+ * Matches backend: common/revenue/enums.js PAYMENT_METHOD + 'card' + 'manual'
  */
 export type PaymentMethod =
   | "bkash"
   | "nagad"
   | "rocket"
   | "bank"
+  | "card"
   | "online"
   | "cash"
   | "manual";
@@ -176,4 +176,51 @@ export interface GatewayInfo {
   sessionId?: string;
   paymentUrl?: string;
   expiresAt?: string;
+}
+
+// ==================== Platform Payment Config Types ====================
+
+/**
+ * Manual payment methods (excludes automated gateways)
+ * Used for displaying payment options to customers
+ */
+export type ManualPaymentMethod = 'bkash' | 'nagad' | 'rocket' | 'bank' | 'cash';
+
+/**
+ * Mobile wallet payment details (bKash, Nagad, Rocket)
+ * From platform.model.js walletDetailsSchema
+ */
+export interface WalletDetails {
+  walletNumber?: string;
+  walletName?: string;
+  note?: string;
+}
+
+/**
+ * Bank account payment details
+ * From platform.model.js bankDetailsSchema
+ */
+export interface BankDetails {
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+  branchName?: string;
+  routingNumber?: string;
+  swiftCode?: string;
+  note?: string;
+}
+
+/**
+ * Platform payment configuration
+ * From platform.model.js payment field
+ * Used to display payment instructions to customers at checkout
+ */
+export interface PlatformPaymentConfig {
+  cash?: {
+    enabled: boolean;
+  };
+  bkash?: WalletDetails;
+  nagad?: WalletDetails;
+  rocket?: WalletDetails;
+  bank?: BankDetails;
 }

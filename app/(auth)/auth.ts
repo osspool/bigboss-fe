@@ -1,31 +1,41 @@
-import NextAuth from "next-auth";
+import NextAuth, { type DefaultSession } from "next-auth";
+import type { DefaultJWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { handleApiRequest } from "@/api/api-handler";
 import { authConfig } from "./auth.config";
-import type { User, AuthResponse, UserRoleType } from "@/api/user-data";
+import type { AuthResponse, UserRoleType } from "@/api/user-data";
 
-// Extend NextAuth types
+// Extend NextAuth types (Auth.js v5)
 declare module "next-auth" {
-  interface Session {
+  interface Session extends DefaultSession {
     user: {
       id: string;
-      name: string;
-      email: string;
-      image?: string;
       roles?: UserRoleType[];
       phone?: string;
       organizationId?: string;
-    };
+    } & DefaultSession["user"];
     accessToken?: string;
     refreshToken?: string;
     roles?: UserRoleType[];
     organizationId?: string;
   }
+
+  interface User {
+    id?: string;
+    email?: string | null;
+    name?: string | null;
+    image?: string | null;
+    roles?: UserRoleType[];
+    phone?: string;
+    organizationId?: string;
+    accessToken?: string;
+    refreshToken?: string;
+  }
 }
 
 declare module "next-auth/jwt" {
-  interface JWT {
+  interface JWT extends DefaultJWT {
     sub?: string;
     email?: string;
     name?: string;
@@ -47,12 +57,16 @@ export const {
   ...authConfig,
   providers: [
     Credentials({
-      credentials: {},
-      async authorize({ email, password }) {
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const { email, password } = credentials as { email: string; password: string };
         try {
-          const data = await handleApiRequest("POST", "/api/v1/auth/login", {
+          const data = await handleApiRequest<AuthResponse>("POST", "/api/v1/auth/login", {
             body: { email, password },
-          }) as AuthResponse;
+          });
 
           const { user, token, refreshToken } = data;
           console.log("User new", user);
@@ -61,12 +75,17 @@ export const {
             throw new Error("User not found.");
           }
 
+          // Return User object with extra fields for jwt callback
           return {
-            user,
-            token,
-            refreshToken,
-            access_token: token,
-            refresh_token: refreshToken,
+            id: user._id || user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            roles: user.roles,
+            phone: user.phone,
+            organizationId: user.organization,
+            accessToken: token,
+            refreshToken: refreshToken,
           };
         } catch (error) {
           console.error("Error during user authorization:", error);
@@ -84,13 +103,17 @@ export const {
       // Initial sign in - OAuth providers (like Google)
       if (account?.provider === "google") {
         try {
-          const data = await handleApiRequest("POST", "/api/v1/auth/oauth-login", {
+          const data = await handleApiRequest<{
+            user: { _id: string; email: string; name: string; roles?: UserRoleType[]; phone?: string; image?: string; organization?: string };
+            access_token: string;
+            refresh_token: string;
+          }>("POST", "/api/v1/auth/oauth-login", {
             body: {
-              email: (user as any).email,
-              name: (user as any).name,
+              email: user?.email,
+              name: user?.name,
               provider: account.provider,
               providerAccountId: account.providerAccountId,
-              image: (user as any).image,
+              image: user?.image,
             },
           });
 
@@ -110,25 +133,26 @@ export const {
       }
       // Initial sign in - Credentials provider
       else if (user) {
-        const u = user as any;
-        token.sub = u.user._id || u.user.id;
-        token.email = u.user.email;
-        token.name = u.user.name;
-        token.roles = u.user.roles || ['user'];
-        token.phone = u.user.phone;
-        token.accessToken = u.access_token || u.token;
-        token.refreshToken = u.refresh_token || u.refreshToken;
-        if (u.user.image) token.image = u.user.image;
-        token.organizationId = u?.user?.organization ?? undefined;
+        token.sub = user.id;
+        token.email = user.email ?? undefined;
+        token.name = user.name ?? undefined;
+        token.roles = user.roles || ['user'];
+        token.phone = user.phone;
+        token.accessToken = user.accessToken;
+        token.refreshToken = user.refreshToken;
+        if (user.image) token.image = user.image;
+        token.organizationId = user.organizationId;
       }
 
       // Handle session updates (e.g., after creating organization)
       if (trigger === "update" && session) {
         if (session.shouldRefresh) {
           try {
-            const refreshData = await handleApiRequest("POST", "/api/v1/auth/refresh", {
-              body: { token: token.refreshToken },
-            });
+            const refreshData = await handleApiRequest<{ token: string; refreshToken: string }>(
+              "POST",
+              "/api/v1/auth/refresh",
+              { body: { token: token.refreshToken } }
+            );
 
             const newAccessToken = refreshData.token;
             const newRefreshToken = refreshData.refreshToken;

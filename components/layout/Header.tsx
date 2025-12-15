@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Menu, X, Search, User, ChevronDown, ChevronRight, LogOut, Settings, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Container } from "./Container";
 import { HeaderSearch } from "./HeaderSearch";
 import { MobileSearchOverlay } from "./MobileSearchOverlay";
-import { NAV_ITEMS, CATEGORIES } from "@/lib/constants";
+import { CATEGORIES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { CartBadge } from "@/components/platform/cart/CartBadge";
 import {
@@ -47,7 +46,7 @@ export function Header({ user, token }: HeaderProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<string[]>([]);
-  const pathname = usePathname();
+  const [showBanner, setShowBanner] = useState(true);
   const isLoggedIn = !!user;
 
   const toggleCategory = (slug: string) => {
@@ -64,13 +63,23 @@ export function Header({ user, token }: HeaderProps) {
     <>
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         {/* Announcement Bar */}
-        <div className="bg-primary text-primary-foreground py-2 text-center text-sm">
-          <Container>
-            <p className="font-medium tracking-wide">
-              FREE SHIPPING ON ORDERS OVER ৳5,000 | USE CODE: BIGBOSS10
-            </p>
-          </Container>
-        </div>
+        {showBanner && (
+          <div className="bg-primary text-primary-foreground py-2 text-sm px-4">
+            <div className="flex items-center">
+              <div className="w-6 shrink-0" />
+              <p className="font-medium tracking-wide text-center flex-1">
+                FREE SHIPPING ON ORDERS OVER ৳5,000 | USE CODE: BIGBOSS10
+              </p>
+              <button
+                onClick={() => setShowBanner(false)}
+                className="w-6 h-6 shrink-0 flex items-center justify-center rounded hover:bg-white/10 transition-colors"
+                aria-label="Close announcement"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Main Header */}
         <Container>
@@ -87,8 +96,12 @@ export function Header({ user, token }: HeaderProps) {
               </SheetTrigger>
               <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0 bg-background border-border">
                 <SheetHeader className="p-6 border-b border-border">
-                  <SheetTitle className="font-display text-2xl tracking-tight">
-                    BIGBOSS
+                  <SheetTitle>
+                    <img
+                      src="/bigboss-logo.png"
+                      alt="BIGBOSS"
+                      className="h-5 w-auto"
+                    />
                   </SheetTitle>
                 </SheetHeader>
                 
@@ -132,11 +145,25 @@ export function Header({ user, token }: HeaderProps) {
                     )}
                   </div>
 
+                  {/* Search Button */}
+                  <div className="px-4 py-3 border-b border-border">
+                    <button
+                      onClick={() => {
+                        setIsSheetOpen(false);
+                        setIsSearchOpen(true);
+                      }}
+                      className="flex items-center gap-3 w-full h-10 px-3 rounded-md border border-input bg-muted/40 text-muted-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      <Search className="size-4" />
+                      <span className="text-sm">Search products...</span>
+                    </button>
+                  </div>
+
                   {/* Navigation */}
                   <div className="flex-1 overflow-y-auto py-4">
                     {/* New Arrivals Link */}
                     <Link
-                      href="/products?category=new-arrivals"
+                      href="/products?tags=new-arrivals"
                       onClick={() => setIsSheetOpen(false)}
                       className="flex items-center px-6 py-3 text-base font-medium hover:bg-accent transition-colors"
                     >
@@ -183,7 +210,7 @@ export function Header({ user, token }: HeaderProps) {
 
                     {/* Sale Link */}
                     <Link
-                      href="/products?category=sale"
+                      href="/products?tags=sale"
                       onClick={() => setIsSheetOpen(false)}
                       className="flex items-center px-6 py-3 text-base font-medium text-destructive hover:bg-accent transition-colors"
                     >
@@ -228,14 +255,18 @@ export function Header({ user, token }: HeaderProps) {
 
             {/* Logo */}
             <Link href="/" className="flex items-center flex-shrink-0">
-              <span className="font-display text-3xl md:text-4xl tracking-tight">BIGBOSS</span>
+              <img
+                src="/bigboss-logo.png"
+                alt="BIGBOSS"
+                className="h-5 md:h-6 w-auto"
+              />
             </Link>
 
             {/* Desktop Navigation with Mega Menu */}
             <div className="hidden lg:flex items-center gap-6">
               {/* New Arrivals - Simple Link */}
               <Link
-                href="/products?category=new-arrivals"
+                href="/products?tags=new-arrivals"
                 className="text-sm font-medium tracking-wide uppercase transition-colors link-underline"
               >
                 New
@@ -287,10 +318,10 @@ export function Header({ user, token }: HeaderProps) {
                                   href={`/products?parentCategory=${category.slug}&category=${sub.slug}`}
                                   className="flex items-center gap-3 py-2 px-0 cursor-pointer hover:text-primary transition-colors group/item"
                                 >
-                                  {sub.image && (
+                                  {"image" in sub && sub.image && (
                                     <div className="w-10 h-10 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                                      <img 
-                                        src={sub?.image ?? ""} 
+                                      <img
+                                        src={sub.image}
                                         alt={sub.label}
                                         className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-300"
                                       />
@@ -319,7 +350,7 @@ export function Header({ user, token }: HeaderProps) {
 
               {/* Sale - Simple Link with highlight */}
               <Link
-                href="/products?category=sale"
+                href="/products?tags=sale"
                 className="text-sm font-medium tracking-wide uppercase transition-colors link-underline text-destructive"
               >
                 Sale
@@ -333,16 +364,6 @@ export function Header({ user, token }: HeaderProps) {
 
             {/* Actions */}
             <div className="flex items-center gap-1 md:gap-2">
-              {/* Mobile Search Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setIsSearchOpen(true)}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-
               {/* User Account */}
               {isLoggedIn && user ? (
                 <DropdownMenu>

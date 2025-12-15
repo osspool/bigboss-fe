@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@classytic/bd-areas": "^1.0.0",
     "@classytic/formkit": "^1.0.3",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -46,7 +47,7 @@
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.555.0",
-    "next": "16.0.7",
+    "next": "^16.0.10",
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "^0.4.6",
     "react": "^19.2.1",

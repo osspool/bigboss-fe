@@ -319,6 +319,21 @@ export const ORDER_STATUS_COLORS = {
   [ORDER_STATUS.CANCELLED]: 'destructive',
 };
 
+// ============ ORDER SOURCE ============
+/**
+ * Order Source - Where the order originated from
+ * Matches backend order model source field
+ */
+export const ORDER_SOURCE = {
+  WEB: 'web',     // Online store/website
+  POS: 'pos',     // Point of Sale
+  API: 'api',     // External API integration
+};
+
+export const ORDER_SOURCE_VALUES = Object.values(ORDER_SOURCE);
+
+export const ORDER_SOURCE_OPTIONS = mapToOptions(ORDER_SOURCE_VALUES);
+
 
 // Default export for convenience
 export default {
@@ -369,6 +384,9 @@ export default {
   ORDER_STATUS_OPTIONS,
   ORDER_STATUS_LABELS,
   ORDER_STATUS_COLORS,
+  ORDER_SOURCE,
+  ORDER_SOURCE_VALUES,
+  ORDER_SOURCE_OPTIONS,
   // Platform
   DEFAULT_GATEWAY_FEES,
   // Commission

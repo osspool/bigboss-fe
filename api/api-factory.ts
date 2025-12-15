@@ -1,5 +1,5 @@
 // @/api/api-factory.ts
-import { handleApiRequest } from "./api-handler";
+import { handleApiRequest, createQueryString } from "./api-handler";
 
 // ==================== MongoKit Response Types ====================
 
@@ -188,35 +188,10 @@ export class BaseApi<
 
   /**
    * Creates query string from parameters
-   * Supports: ?field=value and ?field[operator]=value
-   * Note: null is considered a valid filter value (e.g., organizationId=null)
+   * Delegates to shared utility from api-handler.ts
    */
   createQueryString(params: Record<string, unknown> = {}): string {
-    const searchParams = new URLSearchParams();
-
-    Object.entries(params).forEach(([key, value]) => {
-      // Only filter out undefined and empty strings, allow null
-      if (value === undefined || value === '') return;
-
-      // Handle arrays - use [in] for multiple values, direct for single
-      if (Array.isArray(value)) {
-        if (value.length > 1) {
-          searchParams.append(`${key}[in]`, value.join(','));
-        } else if (value.length === 1) {
-          searchParams.append(key, String(value[0]));
-        }
-      }
-      // Handle null explicitly
-      else if (value === null) {
-        searchParams.append(key, 'null');
-      }
-      // Handle primitive values directly
-      else {
-        searchParams.append(key, String(value));
-      }
-    });
-
-    return searchParams.toString();
+    return createQueryString(params);
   }
 
   /**
@@ -224,7 +199,7 @@ export class BaseApi<
    * Handles pagination, sorting, and filters
    * Note: Critical security filters (organizationId, ownerId) are ALWAYS sent, even if null
    */
-  prepareParams(params: Record<string, unknown> = {}): Record<string, unknown> {
+  prepareParams(params: QueryParams = {}): Record<string, unknown> {
     const result: Record<string, unknown> = {};
 
     // Critical security filters that MUST always be sent to backend
@@ -274,7 +249,7 @@ export class BaseApi<
   }: {
     token?: string | null;
     organizationId?: string | null;
-    params?: Record<string, unknown>;
+    params?: QueryParams;
     options?: Omit<RequestOptions, 'token' | 'organizationId'>;
   } = {}): Promise<PaginatedResponse<TDoc>> {
     const processedParams = this.prepareParams(params);

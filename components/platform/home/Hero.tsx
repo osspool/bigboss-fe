@@ -25,7 +25,7 @@ export function Hero({ data }: HeroProps) {
   const highlightedWord = data?.highlightedWord || "STYLE";
   const description = data?.description || "Premium streetwear crafted for those who dare to stand out. Elevate your wardrobe with pieces that make a statement.";
   const primaryCTA = data?.primaryCTA || { label: "Shop Collection", href: "/products" };
-  const secondaryCTA = data?.secondaryCTA || { label: "New Arrivals", href: "/products?category=new-arrivals" };
+  const secondaryCTA = data?.secondaryCTA || { label: "New Arrivals", href: "/products?tags=new-arrivals" };
   const image = data?.image || "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800";
   const floatingBadge = data?.floatingBadge || { value: "30%", label: "Off First Order" };
 

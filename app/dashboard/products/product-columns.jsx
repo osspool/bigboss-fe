@@ -5,10 +5,11 @@ import { ActionDropdown } from "@/components/custom/ui/dropdown-wrapper";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn, getProductImageUrl } from "@/lib/utils";
 
 const ImageCell = React.memo(({ item }) => {
-  const imageUrl = item.featuredImage?.url || item.images?.[0]?.url;
+  // Use thumbnail variant for small table cell images (48px)
+  const imageUrl = getProductImageUrl(item.featuredImage, item.images, "thumbnail");
   const alt = item.featuredImage?.alt || item.name;
 
   return (

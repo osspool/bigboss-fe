@@ -27,7 +27,7 @@ export function ProductForm({
       shortDescription: product?.shortDescription || "",
       description: product?.description || "",
       basePrice: product?.basePrice ?? "",
-      quantity: product?.quantity ?? 0,
+      quantity: product?.quantity ?? 0, // Read-only, managed by inventory service
       category: product?.category || "",
       parentCategory: product?.parentCategory || "",
       images: product?.images?.map(img => ({
@@ -88,7 +88,6 @@ export function ProductForm({
         const cleanData = {
           name: data.name,
           basePrice: Number(data.basePrice),
-          quantity: Number(data.quantity),
           category: data.category,
           isActive: data.isActive,
           ...(data.shortDescription && { shortDescription: data.shortDescription }),
@@ -210,7 +209,7 @@ export function ProductForm({
       // Map error fields to tabs
       const basicFields = ["name", "shortDescription", "description", "category", "parentCategory", "tags", "style"];
       const mediaFields = ["images"];
-      const pricingFields = ["basePrice", "quantity", "isActive", "discount"];
+      const pricingFields = ["basePrice", "isActive", "discount"];
       const variationFields = ["variations"];
       
       for (const field of errorFields) {
@@ -281,7 +280,8 @@ export function ProductForm({
         variant="default"
         layout="flex"
         className="flex-1"
-        listClassName="mb-4"
+        listWrapperClassName="px-0"
+        listClassName="mb-4 gap-0.5"
         contentClassName="px-1"
       />
       

@@ -23,7 +23,8 @@ export function Marquee({ className, data }: MarqueeProps) {
     "★",
   ];
 
-  const phrases = data?.items?.flatMap(item => [item, "★"]) || defaultPhrases;
+  const phrases = data?.items?.flatMap((item) => [item, "★"]) || defaultPhrases;
+
   return (
     <div
       className={cn(
@@ -31,17 +32,15 @@ export function Marquee({ className, data }: MarqueeProps) {
         className
       )}
     >
-      <div className="flex whitespace-nowrap">
-        <div className={cn("flex items-center gap-8 pr-8", "animate-marquee")}>
-          {[...phrases, ...phrases].map((phrase, i) => (
-            <span
-              key={i}
-              className="text-sm font-medium uppercase tracking-wider"
-            >
-              {phrase}
-            </span>
-          ))}
-        </div>
+      <div className="animate-marquee flex whitespace-nowrap">
+        {[...phrases, ...phrases].map((phrase, i) => (
+          <span
+            key={i}
+            className="mx-4 text-sm font-medium uppercase tracking-wider"
+          >
+            {phrase}
+          </span>
+        ))}
       </div>
     </div>
   );

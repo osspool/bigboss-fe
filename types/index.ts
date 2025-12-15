@@ -28,6 +28,11 @@ export type {
   Discount,
   // Stats
   Stats,
+  // Payment Config (from platform settings)
+  ManualPaymentMethod,
+  WalletDetails,
+  BankDetails,
+  PlatformPaymentConfig,
 } from "./common.types";
 
 // ==================== Product Types ====================
@@ -97,46 +102,48 @@ export type {
   // Order
   Order,
   // API Payloads
-  CreateOrderItem,
-  OrderPaymentData,
-  CreateOrderPayloadCOD,
-  CreateOrderPayloadManual,
+  // CreateOrderItem, // COMMENTED: doesn't exist
+  // OrderPaymentData, // COMMENTED: use PaymentData instead
+  // CreateOrderPayloadCOD, // COMMENTED: doesn't exist
+  // CreateOrderPayloadManual, // COMMENTED: doesn't exist
   CreateOrderPayload,
   CancelOrderPayload,
-  UpdateOrderStatusPayload,
+  // UpdateOrderStatusPayload, // COMMENTED: use UpdateStatusPayload instead
   FulfillOrderPayload,
   RefundOrderPayload,
   // API Responses
-  OrderListResponse,
-  OrderResponse,
+  // OrderListResponse, // COMMENTED: doesn't exist
+  // OrderResponse, // COMMENTED: doesn't exist
   // Summary
-  OrderSummary,
+  // OrderSummary, // COMMENTED: doesn't exist
   // Query
   OrderQueryParams,
 } from "./order.types";
 
 // ==================== Payment Types ====================
+// NOTE: Many payment types don't exist in payment.types.ts
+// The payment.types.ts only exports: PaymentGatewayType, PaymentMethod, PaymentStatus,
+// PaymentDetails, GatewayInfo, CurrentPayment, VerifyPaymentPayload, RejectPaymentPayload,
+// VerificationResult, RejectResult
 export type {
-  // Gateway & Methods
-  PaymentGateway,
-  ManualPaymentMethod,
-  // Details
-  WalletDetails,
-  BankDetails,
-  // Configuration
-  PlatformPaymentConfig,
-  // Payment Data
-  PaymentData,
-  // Payment Intent
-  PaymentIntent,
-  // Responses
-  PaymentResponse,
-  // Verification
-  PaymentVerificationRequest,
-  // History
-  PaymentRecord,
-  // Refund
-  Refund,
+  // PaymentGateway, // COMMENTED: use PaymentGatewayType instead
+  // ManualPaymentMethod, // COMMENTED: doesn't exist (use PaymentMethod)
+  // WalletDetails, // COMMENTED: doesn't exist
+  // BankDetails, // COMMENTED: doesn't exist
+  // PlatformPaymentConfig, // COMMENTED: doesn't exist
+  // PaymentData, // COMMENTED: doesn't exist in payment.types (exists in order.types)
+  // PaymentIntent, // COMMENTED: doesn't exist
+  // PaymentResponse, // COMMENTED: doesn't exist
+  // PaymentVerificationRequest, // COMMENTED: doesn't exist
+  // PaymentRecord, // COMMENTED: doesn't exist
+  // Refund, // COMMENTED: doesn't exist
+  PaymentGatewayType,
+  PaymentMethod,
+  // CurrentPayment is already exported from order.types
+  VerifyPaymentPayload,
+  RejectPaymentPayload,
+  VerificationResult,
+  RejectResult,
 } from "./payment.types";
 
 // ==================== Review Types ====================
@@ -170,7 +177,8 @@ export type {
   // Validation
   CouponValidationResult,
   // API Payloads
-  ApplyCouponPayload,
+  // ApplyCouponPayload, // COMMENTED: use ValidateCouponPayload instead
+  ValidateCouponPayload,
   CreateCouponPayload,
   UpdateCouponPayload,
   // API Responses
@@ -207,6 +215,7 @@ export type {
 } from "./filter.types";
 
 // ==================== CMS Types ====================
+// NOTE: Many CMS types don't exist. Only exporting what actually exists.
 export type {
   // Metadata
   CMSMetadata,
@@ -214,47 +223,49 @@ export type {
   CMSPageStatus,
   // Page
   CMSPage,
-  CMSPageWithContent,
+  // CMSPageWithContent, // COMMENTED: doesn't exist
   // Content Types
   HomePageContent,
-  HomepageContent,
+  // HomepageContent, // COMMENTED: use HomePageContent instead
   AboutPageContent,
   ContactPageContent,
-  TextPageContent,
-  PrivacyPageContent,
+  // TextPageContent, // COMMENTED: doesn't exist
+  // PrivacyPageContent, // COMMENTED: use PolicyPageContent instead
+  PolicyPageContent,
   ReturnsPageContent,
   FAQPageContent,
-  CookiesPageContent,
-  TermsPageContent,
-  SizeGuideContent,
+  // CookiesPageContent, // COMMENTED: doesn't exist
+  // TermsPageContent, // COMMENTED: doesn't exist
+  // SizeGuideContent, // COMMENTED: use SizeGuidePageContent instead
+  SizeGuidePageContent,
   // Content Blocks
-  ContentBlock,
+  // ContentBlock, // COMMENTED: doesn't exist
   // Navigation
-  NavigationItem,
-  NavigationMenu,
+  // NavigationItem, // COMMENTED: doesn't exist
+  // NavigationMenu, // COMMENTED: doesn't exist
   // Footer
-  FooterConfig,
-  // Shared shapes
-  CTA,
-  StatItem,
-  FeatureItem,
-  SupportContactSection,
-  LegalContact,
-  LegalSection,
-  ReturnsSection,
-  // Typed Pages
-  Homepage,
-  HomePage,
-  AboutPage,
-  ContactPage,
-  TextPage,
-  PrivacyPage,
-  ReturnsPage,
-  FAQPage,
-  CookiesPage,
-  TermsPage,
-  SizeGuidePage,
+  // FooterConfig, // COMMENTED: doesn't exist
+  // Shared shapes - none are exported from cms.types
+  // CTA, // COMMENTED: not exported
+  // StatItem, // COMMENTED: doesn't exist
+  // FeatureItem, // COMMENTED: doesn't exist
+  // SupportContactSection, // COMMENTED: doesn't exist
+  // LegalContact, // COMMENTED: doesn't exist
+  // LegalSection, // COMMENTED: doesn't exist
+  // ReturnsSection, // COMMENTED: doesn't exist
+  // Typed Pages - none exist
+  // Homepage, // COMMENTED: doesn't exist
+  // HomePage, // COMMENTED: doesn't exist
+  // AboutPage, // COMMENTED: doesn't exist
+  // ContactPage, // COMMENTED: doesn't exist
+  // TextPage, // COMMENTED: doesn't exist
+  // PrivacyPage, // COMMENTED: doesn't exist
+  // ReturnsPage, // COMMENTED: doesn't exist
+  // FAQPage, // COMMENTED: doesn't exist
+  // CookiesPage, // COMMENTED: doesn't exist
+  // TermsPage, // COMMENTED: doesn't exist
+  // SizeGuidePage, // COMMENTED: doesn't exist
   // API Responses
-  CMSPageListResponse,
-  CMSPageResponse,
+  // CMSPageListResponse, // COMMENTED: doesn't exist
+  // CMSPageResponse, // COMMENTED: doesn't exist
 } from "./cms.types";

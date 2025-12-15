@@ -2,10 +2,17 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, Loader2, ArrowLeft } from "lucide-react";
+import { Search, X, Loader2, ArrowLeft, ArrowRight } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useProducts } from "@/hooks/query/useProducts";
-import { cn } from "@/lib/utils";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupButton,
+  InputGroupText,
+} from "@/components/ui/input-group";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 interface MobileSearchOverlayProps {
@@ -37,7 +44,6 @@ export function MobileSearchOverlay({ isOpen, onClose }: MobileSearchOverlayProp
   // Focus input when overlay opens
   useEffect(() => {
     if (isOpen) {
-      // Small delay to ensure the overlay is visible
       setTimeout(() => inputRef.current?.focus(), 100);
     } else {
       setQuery("");
@@ -57,8 +63,8 @@ export function MobileSearchOverlay({ isOpen, onClose }: MobileSearchOverlayProp
   }, [isOpen]);
 
   // Handle form submit
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback((e?: React.FormEvent) => {
+    e?.preventDefault();
     if (query.trim()) {
       router.push(`/products?search=${encodeURIComponent(query.trim())}`);
       onClose();
@@ -70,109 +76,148 @@ export function MobileSearchOverlay({ isOpen, onClose }: MobileSearchOverlayProp
     onClose();
   }, [onClose]);
 
+  const clearQuery = useCallback(() => {
+    setQuery("");
+    inputRef.current?.focus();
+  }, []);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background">
+    <div className="fixed inset-0 z-100 bg-background animate-in fade-in-0 duration-200">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-border">
-        <button
-          type="button"
+      <div className="flex items-center gap-3 px-4 h-16 border-b border-border bg-background">
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onClose}
-          className="p-2 -ml-2 hover:bg-accent rounded-md transition-colors"
+          className="-ml-2"
           aria-label="Close search"
         >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+          <ArrowLeft className="size-5" />
+        </Button>
 
         <form onSubmit={handleSubmit} className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
+          <InputGroup className="bg-muted/40">
+            <InputGroupAddon align="inline-start">
+              <InputGroupText>
+                <Search className="size-4" />
+              </InputGroupText>
+            </InputGroupAddon>
+
+            <InputGroupInput
               ref={inputRef}
-              type="search"
+              type="text"
               placeholder="Search products..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full h-10 pl-10 pr-10 bg-muted/50 rounded-lg border-0 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+              className="text-base"
             />
-            {query && (
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery("");
-                  inputRef.current?.focus();
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+
+            <InputGroupAddon align="inline-end">
+              {isLoading ? (
+                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+              ) : query ? (
+                <InputGroupButton
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  onClick={clearQuery}
+                  aria-label="Clear search"
+                >
+                  <X className="size-3.5" />
+                </InputGroupButton>
+              ) : null}
+            </InputGroupAddon>
+          </InputGroup>
         </form>
       </div>
 
       {/* Results */}
       <div className="flex-1 overflow-y-auto">
         {query.length < 2 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <Search className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground text-center">
-              Search for products by name, category, or style
+          <div className="flex flex-col items-center justify-center py-20 px-6">
+            <div className="size-16 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+              <Search className="size-7 text-muted-foreground/50" />
+            </div>
+            <p className="text-lg font-medium mb-2">Search Products</p>
+            <p className="text-muted-foreground text-center text-sm">
+              Find products by name, category, or style
             </p>
           </div>
         ) : isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : suggestions && suggestions.length > 0 ? (
-          <div className="divide-y divide-border">
-            {suggestions.map((product: any) => (
-              <Link
-                key={product._id}
-                href={`/products/${product.slug}`}
-                onClick={handleSuggestionClick}
-                className="flex items-center gap-4 px-4 py-4 hover:bg-accent transition-colors"
-              >
-                {product.images?.[0] && (
-                  <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
+          <div>
+            {/* Results header */}
+            <div className="px-4 py-3 border-b border-border bg-muted/20 sticky top-0">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Products
+              </p>
+            </div>
+
+            {/* Results list */}
+            <div className="divide-y divide-border">
+              {suggestions.map((product: any) => (
+                <Link
+                  key={product._id}
+                  href={`/products/${product.slug}`}
+                  onClick={handleSuggestionClick}
+                  className="group flex items-center gap-4 px-4 py-4 hover:bg-accent/50 active:bg-accent transition-colors"
+                >
+                  {product.images?.[0] ? (
+                    <div className="size-16 rounded-lg overflow-hidden bg-muted shrink-0 ring-1 ring-border">
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="size-16 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      <Search className="size-5 text-muted-foreground/50" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{product.name}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      ৳{product.basePrice?.toLocaleString()}
+                    </p>
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{product.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    ৳{product.basePrice?.toLocaleString()}
-                  </p>
-                </div>
-              </Link>
-            ))}
+                  <ArrowRight className="size-4 text-muted-foreground/50" />
+                </Link>
+              ))}
+            </div>
 
             {/* View all results button */}
             <button
               type="button"
-              onClick={handleSubmit}
-              className="w-full px-4 py-4 text-center text-primary font-medium hover:bg-accent transition-colors"
+              onClick={() => handleSubmit()}
+              className="w-full px-4 py-4 text-center font-medium text-primary bg-muted/20 hover:bg-muted/40 active:bg-muted/50 transition-colors flex items-center justify-center gap-2 border-t border-border"
             >
-              View all results for &quot;{query}&quot;
+              View all results for "{query}"
+              <ArrowRight className="size-4" />
             </button>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <p className="text-muted-foreground text-center mb-4">
-              No products found for &quot;{query}&quot;
+          <div className="flex flex-col items-center justify-center py-20 px-6">
+            <div className="size-16 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+              <Search className="size-7 text-muted-foreground/50" />
+            </div>
+            <p className="text-lg font-medium mb-2">No products found</p>
+            <p className="text-muted-foreground text-center text-sm mb-6">
+              We couldn't find anything for "{query}"
             </p>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="text-primary font-medium hover:underline"
+            <Button
+              variant="outline"
+              onClick={() => handleSubmit()}
+              className="gap-2"
             >
               Search anyway
-            </button>
+              <ArrowRight className="size-4" />
+            </Button>
           </div>
         )}
       </div>

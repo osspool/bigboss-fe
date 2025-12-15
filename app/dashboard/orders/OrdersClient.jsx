@@ -50,11 +50,13 @@ export function OrdersClient({ token, initialLimit = 15 }) {
     
     // Filter params
     const status = searchParams.get("status");
+    const source = searchParams.get("source");
     const paymentStatus = searchParams.get("currentPayment.status");
     const dateFrom = searchParams.get("createdAt[gte]");
     const dateTo = searchParams.get("createdAt[lte]");
-    
+
     if (status) params.status = status;
+    if (source) params.source = source;
     if (paymentStatus) params["currentPayment.status"] = paymentStatus;
     if (dateFrom) params["createdAt[gte]"] = dateFrom;
     if (dateTo) params["createdAt[lte]"] = dateTo;

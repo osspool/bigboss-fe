@@ -18,17 +18,45 @@ export type ProductImage = Image;
 
 /**
  * Single option within a product variation
- * @example { value: "Medium", priceModifier: 5, quantity: 20 }
+ * @example { value: "Medium", sku: "TSHIRT-M", priceModifier: 5, costPrice: 200, quantity: 20 }
  */
 export interface VariationOption {
   /** Option value (e.g., "Small", "Red", "Cotton") */
   value: string;
+  /** SKU for this variant (e.g., "TSHIRT-RED-M") */
+  sku?: string;
+  /** Scannable barcode for POS */
+  barcode?: string;
   /** Price adjustment for this option (+/- from base price) */
   priceModifier: number;
-  /** Available quantity for this specific option */
+  /**
+   * Cost price for this variant (admin-only field)
+   * Used for profit margin calculations. Only visible to admin/store-manager roles.
+   */
+  costPrice?: number;
+  /**
+   * Total stock for this variant (read-only, synced from StockEntry)
+   *
+   * Like product.quantity, this is auto-synced for display purposes.
+   * For per-branch stock, use posApi.getStock() with the variantSku.
+   */
   quantity: number;
   /** Optional images specific to this variation option */
   images?: ProductImage[];
+}
+
+/**
+ * Variation option payload for create/update.
+ * Backend provides defaults for priceModifier and quantity when omitted.
+ */
+export interface VariationOptionPayload {
+  value: string;
+  sku?: string;
+  barcode?: string;
+  priceModifier?: number;
+  costPrice?: number;
+  images?: ProductImage[];
+  quantity?: number;
 }
 
 /**
@@ -39,6 +67,14 @@ export interface ProductVariation {
   name: string;
   /** Available options for this variation */
   options: VariationOption[];
+}
+
+/**
+ * Product variation payload for create/update.
+ */
+export interface ProductVariationPayload {
+  name: string;
+  options: VariationOptionPayload[];
 }
 
 // ==================== Product Properties ====================
@@ -115,10 +151,27 @@ export interface Product {
   // ===== Pricing & Inventory =====
   /** Base price before discounts */
   basePrice: number;
-  /** Available stock quantity */
+  /**
+   * Cost price (admin-only field)
+   * Used for profit margin calculations. Only visible to admin/store-manager roles.
+   */
+  costPrice?: number;
+  /**
+   * Total stock quantity (read-only, synced from StockEntry)
+   *
+   * Stock is primarily managed via StockEntry model (per-branch tracking).
+   * This field is auto-synced for display purposes and backward compatibility.
+   * Use posApi.getStock() to get detailed per-branch stock levels.
+   */
   quantity: number;
   /** Whether the product is active/visible */
   isActive?: boolean;
+
+  // ===== SKU & Barcode (for simple products) =====
+  /** Product SKU (auto-generated or manual) */
+  sku?: string;
+  /** Scannable barcode for POS */
+  barcode?: string;
 
   // ===== Media =====
   /** Product images array */
@@ -149,6 +202,10 @@ export interface Product {
   currentPrice?: number;
   /** Virtual: Whether discount is currently active */
   isDiscountActive?: boolean;
+  /** Virtual: Profit per unit (currentPrice - costPrice), null if costPrice not set */
+  profitMargin?: number | null;
+  /** Virtual: Profit percentage ((profitMargin / currentPrice) * 100) */
+  profitMarginPercent?: number | null;
 
   // ===== Statistics & Reviews (Read-only) =====
   /** Product statistics (sales, views, etc.) */
@@ -192,24 +249,44 @@ export type ProductResponse = ApiResponse<Product>;
 /**
  * Product payload for create/update
  * All fields optional - backend handles validation via schema rules
- * System-managed fields (slug, stats, ratings) are ignored by backend
+ * System-managed fields (slug, stats, ratings, quantity) are ignored by backend
+ *
+ * Note: Stock is managed via StockEntry. Use posApi.setStock() to update stock.
+ * The quantity field here is ignored - product.quantity is auto-synced from StockEntry.
  */
 export interface ProductPayload {
   name?: string;
   shortDescription?: string;
   description?: string;
   basePrice?: number;
+  /** Cost price (admin-only). Only admins/store-managers can set this. */
+  costPrice?: number;
+  /** Initial stock only. After creation, use posApi.setStock() to update. */
   quantity?: number;
+  sku?: string;
+  barcode?: string;
   images?: ProductImage[];
   category?: string;
   parentCategory?: string | null;
   tags?: string[];
   style?: ProductStyle[];
-  variations?: ProductVariation[];
+  variations?: ProductVariationPayload[];
   properties?: ProductProperties;
   discount?: ProductDiscount;
   isActive?: boolean;
 }
+
+/**
+ * Product create input (alias for ProductPayload)
+ * Use this type for create forms
+ */
+export type ProductCreateInput = ProductPayload;
+
+/**
+ * Product update input (alias for ProductPayload)
+ * Use this type for update forms
+ */
+export type ProductUpdateInput = ProductPayload;
 
 /**
  * Query parameters for product filtering

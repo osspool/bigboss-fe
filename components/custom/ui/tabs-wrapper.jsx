@@ -246,12 +246,12 @@ export const DynamicTabs = memo(function DynamicTabs({
                         }}
                     >
                         {tabs.map((tab) => (
-                            <TabTrigger 
-                                key={tab.value} 
+                            <TabTrigger
+                                key={tab.value}
                                 value={tab.value}
                                 variant={variant}
                                 disabled={tab.disabled}
-                            className="justify-center px-4 py-2"
+                                className="justify-center px-2 py-1.5 text-xs sm:text-sm"
                             >
                                 {tab.icon}
                                 {tab.hideTextOnMobile ? (

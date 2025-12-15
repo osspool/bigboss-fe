@@ -23,16 +23,29 @@ type FetchOptions = Omit<RequestOptions, 'token' | 'organizationId'>;
 
 /**
  * Order API - extends base CRUD with customer/admin specific endpoints
- * 
- * Customer Endpoints:
+ *
+ * ## Payment Gateway Support
+ *
+ * **Current: Manual Gateway (default)**
+ * - COD (Cash on Delivery): `paymentData: { type: 'cash' }`
+ * - bKash/Nagad/Rocket: Customer pays first, provides TrxID
+ * - Bank Transfer: Customer transfers, provides reference
+ * - Admin manually verifies payments in dashboard
+ *
+ * **Future: Automated Gateways**
+ * - Stripe: `paymentData: { type: 'card', gateway: 'stripe' }`
+ * - SSLCommerz: `paymentData: { type: 'online', gateway: 'sslcommerz' }`
+ * - These will redirect to payment provider and auto-verify
+ *
+ * ## Customer Endpoints
  * - POST /orders - Create order (checkout from cart)
  * - GET /orders/my - List my orders
  * - GET /orders/my/:id - Get my order detail
  * - GET /orders/:id/shipping - Get shipping info
  * - POST /orders/:id/cancel - Cancel order
  * - POST /orders/:id/cancel-request - Request cancellation (admin review)
- * 
- * Admin Endpoints:
+ *
+ * ## Admin Endpoints
  * - GET /orders - List all orders
  * - GET /orders/:id - Get order by ID
  * - PATCH /orders/:id - Update order
@@ -53,7 +66,42 @@ class OrderApi extends BaseApi {
   /**
    * Create order (checkout from cart)
    * POST /orders
-   * Cart items are fetched server-side from user's cart
+   *
+   * Cart items are fetched server-side from user's cart.
+   * Payment defaults to COD (cash) if paymentData is omitted.
+   *
+   * @example COD Order
+   * orderApi.checkout({
+   *   token,
+   *   data: {
+   *     deliveryAddress: {
+   *       recipientName: 'John Doe',
+   *       recipientPhone: '01712345678',
+   *       addressLine1: 'House 12, Road 5',
+   *       areaId: 1206,                    // from bd-areas
+   *       areaName: 'Mohammadpur',
+   *       zoneId: 1,                       // from area.zoneId
+   *       providerAreaIds: { redx: 1206 }, // from area.providers
+   *       city: 'Dhaka'
+   *     },
+   *     delivery: { method: 'standard', price: 60 },
+   *     paymentData: { type: 'cash' }
+   *   }
+   * })
+   *
+   * @example bKash Payment (Manual)
+   * orderApi.checkout({
+   *   token,
+   *   data: {
+   *     deliveryAddress: { ... },
+   *     delivery: { method: 'standard', price: 60 },
+   *     paymentData: {
+   *       type: 'bkash',
+   *       reference: 'BGH3K5L90P',  // TrxID from bKash
+   *       senderPhone: '01712345678'
+   *     }
+   *   }
+   * })
    */
   async checkout({
     token,

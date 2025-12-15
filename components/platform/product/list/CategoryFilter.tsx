@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, Check } from "lucide-react";
+import { ChevronRight, Check, LayoutGrid } from "lucide-react";
 import { CATEGORIES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +42,8 @@ export function CategoryFilter({
 
   return (
     <div>
-      <h3 className="font-medium uppercase tracking-wider text-sm mb-4">
+      <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
+        <LayoutGrid className="h-4 w-4 text-muted-foreground" />
         Categories
       </h3>
       <div className="space-y-1">
@@ -58,16 +59,16 @@ export function CategoryFilter({
                 className={cn(
                   "w-full flex items-center justify-between py-2.5 px-3 rounded-lg text-sm transition-all",
                   isParentSelected
-                    ? "bg-primary text-primary-foreground font-medium"
-                    : "hover:bg-muted"
+                    ? "bg-primary text-primary-foreground font-medium shadow-sm"
+                    : "bg-muted/30 hover:bg-muted"
                 )}
               >
                 <span>{cat.label}</span>
-                <ChevronRight 
+                <ChevronRight
                   className={cn(
                     "h-4 w-4 transition-transform duration-200",
                     isExpanded && "rotate-90"
-                  )} 
+                  )}
                 />
               </button>
 
@@ -75,36 +76,36 @@ export function CategoryFilter({
               <div
                 className={cn(
                   "grid transition-all duration-200 ease-in-out",
-                  isExpanded 
-                    ? "grid-rows-[1fr] opacity-100 mt-1" 
+                  isExpanded
+                    ? "grid-rows-[1fr] opacity-100 mt-1"
                     : "grid-rows-[0fr] opacity-0"
                 )}
               >
                 <div className="overflow-hidden">
-                  <div className="pl-3 space-y-0.5 pb-2">
+                  <div className="ml-2 pl-3 border-l-2 border-muted space-y-0.5 py-2">
                     {cat.subcategories.map((sub) => {
                       const isChildSelected = parentCategory === cat.slug && childCategory === sub.slug;
-                      
+
                       return (
                         <button
                           key={sub.slug}
                           onClick={() => handleChildClick(cat.slug, sub.slug)}
                           className={cn(
-                            "w-full flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-all",
+                            "w-full flex items-center gap-2.5 py-2 px-3 rounded-md text-sm transition-all",
                             isChildSelected
-                              ? "bg-accent text-accent-foreground font-medium"
+                              ? "bg-primary/10 text-primary font-medium"
                               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                           )}
                         >
-                          <div 
+                          <div
                             className={cn(
-                              "w-4 h-4 rounded border flex items-center justify-center transition-colors",
-                              isChildSelected 
-                                ? "bg-primary border-primary" 
-                                : "border-border"
+                              "w-4 h-4 rounded border-2 flex items-center justify-center transition-all shrink-0",
+                              isChildSelected
+                                ? "bg-primary border-primary"
+                                : "border-muted-foreground/30"
                             )}
                           >
-                            {isChildSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                            {isChildSelected && <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />}
                           </div>
                           <span>{sub.label}</span>
                         </button>

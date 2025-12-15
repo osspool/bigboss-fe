@@ -68,18 +68,27 @@ export function CustomerForm({
           const cleanedAddresses = data.addresses
             .filter((addr) => {
               // Only include addresses with required fields
-              return addr.label && addr.addressLine1 && addr.city && addr.postalCode && addr.phone;
+              // Required: label, addressLine1, recipientPhone, areaId
+              const phone = addr.recipientPhone || addr.phone;
+              return addr.label && addr.addressLine1 && phone && addr.areaId;
             })
             .map((addr) => ({
               ...(addr._id && { _id: addr._id }), // Include _id if editing existing address
               label: addr.label,
+              ...(addr.recipientName && { recipientName: addr.recipientName }),
+              recipientPhone: addr.recipientPhone || addr.phone, // Use recipientPhone, fallback to phone
               addressLine1: addr.addressLine1,
               ...(addr.addressLine2 && { addressLine2: addr.addressLine2 }),
+              // Area fields (required for delivery)
+              areaId: addr.areaId,
+              areaName: addr.areaName,
+              zoneId: addr.zoneId,
+              ...(addr.providerAreaIds && { providerAreaIds: addr.providerAreaIds }),
+              // Location (auto-filled from area)
               city: addr.city,
-              ...(addr.state && { state: addr.state }),
-              postalCode: addr.postalCode,
+              division: addr.division,
+              ...(addr.postalCode && { postalCode: addr.postalCode }),
               country: addr.country || "Bangladesh",
-              phone: addr.phone,
               isDefault: addr.isDefault || false,
             }));
 

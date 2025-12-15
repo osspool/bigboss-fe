@@ -10,7 +10,9 @@ import { AddressFormDialog } from "./AddressFormDialog";
 
 /**
  * AddressSection Component
- * Manages delivery address selection and creation for checkout
+ *
+ * Manages delivery address selection for checkout.
+ * Addresses now include areaId/areaName for shipping calculation.
  */
 export function AddressSection({
   token,
@@ -41,8 +43,6 @@ export function AddressSection({
 
     const address = addresses[index];
     setSelectedIndex(index);
-
-    // Update parent component with selected address
     onAddressChange?.(address);
   }, [addresses, onAddressChange]);
 
@@ -77,24 +77,20 @@ export function AddressSection({
       let updatedAddresses;
 
       if (editingAddress) {
-        // Update existing address
         updatedAddresses = addresses.map(addr =>
           addr._id === editingAddress._id ? { ...addr, ...addressData } : addr
         );
       } else {
-        // Add new address
-        const newAddress = {
-          ...addressData,
-          _id: `temp-${Date.now()}`, // Temporary ID, backend will assign proper one
-        };
-        updatedAddresses = [...addresses, newAddress];
+        updatedAddresses = [...addresses, addressData];
       }
 
-      // If this is set as default, unset others
       if (addressData.isDefault) {
+        const newAddressIndex = editingAddress
+          ? updatedAddresses.findIndex(addr => addr._id === editingAddress._id)
+          : updatedAddresses.length - 1;
         updatedAddresses = updatedAddresses.map((addr, idx) => ({
           ...addr,
-          isDefault: addr._id === (editingAddress?._id || `temp-${Date.now()}`)
+          isDefault: idx === newAddressIndex
         }));
       }
 
@@ -144,7 +140,7 @@ export function AddressSection({
           <p className="text-muted-foreground mb-4">
             No saved addresses yet. Add one to continue.
           </p>
-          <Button onClick={handleAddNewAddress}>
+          <Button type="button" onClick={handleAddNewAddress}>
             <Plus className="h-4 w-4 mr-2" />
             Add Your First Address
           </Button>
@@ -157,7 +153,7 @@ export function AddressSection({
           <div className="grid grid-cols-1 gap-4">
             {addresses.map((address, index) => (
               <AddressCard
-                key={address._id}
+                key={address._id || index}
                 address={address}
                 index={index}
                 isSelectable={true}
@@ -165,6 +161,7 @@ export function AddressSection({
                 onSelect={() => handleAddressSelect(index)}
                 onEdit={() => handleEditAddress(address)}
                 onDelete={() => handleDeleteAddress(address._id)}
+                showAreaInfo={true}
               />
             ))}
           </div>
