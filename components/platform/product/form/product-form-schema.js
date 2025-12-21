@@ -1,26 +1,13 @@
-import { CATEGORIES, PRODUCT_STYLES } from "@/data/constants";
+import { PRODUCT_STYLES } from "@/data/constants";
 import { TAG_OPTIONS } from "@/lib/constants";
-import { Info, Package, DollarSign, Tags, ImageIcon, Settings, FileText, BarChart3, Layers } from "lucide-react";
+import { Info, Package, DollarSign, Tags, ImageIcon, Settings, FileText, BarChart3, Layers, Barcode } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { field, section } from "@/components/form/form-system";
 import { format } from "date-fns";
 import { ImageManager } from "./ImageManager";
 import { LiteEditorField } from "@/components/form/lite-editor/lite-editor-field";
 import { VariationField } from "./VariationField";
-
-// Build category options from constants
-const PARENT_CATEGORY_OPTIONS = Object.entries(CATEGORIES).map(([key, cat]) => ({
-  value: cat.slug,
-  label: cat.label,
-}));
-
-// Build subcategory options (flattened from all parent categories)
-const ALL_CATEGORY_OPTIONS = Object.values(CATEGORIES).flatMap((cat) =>
-  cat.subcategories.map((sub) => ({
-    value: sub.slug,
-    label: `${cat.label} → ${sub.label}`,
-  }))
-);
+import { BarcodeManager } from "./BarcodeManager";
 
 const DISCOUNT_TYPE_OPTIONS = [
   // Allow clearing discount selection
@@ -34,11 +21,15 @@ const DISCOUNT_TYPE_OPTIONS = [
  * @param {Object} options - Schema options
  * @param {boolean} options.isEdit - Whether this is an edit form
  * @param {Object} options.product - Existing product (for edit mode)
+ * @param {Array} options.parentCategoryOptions - Parent category options for select
+ * @param {Array} options.categoryOptions - All category options (flattened tree)
  * @returns {Object} Form schema with tabs structure
  */
 export const createProductFormSchema = ({
   isEdit = false,
   product = null,
+  parentCategoryOptions = [],
+  categoryOptions = [],
 }) => {
   return {
     // Define tabs for the form (compact labels for sheet context)
@@ -62,6 +53,11 @@ export const createProductFormSchema = ({
         id: "variations",
         label: "Variants",
         icon: <Layers className="h-4 w-4" />,
+      },
+      {
+        id: "barcode",
+        label: "Barcode",
+        icon: <Barcode className="h-4 w-4" />,
       },
       ...(isEdit && product ? [{
         id: "stats",
@@ -89,7 +85,7 @@ export const createProductFormSchema = ({
           },
         ] : []),
 
-        // Product Name
+        // Product Name & SKU
         section(
           "name-section",
           null,
@@ -97,10 +93,13 @@ export const createProductFormSchema = ({
             field.text("name", "Product Name", {
               placeholder: "Premium Wireless Headphones",
               required: true,
-              fullWidth: true,
+            }),
+            field.text("sku", "SKU", {
+              placeholder: "Auto-generated if empty",
+              description: "Stock Keeping Unit (optional)",
             }),
           ],
-          { cols: 1 }
+          { cols: 2 }
         ),
 
         // Short Description
@@ -135,15 +134,18 @@ export const createProductFormSchema = ({
           ),
         },
 
-        // Categories
+        // Categories (dynamic from API)
         section(
           "category-section",
           "Categories",
           [
-            field.select("parentCategory", "Parent Category", PARENT_CATEGORY_OPTIONS, {
+            field.select("parentCategory", "Parent Category", [
+              { value: "", label: "None" },
+              ...parentCategoryOptions,
+            ], {
               placeholder: "Select parent category",
             }),
-            field.combobox("category", "Category", ALL_CATEGORY_OPTIONS, {
+            field.combobox("category", "Category", categoryOptions, {
               placeholder: "Select category",
               required: true,
               searchPlaceholder: "Search categories...",
@@ -204,6 +206,12 @@ export const createProductFormSchema = ({
               min: 0,
               step: 0.01,
             }),
+            field.number("costPrice", "Cost Price (৳)", {
+              placeholder: "150.00",
+              min: 0,
+              step: 0.01,
+              description: "For profit margin calculation (admin only)",
+            }),
             field.number("quantity", "Stock Quantity", {
               placeholder: "0",
               min: 0,
@@ -214,7 +222,29 @@ export const createProductFormSchema = ({
               description: "Product is visible and available for purchase",
             }),
           ],
-          { cols: 3, icon: <DollarSign className="h-4 w-4" /> }
+          { cols: 2, icon: <DollarSign className="h-4 w-4" /> }
+        ),
+
+        // VAT Configuration
+        section(
+          "vat-section",
+          "VAT Configuration",
+          [
+            field.number("vatRate", "VAT Rate (%)", {
+              placeholder: "15",
+              min: 0,
+              max: 100,
+              step: 0.5,
+              description: "Leave empty to inherit from category/platform default",
+            }),
+          ],
+          {
+            cols: 1,
+            collapsible: true,
+            defaultOpen: !!(product?.vatRate !== undefined && product?.vatRate !== null),
+            icon: <Settings className="h-4 w-4" />,
+            description: "Product-specific VAT rate override",
+          }
         ),
 
         // Discount Section
@@ -256,7 +286,17 @@ export const createProductFormSchema = ({
         {
           id: "variations-section",
           render: ({ control, disabled }) => (
-            <VariationField control={control} disabled={disabled} />
+            <VariationField control={control} disabled={disabled} isEdit={isEdit} product={product} />
+          ),
+        },
+      ],
+
+      // === BARCODE TAB ===
+      barcode: [
+        {
+          id: "barcode-section",
+          render: ({ control, disabled }) => (
+            <BarcodeManager control={control} disabled={disabled} isEdit={isEdit} product={product} />
           ),
         },
       ],

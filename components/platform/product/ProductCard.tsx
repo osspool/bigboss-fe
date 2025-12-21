@@ -211,19 +211,19 @@ export function ProductCard({
           </div>
         )}
         {/* Color options preview */}
-        {product.variations?.find((v) => v.name.toLowerCase() === "color") && (
+        {product.variationAttributes?.find((attr) => attr.name.toLowerCase() === "color") && (
           <div className="flex gap-1 mt-2">
-            {product.variations
-              .find((v) => v.name.toLowerCase() === "color")
-              ?.options.slice(0, 4)
-              .map((color) => (
+            {product.variationAttributes
+              .find((attr) => attr.name.toLowerCase() === "color")
+              ?.values.slice(0, 4)
+              .map((colorValue) => (
                 <span
-                  key={color.value}
+                  key={colorValue}
                   className="w-4 h-4 rounded-full border border-border"
                   style={{
-                    backgroundColor: getColorHex(color.value),
+                    backgroundColor: getColorHex(colorValue),
                   }}
-                  title={color.value}
+                  title={colorValue}
                 />
               ))}
           </div>

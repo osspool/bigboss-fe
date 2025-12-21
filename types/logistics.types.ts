@@ -187,6 +187,8 @@ export interface CreateShipmentPayload {
   pickupStoreId?: number;
   pickupAreaId?: number;
   weight?: number;
+  /** COD amount to collect on delivery (0 for prepaid orders) */
+  codAmount?: number;
   instructions?: string;
 }
 

@@ -165,7 +165,7 @@ export function ProductSearch({ className, onClose, variant = "desktop" }: Produ
               </p>
               {products.map((product: Product) => (
                 <Link
-                  key={product._id || product.id}
+                  key={product._id || product.slug}
                   href={`/products/${product.slug}`}
                   onClick={handleProductClick}
                   className="flex items-center gap-3 p-2 rounded-md hover:bg-secondary/50 transition-colors"

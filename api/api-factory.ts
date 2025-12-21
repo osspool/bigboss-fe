@@ -70,10 +70,20 @@ export type PaginatedResponse<T = unknown> =
 
 /**
  * Delete operation response
+ * Supports both soft delete (default) and hard delete
  */
 export interface DeleteResponse {
   success: boolean;
-  message: string;
+  deleted: boolean;
+  /** ID of the deleted record */
+  id?: string;
+  /** @deprecated Use `id` instead */
+  productId?: string;
+  /** True if soft delete was performed (default behavior) */
+  soft?: boolean;
+  /** Legacy message field */
+  message?: string;
+  /** Number of records deleted (for bulk operations) */
   count?: number;
 }
 
@@ -133,6 +143,7 @@ export interface RequestOptions {
   revalidate?: number;
   tags?: string[];
   headerOptions?: Record<string, string>;
+  responseType?: 'json' | 'blob' | 'text';
 }
 
 // ==================== Base API Configuration ====================
@@ -469,7 +480,7 @@ export class BaseApi<
     }: {
       token?: string;
       organizationId?: string | null;
-      data?: Record<string, unknown>;
+      data?: unknown;
       params?: QueryParams;
       options?: Omit<RequestOptions, 'token' | 'organizationId'>;
     } = {}

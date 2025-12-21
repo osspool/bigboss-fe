@@ -27,14 +27,20 @@ export function useVerifyPayment(token) {
         data: { transactionId, notes },
       });
     },
-    onSuccess: async (result) => {
+    onSuccess: (result) => {
       toast.success('Payment verified successfully');
 
       // Invalidate all order and transaction queries to refresh UI
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['orders'] }),
-        queryClient.invalidateQueries({ queryKey: ['transactions'] }),
-      ]);
+      // Use refetchType: 'all' to ensure all matching queries (active + inactive) are refetched
+      // This ensures the order list updates immediately and structural sharing doesn't prevent updates
+      queryClient.invalidateQueries({
+        queryKey: ['orders'],
+        refetchType: 'all',
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['transactions'],
+        refetchType: 'all',
+      });
 
       return result;
     },
@@ -73,14 +79,19 @@ export function useRejectPayment(token) {
         data: { transactionId, reason },
       });
     },
-    onSuccess: async (result) => {
+    onSuccess: (result) => {
       toast.success('Payment rejected');
 
       // Invalidate all order and transaction queries to refresh UI
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['orders'] }),
-        queryClient.invalidateQueries({ queryKey: ['transactions'] }),
-      ]);
+      // Use refetchType: 'all' to ensure all matching queries are refetched
+      queryClient.invalidateQueries({
+        queryKey: ['orders'],
+        refetchType: 'all',
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['transactions'],
+        refetchType: 'all',
+      });
 
       return result;
     },

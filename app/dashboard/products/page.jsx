@@ -6,7 +6,7 @@ import "@/components/form/lite-editor/markdown-preview.css";
 export default async function ProductsPage() {
   const session = await auth();
   const token = session?.accessToken ?? "";
-  const userRole = session?.user?.role ?? "user";
+  const userRoles = session?.user?.roles ?? [];
 
   const breadcrumbItems = [
     { label: "Dashboard", href: "/dashboard" },
@@ -17,7 +17,7 @@ export default async function ProductsPage() {
     <div className="flex flex-1 flex-col gap-2">
       <PageHeader items={breadcrumbItems} />
       <div className="flex-1">
-        <ProductsClient token={token} userRole={userRole} />
+        <ProductsClient token={token} userRoles={userRoles} />
       </div>
     </div>
   );

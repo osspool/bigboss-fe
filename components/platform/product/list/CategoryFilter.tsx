@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronRight, Check, LayoutGrid } from "lucide-react";
-import { CATEGORIES } from "@/lib/constants";
+import { useState, useMemo } from "react";
+import { ChevronRight, Check, LayoutGrid, Loader2 } from "lucide-react";
+import { useCategoriesSafe } from "@/contexts/CategoryContext";
 import { cn } from "@/lib/utils";
 
 interface CategoryFilterProps {
@@ -18,14 +18,34 @@ export function CategoryFilter({
 }: CategoryFilterProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(parentCategory);
 
-  const handleParentClick = (slug: string) => {
-    if (expandedCategory === slug) {
-      // If clicking same category, toggle it off
-      setExpandedCategory(null);
-      if (parentCategory === slug) {
-        onCategoryChange(null, null);
-      }
+  // Get categories from context (server-prefetched)
+  const { categoryTree, isLoading } = useCategoriesSafe();
+
+  // Memoize flat category structure for efficient lookup
+  const categories = useMemo(() => {
+    return categoryTree.map(cat => ({
+      slug: cat.slug,
+      label: cat.name,
+      subcategories: (cat.children || []).map(child => ({
+        slug: child.slug,
+        label: child.name,
+      })),
+    }));
+  }, [categoryTree]);
+
+  // Toggle expand/collapse without selecting
+  const handleExpandToggle = (slug: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedCategory(prev => prev === slug ? null : slug);
+  };
+
+  // Select parent category
+  const handleParentSelect = (slug: string) => {
+    if (parentCategory === slug) {
+      // Deselect if already selected
+      onCategoryChange(null, null);
     } else {
+      // Select parent and expand it
       setExpandedCategory(slug);
       onCategoryChange(slug, null);
     }
@@ -40,6 +60,32 @@ export function CategoryFilter({
     }
   };
 
+  if (isLoading) {
+    return (
+      <div>
+        <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
+          <LayoutGrid className="h-4 w-4 text-muted-foreground" />
+          Categories
+        </h3>
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  if (categories.length === 0) {
+    return (
+      <div>
+        <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
+          <LayoutGrid className="h-4 w-4 text-muted-foreground" />
+          Categories
+        </h3>
+        <p className="text-sm text-muted-foreground py-4">No categories available</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
@@ -47,15 +93,14 @@ export function CategoryFilter({
         Categories
       </h3>
       <div className="space-y-1">
-        {Object.values(CATEGORIES).map((cat) => {
+        {categories.map((cat) => {
           const isExpanded = expandedCategory === cat.slug;
           const isParentSelected = parentCategory === cat.slug;
 
           return (
             <div key={cat.slug} className="overflow-hidden">
               {/* Parent Category */}
-              <button
-                onClick={() => handleParentClick(cat.slug)}
+              <div
                 className={cn(
                   "w-full flex items-center justify-between py-2.5 px-3 rounded-lg text-sm transition-all",
                   isParentSelected
@@ -63,14 +108,26 @@ export function CategoryFilter({
                     : "bg-muted/30 hover:bg-muted"
                 )}
               >
-                <span>{cat.label}</span>
-                <ChevronRight
-                  className={cn(
-                    "h-4 w-4 transition-transform duration-200",
-                    isExpanded && "rotate-90"
-                  )}
-                />
-              </button>
+                <button
+                  onClick={() => handleParentSelect(cat.slug)}
+                  className="flex-1 text-left"
+                >
+                  {cat.label}
+                </button>
+                {cat.subcategories.length > 0 && (
+                  <button
+                    onClick={(e) => handleExpandToggle(cat.slug, e)}
+                    className="p-1 -mr-1 rounded hover:bg-black/10"
+                  >
+                    <ChevronRight
+                      className={cn(
+                        "h-4 w-4 transition-transform duration-200",
+                        isExpanded && "rotate-90"
+                      )}
+                    />
+                  </button>
+                )}
+              </div>
 
               {/* Subcategories */}
               <div

@@ -38,6 +38,7 @@ import {
   useLogisticsActions,
 } from "@/hooks/query/useLogistics";
 import { formatPrice } from "@/lib/constants";
+import { calculateDefaultCodAmount, getCodStatusInfo } from "@/lib/commerce-utils";
 import type { Order } from "@/types/order.types";
 import type { PickupStore, LogisticsProvider } from "@/types/logistics.types";
 
@@ -74,10 +75,13 @@ export function CreateShipmentDialog({
   // Form state
   const [provider, setProvider] = useState<LogisticsProvider>("redx");
   const [selectedStoreId, setSelectedStoreId] = useState<string>("");
-  const [weight, setWeight] = useState<string>(
-    order.parcel?.weightGrams?.toString() || "500"
-  );
+  const [weight, setWeight] = useState<string>("500");
   const [instructions, setInstructions] = useState<string>("");
+
+  // COD amount (calculated based on payment type)
+  const defaultCodAmount = useMemo(() => calculateDefaultCodAmount(order), [order]);
+  const codStatusInfo = useMemo(() => getCodStatusInfo(order), [order]);
+  const [codAmount, setCodAmount] = useState<string>(defaultCodAmount.toString());
 
   // Manual entry fields
   const [manualTracking, setManualTracking] = useState<string>("");
@@ -135,6 +139,7 @@ export function CreateShipmentDialog({
         deliveryAreaName: deliveryAddress?.areaName,
         providerAreaId,
         weight: weight ? parseInt(weight) : 500,
+        codAmount: codAmount ? parseInt(codAmount) : 0,
         instructions: instructions || undefined,
       });
 
@@ -178,7 +183,7 @@ export function CreateShipmentDialog({
                 <div>
                   <span className="text-xs text-muted-foreground">Phone</span>
                   <p className="font-medium">
-                    {deliveryAddress.recipientPhone || deliveryAddress.phone || "—"}
+                    {deliveryAddress.recipientPhone || "—"}
                   </p>
                 </div>
               </div>
@@ -239,14 +244,46 @@ export function CreateShipmentDialog({
                 )}
               </div>
 
-              {/* COD Amount */}
-              <div className="pt-2 border-t border-border/50">
+              {/* COD Amount - Editable */}
+              <div className="pt-3 border-t border-border/50 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">COD Amount</span>
-                  <p className="font-bold text-primary text-lg">
-                    {formatPrice(order.totalAmount)}
-                  </p>
+                  <div>
+                    <Label htmlFor="cod-amount" className="text-sm font-medium">
+                      {codStatusInfo.label}
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {codStatusInfo.description}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">৳</span>
+                    <Input
+                      id="cod-amount"
+                      type="number"
+                      value={codAmount}
+                      onChange={(e) => setCodAmount(e.target.value)}
+                      className="w-28 text-right font-bold"
+                      min={0}
+                      max={order.totalAmount}
+                    />
+                  </div>
                 </div>
+                {order.currentPayment?.method && order.currentPayment.method !== "cash" && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <Badge variant="outline" className="capitalize">
+                      {order.currentPayment.method}
+                    </Badge>
+                    <Badge
+                      variant={order.currentPayment.status === "verified" ? "default" : "secondary"}
+                      className={`capitalize ${order.currentPayment.status === "verified" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : ""}`}
+                    >
+                      {order.currentPayment.status}
+                    </Badge>
+                    {parseInt(codAmount) === 0 && order.currentPayment.status !== "verified" && (
+                      <span className="text-warning">⚠️ Payment not verified</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -385,11 +422,6 @@ export function CreateShipmentDialog({
                 placeholder="500"
                 min={1}
               />
-              {order.parcel?.missingWeightItems ? (
-                <p className="text-xs text-warning">
-                  {order.parcel.missingWeightItems} item(s) had no weight data
-                </p>
-              ) : null}
             </div>
 
             {/* Special Instructions */}

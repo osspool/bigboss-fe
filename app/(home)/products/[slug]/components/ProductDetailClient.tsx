@@ -34,7 +34,7 @@ import { ProductGrid } from "@/components/platform/product/ProductGrid";
 import { MarkdownPreview } from "@/components/form/lite-editor/MarkdownPreview";
 import { useCart } from "@/hooks/query/useCart";
 import { formatPrice, getDiscountPercentage } from "@/lib/constants";
-import type { Product, CartItemVariation } from "@/types";
+import type { Product } from "@/types";
 
 interface ProductDetailPageProps {
   product: Product;
@@ -45,51 +45,50 @@ interface ProductDetailPageProps {
 export function ProductDetailPage({ product, recommendations = [], token }: ProductDetailPageProps) {
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariations, setSelectedVariations] = useState<CartItemVariation[]>([]);
+  // New variant system: selectedAttributes stores the selected attribute values (e.g., { size: "M", color: "Red" })
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
   const [isOutOfStock, setIsOutOfStock] = useState(false);
 
   // Initialize cart hook
   const { addToCart, isUpdating } = useCart(token);
 
-  // Convert selectedVariations to Record<string, string> for VariationSelector component
-  const selectedVariationsRecord = useMemo(() => {
-    const record: Record<string, string> = {};
-    selectedVariations.forEach((v) => {
-      record[v.name] = v.option.value;
-    });
-    return record;
-  }, [selectedVariations]);
+  // Check if product has variants
+  const hasVariants = product.productType === 'variant' && product.variants && product.variants.length > 0;
 
-  // Initialize variations with first options
+  // Initialize selected attributes with first values
   useEffect(() => {
-    if (product.variations && product.variations.length > 0) {
-      const initial: CartItemVariation[] = product.variations.map((v) => {
-        const firstOption = v.options[0];
-        return {
-          name: v.name,
-          option: {
-            value: firstOption.value,
-            priceModifier: firstOption.priceModifier,
-          },
-        };
+    if (hasVariants && product.variationAttributes) {
+      const initial: Record<string, string> = {};
+      product.variationAttributes.forEach((attr) => {
+        const attrKey = attr.name.toLowerCase();
+        initial[attrKey] = attr.values[0];
       });
-      setSelectedVariations(initial);
+      setSelectedAttributes(initial);
     }
-  }, [product._id, product.id, product.variations]);
+  }, [product._id, hasVariants, product.variationAttributes]);
+
+  // Find the currently selected variant based on selectedAttributes
+  const selectedVariant = useMemo(() => {
+    if (!hasVariants || !product.variants) return null;
+
+    return product.variants.find(variant => {
+      if (!variant.isActive) return false;
+      return Object.entries(selectedAttributes).every(([key, value]) =>
+        variant.attributes[key] === value
+      );
+    });
+  }, [hasVariants, product.variants, selectedAttributes]);
 
   // Check stock availability
   useEffect(() => {
-    if (product.variations && product.variations.length > 0) {
-      const checkStock = selectedVariations.every(({ option }) => {
-        const variation = product.variations?.find((v) => v.name === selectedVariations.find((sv) => sv.option.value === option.value)?.name);
-        const selectedOption = variation?.options.find((o) => o.value === option.value);
-        return selectedOption && selectedOption.quantity > 0;
-      });
-      setIsOutOfStock(!checkStock);
+    if (hasVariants) {
+      // For variant products, check if selected variant exists and is active
+      setIsOutOfStock(!selectedVariant || !selectedVariant.isActive);
     } else {
+      // For simple products, check quantity
       setIsOutOfStock(product.quantity <= 0);
     }
-  }, [selectedVariations, product]);
+  }, [hasVariants, selectedVariant, product.quantity]);
 
   // Calculate prices
   const currentPrice = product.currentPrice ?? product.basePrice;
@@ -98,50 +97,19 @@ export function ProductDetailPage({ product, recommendations = [], token }: Prod
     ? getDiscountPercentage(product.basePrice, currentPrice)
     : 0;
 
-  // Calculate final price with variations
+  // Calculate final price with variant modifier
   const finalPrice = useMemo(() => {
-    let price = currentPrice;
-    selectedVariations.forEach(({ option }) => {
-      if (option.priceModifier) {
-        price += option.priceModifier;
-      }
-    });
-    return price;
-  }, [currentPrice, selectedVariations]);
-
-  const handleVariationChange = (variationName: string, value: string) => {
-    const variation = product.variations?.find((v) => v.name === variationName);
-    const selectedOption = variation?.options.find((o) => o.value === value);
-
-    if (!selectedOption) {
-      toast.error(`Selected option for ${variationName} is invalid.`);
-      return;
+    if (hasVariants && selectedVariant) {
+      return currentPrice + (selectedVariant.priceModifier || 0);
     }
+    return currentPrice;
+  }, [hasVariants, selectedVariant, currentPrice]);
 
-    if (selectedOption.quantity <= 0) {
-      toast.error(`${variationName} option "${value}" is out of stock.`);
-      return;
-    }
-
-    setSelectedVariations((prev) => {
-      const existingIndex = prev.findIndex((v) => v.name === variationName);
-      const newVariation: CartItemVariation = {
-        name: variationName,
-        option: {
-          value: selectedOption.value,
-          priceModifier: selectedOption.priceModifier,
-        },
-      };
-
-      if (existingIndex !== -1) {
-        return [
-          ...prev.slice(0, existingIndex),
-          newVariation,
-          ...prev.slice(existingIndex + 1),
-        ];
-      }
-      return [...prev, newVariation];
-    });
+  const handleAttributeChange = (attrKey: string, value: string) => {
+    setSelectedAttributes(prev => ({
+      ...prev,
+      [attrKey]: value,
+    }));
   };
 
   const handleAddToCart = () => {
@@ -152,40 +120,32 @@ export function ProductDetailPage({ product, recommendations = [], token }: Prod
       return;
     }
 
-    // Validate variations selection
-    if (product.variations && product.variations.length > 0) {
-      if (selectedVariations.length !== product.variations.length) {
-        toast.error("Please select all product variations before adding to cart.");
+    // For variant products, ensure a variant is selected
+    if (hasVariants) {
+      if (!selectedVariant) {
+        toast.error("Please select all product options before adding to cart.");
         return;
       }
     }
 
     // Check stock
     if (isOutOfStock) {
-      toast.error("Selected product or variations are out of stock.");
+      toast.error("Selected product is out of stock.");
       return;
     }
 
-    // Prepare variations payload (only send value, not priceModifier)
-    const variationsPayload = selectedVariations.map((v) => ({
-      name: v.name,
-      option: {
-        value: v.option.value,
-      },
-    }));
-
     // Get product ID
-    const productId = product._id || product.id;
+    const productId = product._id;
     if (!productId) {
       toast.error("Invalid product ID");
       return;
     }
 
-    // Add to cart
+    // Add to cart with variantSku if variant product
     addToCart({
       productId,
+      variantSku: hasVariants && selectedVariant ? selectedVariant.sku : undefined,
       quantity,
-      variations: product.variations && product.variations.length > 0 ? variationsPayload : [],
     });
   };
 
@@ -245,12 +205,13 @@ export function ProductDetailPage({ product, recommendations = [], token }: Prod
                   hasDiscount={hasDiscount}
                 />
 
-                {/* Variations */}
-                {product.variations && product.variations.length > 0 && (
+                {/* Variation Selector (new variant system) */}
+                {hasVariants && product.variationAttributes && product.variants && (
                   <VariationSelector
-                    variations={product.variations}
-                    selectedVariations={selectedVariationsRecord}
-                    onVariationChange={handleVariationChange}
+                    variationAttributes={product.variationAttributes}
+                    variants={product.variants}
+                    selectedAttributes={selectedAttributes}
+                    onAttributeChange={handleAttributeChange}
                   />
                 )}
 
@@ -400,4 +361,3 @@ function isNewProduct(createdAt?: string): boolean {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   return new Date(createdAt) > thirtyDaysAgo;
 }
-

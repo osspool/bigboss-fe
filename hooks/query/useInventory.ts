@@ -1,0 +1,221 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { posApi } from '@/api/platform/pos-api';
+import { toast } from 'sonner';
+import type { PosProduct, PosProductsResponse } from '@/types/pos.types';
+import type { AdjustStockPayload, AdjustStockResult, BulkAdjustmentPayload } from '@/types/inventory.types';
+
+// ============================================
+// QUERY KEYS
+// ============================================
+
+export const INVENTORY_KEYS = {
+  all: ['inventory'] as const,
+  products: (branchId?: string) => [...INVENTORY_KEYS.all, 'products', branchId] as const,
+  productsList: (branchId?: string, params?: Record<string, unknown>) =>
+    [...INVENTORY_KEYS.products(branchId), params] as const,
+  lookup: (code: string, branchId?: string) =>
+    [...INVENTORY_KEYS.all, 'lookup', code, branchId] as const,
+};
+
+// ============================================
+// TYPES
+// ============================================
+
+export interface InventoryFilters {
+  category?: string;
+  search?: string;
+  inStockOnly?: boolean;
+  lowStockOnly?: boolean;
+  outOfStockOnly?: boolean;
+  after?: string;
+  limit?: number;
+  sort?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
+export interface InventoryListResult {
+  items: PosProduct[];
+  summary: PosProductsResponse['summary'];
+  branch: PosProductsResponse['branch'];
+  hasMore: boolean;
+  nextCursor: string | null;
+  isLoading: boolean;
+  isFetching: boolean;
+  error: Error | null;
+  refetch: () => void;
+}
+
+// ============================================
+// HOOKS
+// ============================================
+
+/**
+ * Hook to fetch inventory products with branch stock
+ * Uses POS API: GET /pos/products
+ */
+export function useInventory(
+  token: string,
+  branchId: string | undefined,
+  filters: InventoryFilters = {},
+  options: { enabled?: boolean } = {}
+): InventoryListResult {
+  const queryKey = INVENTORY_KEYS.productsList(branchId, filters);
+
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey,
+    queryFn: () =>
+      posApi.getProducts({
+        token,
+        branchId,
+        category: filters.category,
+        search: filters.search,
+        inStockOnly: filters.inStockOnly,
+        lowStockOnly: filters.lowStockOnly,
+        after: filters.after,
+        limit: filters.limit || 50,
+        sort: filters.sort || 'name',
+      }),
+    enabled: !!token && options.enabled !== false,
+    staleTime: 30 * 1000, // 30 seconds - inventory changes more frequently
+    refetchOnWindowFocus: true,
+  });
+
+  return {
+    items: data?.docs || [],
+    summary: data?.summary || { totalItems: 0, totalQuantity: 0, lowStockCount: 0, outOfStockCount: 0 },
+    branch: data?.branch || { _id: '', code: '', name: '' },
+    hasMore: data?.hasMore || false,
+    nextCursor: data?.next || null,
+    isLoading,
+    isFetching,
+    error: error as Error | null,
+    refetch,
+  };
+}
+
+/**
+ * Hook for barcode/SKU lookup
+ */
+export function useInventoryLookup(
+  token: string,
+  code: string,
+  branchId?: string,
+  options: { enabled?: boolean } = {}
+) {
+  return useQuery({
+    queryKey: INVENTORY_KEYS.lookup(code, branchId),
+    queryFn: () => posApi.lookup({ token, code, branchId }),
+    enabled: !!token && !!code && code.length >= 2 && options.enabled !== false,
+    staleTime: 10 * 1000,
+  });
+}
+
+/**
+ * Hook for stock adjustment actions
+ */
+export function useStockActions(token: string) {
+  const queryClient = useQueryClient();
+
+  // Single item adjustment
+  const adjustMutation = useMutation({
+    mutationFn: (data: AdjustStockPayload) =>
+      posApi.adjustStock({ token, data }),
+    onSuccess: (result, variables) => {
+      // Invalidate inventory queries for the branch
+      queryClient.invalidateQueries({
+        queryKey: INVENTORY_KEYS.products(variables.branchId),
+      });
+      toast.success('Stock adjusted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to adjust stock');
+    },
+  });
+
+  // Set stock directly
+  const setStockMutation = useMutation({
+    mutationFn: ({
+      productId,
+      quantity,
+      branchId,
+      variantSku,
+      notes,
+    }: {
+      productId: string;
+      quantity: number;
+      branchId?: string;
+      variantSku?: string;
+      notes?: string;
+    }) =>
+      posApi.setStock({
+        token,
+        productId,
+        data: { quantity, branchId, variantSku, notes },
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: INVENTORY_KEYS.products(variables.branchId),
+      });
+      toast.success('Stock level updated');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update stock');
+    },
+  });
+
+  // Bulk adjustment
+  const bulkAdjustMutation = useMutation({
+    mutationFn: (data: BulkAdjustmentPayload) =>
+      posApi.bulkAdjust({ token, data }),
+    onSuccess: (result, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: INVENTORY_KEYS.products(variables.branchId),
+      });
+      const processed = (result as { data?: AdjustStockResult })?.data?.processed || 0;
+      toast.success(`${processed} items updated`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to bulk adjust stock');
+    },
+  });
+
+  return {
+    // Adjust stock (add/remove/set)
+    adjust: adjustMutation.mutateAsync,
+    isAdjusting: adjustMutation.isPending,
+
+    // Set stock directly
+    setStock: setStockMutation.mutateAsync,
+    isSettingStock: setStockMutation.isPending,
+
+    // Bulk operations
+    bulkAdjust: bulkAdjustMutation.mutateAsync,
+    isBulkAdjusting: bulkAdjustMutation.isPending,
+
+    // Combined loading state
+    isLoading: adjustMutation.isPending || setStockMutation.isPending || bulkAdjustMutation.isPending,
+  };
+}
+
+/**
+ * Helper to determine stock status
+ */
+export function getStockStatus(quantity: number, lowThreshold = 10): 'out' | 'low' | 'ok' {
+  if (quantity === 0) return 'out';
+  if (quantity <= lowThreshold) return 'low';
+  return 'ok';
+}
+
+/**
+ * Helper to format stock status badge props
+ */
+export function getStockStatusBadge(status: 'out' | 'low' | 'ok') {
+  switch (status) {
+    case 'out':
+      return { variant: 'destructive' as const, label: 'Out of Stock' };
+    case 'low':
+      return { variant: 'warning' as const, label: 'Low Stock' };
+    case 'ok':
+      return { variant: 'success' as const, label: 'In Stock' };
+  }
+}

@@ -11,7 +11,7 @@ import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapp
 import { useCouponActions, useCoupons } from "@/hooks/query/useCoupons";
 
 
-export function CouponClient({ token, userRole }) {
+export function CouponClient({ token, userRoles = [] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -69,7 +69,7 @@ export function CouponClient({ token, userRole }) {
   );
 
   // Only allow delete for admin/superadmin roles
-  const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+  const isAdmin = userRoles.includes('admin') || userRoles.includes('superadmin');
 
   const columns = useMemo(
     () => couponsColumns(handleEdit, isAdmin ? handleDelete : null),

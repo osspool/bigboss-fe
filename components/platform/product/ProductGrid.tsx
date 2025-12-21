@@ -29,7 +29,7 @@ export function ProductGrid({
     <div className={cn("grid gap-4 md:gap-6", columnClasses[columns], className)}>
       {products.map((product, index) => (
         <ProductCard
-          key={product._id || product.id || product.slug}
+          key={product._id || product.slug}
           product={product}
           variant={variant}
           priority={index < 4}

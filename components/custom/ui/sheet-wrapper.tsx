@@ -11,6 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { ClientSubmitButton } from "@/components/custom/ui/client-submit-button";
 import { cn } from "@/lib/utils";
 
 // Size variants configuration
@@ -164,12 +165,24 @@ export const FormSheet = memo(function FormSheet({
   const footer = useMemo(
     () => (
       <div className="flex flex-col sm:flex-row gap-2 w-full">
-        <Button type="button" variant="outline" className="flex-1" onClick={handleCancel}>
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1"
+          onClick={handleCancel}
+          disabled={submitDisabled || submitLoading}
+        >
           {cancelLabel}
         </Button>
-        <Button type="submit" form={formId} className="flex-1" disabled={submitDisabled || submitLoading}>
-          {submitLoading ? "Saving..." : submitLabel}
-        </Button>
+        <ClientSubmitButton
+          form={formId}
+          className="flex-1"
+          disabled={submitDisabled}
+          loading={submitLoading}
+          loadingText="Saving..."
+        >
+          {submitLabel}
+        </ClientSubmitButton>
       </div>
     ),
     [cancelLabel, submitLabel, submitDisabled, submitLoading, formId, handleCancel]

@@ -31,13 +31,14 @@ export function SearchFilters({
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Count active filters
+  // Count active filters (excluding default "all" values)
   const activeFilterCount = Object.values(filters).filter((value) => {
     if (Array.isArray(value)) {
       return value.filter(Boolean).length > 0;
     }
     if (typeof value === "string") {
-      return value.trim().length > 0;
+      // Exclude "all" as it's the default/neutral state
+      return value.trim().length > 0 && value !== "all";
     }
     if (typeof value === "number") {
       return value !== undefined && value !== null && value !== "" && !Number.isNaN(value);

@@ -50,11 +50,10 @@ export function FolderSidebar({ selectedFolder, onSelectFolder, folderCounts }: 
               key={folder.id}
               onClick={() => onSelectFolder(folder.id)}
               className={cn(
-                "w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-sm transition-all duration-150",
-                "hover:bg-accent group",
+                "w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-sm transition-all duration-150 group",
                 isSelected
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  : "text-foreground hover:bg-accent"
               )}
             >
               <Icon className={cn(

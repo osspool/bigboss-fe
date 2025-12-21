@@ -1,138 +1,247 @@
 /**
  * Order Types
  *
- * Type definitions for order management matching the ORDER_API_GUIDE and backend schema.
- * These types are extracted from the backend order-api.ts for better organization.
+ * Source of truth: modules/commerce/order/order.model.js
  */
 
-import type { PaymentMethod, PaymentStatus, PaymentGatewayType } from './common.types';
-import type { CurrentPayment } from './payment.types';
+import type { ShippingStatus, ShippingProvider } from './common.types';
 
-// ==================== Enums ====================
+export enum OrderStatus {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  CONFIRMED = 'confirmed',
+  SHIPPED = 'shipped',
+  DELIVERED = 'delivered',
+  CANCELLED = 'cancelled',
+}
 
-export type OrderStatus = 'pending' | 'processing' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-export type ShippingProvider = 'redx' | 'pathao' | 'steadfast' | 'paperfly' | 'sundarban' | 'sa_paribahan' | 'dhl' | 'fedex' | 'other';
-export type ShippingStatus = 'pending' | 'requested' | 'picked_up' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'failed_attempt' | 'returned' | 'cancelled';
-export type OrderSource = 'web' | 'pos' | 'api';
+export enum PaymentStatus {
+  PENDING = 'pending',
+  VERIFIED = 'verified',
+  FAILED = 'failed',
+  REFUNDED = 'refunded',
+  PARTIALLY_REFUNDED = 'partially_refunded',
+  CANCELLED = 'cancelled',
+}
 
-// Re-export payment types from common.types for convenience
-export type { PaymentMethod, PaymentStatus } from './common.types';
+/**
+ * Order Item
+ */
+export interface OrderItem {
+  _id?: string;
+  product: string; // Product ID
+  productName: string;
+  productSlug?: string;
+  
+  // Variant Snapshot
+  variantSku?: string;
+  variantAttributes?: Record<string, string>;
+  variantPriceModifier?: number;
+  
+  quantity: number;
+  price: number;
+  
+  /**
+   * System field: Cost of Goods Sold at time of sale
+   * Used for profit calculation. Read-only.
+   */
+  costPriceAtSale?: number;
+  
+  vatRate?: number;
+  vatAmount?: number;
+  
+  // Virtuals
+  lineTotal?: number;
+  lineTotalExVat?: number;
+  profit?: number | null;
+  profitMargin?: number | null;
+}
 
-// Re-export CurrentPayment from payment.types (used in Order.currentPayment)
-export type { CurrentPayment } from './payment.types';
-
-// ==================== Delivery Address ====================
+export interface OrderDelivery {
+  method: string;
+  price: number;
+  estimatedDays?: number;
+}
 
 /**
  * Order Delivery Address
- *
- * Full shipping details resolved by FE at checkout using @classytic/bd-areas.
- * FE gets Area from getArea(internalId) and maps to this structure.
- *
- * Supports gift orders where recipient differs from customer:
- * - recipientName: Name of person receiving the package
- * - recipientPhone: Phone of person receiving the package
+ * Note: For CreateOrderPayload, specific fields are required (see CreateOrderPayload.deliveryAddress)
  */
-export interface DeliveryAddress {
+export interface OrderAddress {
+  /** Address label (e.g., "Home", "Office") - optional */
   label?: string;
-  /** Recipient name (can differ from customer for gift orders) */
+
+  /** Recipient name for delivery label */
   recipientName?: string;
-  /** Recipient phone (can differ from customer for gift orders) */
-  recipientPhone: string;
-  addressLine1: string;
+
+  /** Contact phone for delivery (format: 01XXXXXXXXX) */
+  recipientPhone?: string;
+
+  /** Street address (required for checkout) */
+  addressLine1?: string;
+
+  /** Additional address details (apartment, floor, etc.) */
   addressLine2?: string;
 
-  /** Area internalId from @classytic/bd-areas */
-  areaId: number;
-  /** Area name (e.g., "Mohammadpur") */
-  areaName: string;
-  /** Zone ID for pricing (from area.zoneId, 1-6) */
-  zoneId: number;
+  /** Area ID from @classytic/bd-areas constants */
+  areaId?: number;
 
-  /** Provider-specific area IDs (from area.providers) */
+  /** Area display name (e.g., "Mohammadpur", "Dhanmondi") */
+  areaName?: string;
+
+  /** Zone ID for delivery pricing (1-6) */
+  zoneId?: number;
+
+  /** Provider-specific area IDs for logistics integration */
   providerAreaIds?: {
     redx?: number;
     pathao?: number;
     steadfast?: number;
   };
 
-  city: string;           // districtName
-  division?: string;      // divisionName
-  postalCode?: string;    // postCode
+  /** City/District name */
+  city?: string;
+
+  /** Division/State */
+  division?: string;
+
+  /** Postal code */
+  postalCode?: string;
+
+  /** Country (defaults to "Bangladesh") */
   country?: string;
-  /** @deprecated Use recipientPhone instead */
-  phone?: string;
 }
 
-// ==================== Delivery ====================
+export interface OrderVat {
+  applicable: boolean;
+  rate: number;
+  amount: number;
+  pricesIncludeVat: boolean;
+  taxableAmount: number;
+  sellerBin?: string;
+  invoiceNumber?: string;
+  invoiceIssuedAt?: string;
+  invoiceBranch?: string;
+  invoiceDateKey?: string;
+}
 
-export interface Delivery {
+export interface OrderPayment {
+  transactionId?: string;
+  amount: number;
+  status: PaymentStatus | string;
   method: string;
-  price: number;
-  estimatedDays?: number;
+  reference?: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
 }
 
-// ==================== Parcel (Checkout Snapshot) ====================
-
-export interface ParcelDimensionsCm {
-  length: number;
-  width: number;
-  height: number;
+export interface OrderShippingHistory {
+  status: ShippingStatus | string;
+  note?: string;
+  actor?: string;
+  timestamp: string;
 }
 
-export interface OrderParcel {
-  /** Total order weight in grams (only set when all items have known weights) */
-  weightGrams?: number;
-  /**
-   * Package dimensions in cm (only set when all items have known dimensions).
-   * Current heuristic: max length/width, stacked height.
-   */
-  dimensionsCm?: ParcelDimensionsCm;
-  /** Quantity count missing weight at checkout */
-  missingWeightItems?: number;
-  /** Quantity count missing dimensions at checkout */
-  missingDimensionItems?: number;
+export interface OrderShipping {
+  provider?: ShippingProvider | string;
+  status?: ShippingStatus | string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  consignmentId?: string;
+  labelUrl?: string;
+  estimatedDelivery?: string;
+  requestedAt?: string;
+  pickedUpAt?: string;
+  deliveredAt?: string;
+  metadata?: Record<string, unknown>;
+  history?: OrderShippingHistory[];
 }
-
-// ==================== Payment Data ====================
 
 /**
- * Payment data for order checkout
+ * Main Order Interface
+ */
+export interface Order {
+  _id: string;
+  orderNumber?: string; // If using auto-increment plugin
+  
+  customer?: string;
+  customerName: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  userId?: string;
+  
+  items: OrderItem[];
+  
+  subtotal: number;
+  discountAmount: number;
+  deliveryCharge: number;
+  totalAmount: number;
+  
+  vat?: OrderVat;
+  
+  delivery?: OrderDelivery;
+  deliveryAddress?: OrderAddress;
+  
+  status: OrderStatus | string;
+  source: 'web' | 'pos' | 'api';
+  
+  // POS specific
+  branch?: string;
+  terminalId?: string;
+  cashier?: string;
+  
+  currentPayment?: OrderPayment;
+  shipping?: OrderShipping;
+  
+  notes?: string;
+  
+  createdAt: string;
+  updatedAt: string;
+  
+  // Virtuals
+  canCancel?: boolean;
+  isCompleted?: boolean;
+  paymentStatus?: string;
+  paymentMethod?: string;
+  netAmount?: number;
+  grossAmount?: number;
+}
+
+/**
+ * Payment Data for checkout
+ * Customer provides payment details for manual verification
  *
- * Payment Flow:
- * 1. **Manual Gateway (default)** - Customer pays externally, provides reference
- *    - COD (cash): No reference needed, collected on delivery
- *    - Mobile wallets (bkash/nagad/rocket): Customer sends money, provides TrxID
- *    - Bank transfer: Customer transfers, provides reference number
- *
- * 2. **Automated Gateways (future)** - Redirects to payment provider
- *    - stripe: Card payments via Stripe Checkout
- *    - sslcommerz: Bangladesh payment gateway (cards, wallets, bank)
- *
- * @example COD (Cash on Delivery)
- * { type: 'cash' }
- *
- * @example bKash (Manual)
- * { type: 'bkash', reference: 'BGH3K5L90P', senderPhone: '01712345678' }
- *
- * @example Stripe (Automated - future)
- * { type: 'card', gateway: 'stripe' }
+ * @see {@link file://d:/projects/ecom/bigboss/fe-prod/docs/api/commerce/checkout.md Checkout API Guide}
  */
 export interface PaymentData {
-  /** Payment method: cash, bkash, nagad, rocket, bank, card */
-  type: PaymentMethod;
   /**
-   * Payment gateway provider
-   * - 'manual' (default): External payment, admin verifies manually
-   * - 'stripe': Stripe Checkout (automated, future)
-   * - 'sslcommerz': SSLCommerz gateway (automated, future)
+   * Payment method (optional, defaults to 'cash')
+   * Options: 'cash' | 'bkash' | 'nagad' | 'rocket' | 'bank_transfer' | 'card'
    */
-  gateway?: PaymentGatewayType;
-  /** Transaction reference/TrxID (for manual verification) */
+  type?: 'cash' | 'bkash' | 'nagad' | 'rocket' | 'bank_transfer' | 'card' | string;
+
+  /**
+   * Payment gateway (default: 'manual'). Future: stripe, sslcommerz
+   * Note: This is library-managed for automated gateways - don't send from FE for manual payments
+   */
+  gateway?: string;
+
+  /**
+   * Transaction ID/reference (recommended for verification)
+   * Example: bKash TrxID: "BGH3K5L90P"
+   */
   reference?: string;
-  /** Sender phone number (required for mobile wallets: bkash/nagad/rocket) */
+
+  /**
+   * Mobile wallet sender phone (REQUIRED for bkash/nagad/rocket)
+   * Format: 01XXXXXXXXX
+   */
   senderPhone?: string;
-  /** Additional payment details for verification */
+
+  /**
+   * Additional payment verification details
+   * Note: These fields are library-managed for automated gateways - don't send from FE for manual payments
+   */
   paymentDetails?: {
     walletNumber?: string;
     walletType?: 'personal' | 'merchant';
@@ -141,218 +250,148 @@ export interface PaymentData {
     accountName?: string;
     proofUrl?: string;
   };
-  /** Payment notes from customer */
+
+  /** Additional payment notes */
   notes?: string;
 }
 
-// Re-export PaymentGatewayType for convenience
-export type { PaymentGatewayType } from './common.types';
-
-// ==================== Order Item ====================
-
-export interface OrderItem {
-  product: string;
-  productName: string;
-  productSlug?: string;
-  variantSku?: string; // SKU of the specific variant for inventory tracking
-  variations?: Array<{
-    name: string;
-    option: { value: string; priceModifier?: number };
-  }>;
-  quantity: number;
-  price: number;
-  /**
-   * Cost price snapshot at order time (admin-only field)
-   * Captured when order is created for accurate profit tracking.
-   */
-  costPriceAtSale?: number;
-}
-
-// ==================== Shipping ====================
-
-export interface ShippingHistory {
-  status: ShippingStatus;
-  note?: string;
-  actor?: string;
-  timestamp: string;
-}
-
-export interface Shipping {
-  provider?: ShippingProvider;
-  status: ShippingStatus;
-  trackingNumber?: string;
-  trackingUrl?: string;
-  labelUrl?: string;
-  consignmentId?: string;
-  estimatedDelivery?: string;
-  requestedAt?: string;
-  pickedUpAt?: string;
-  deliveredAt?: string;
-  metadata?: Record<string, unknown>;
-  history: ShippingHistory[];
-}
-
-// ==================== Coupon ====================
-
-export interface CouponApplied {
-  coupon: string;
-  code: string;
-  discountType: 'percentage' | 'fixed';
-  discountAmount: number;
-}
-
-// ==================== Cancellation ====================
-
-export interface CancellationRequest {
-  requested: boolean;
-  reason?: string;
-  requestedAt?: string;
-  requestedBy?: string;
-}
-
-// ==================== Order ====================
-
-export interface Order {
-  _id: string;
-  customer: string;
-  customerName: string; // Snapshot: customer name at order time
-  customerPhone?: string; // Snapshot: customer phone at order time
-  customerEmail?: string; // Snapshot: customer email at order time
-  userId?: string; // Link to user account (if customer is logged in)
-  items: OrderItem[];
-  subtotal: number;
-  discountAmount: number;
-  totalAmount: number;
-  delivery: Delivery;
-  deliveryAddress: DeliveryAddress;
-  parcel?: OrderParcel;
-  isGift: boolean; // True if ordering on behalf of someone else
-  status: OrderStatus;
-  source?: OrderSource; // Order source: web, pos, or api
-
-  // POS-specific fields
-  branch?: string; // Branch/store ID
-  terminalId?: string; // POS terminal identifier
-  cashier?: string; // Staff member who processed (User ID)
-  currentPayment?: CurrentPayment;
-  couponApplied?: CouponApplied;
-  shipping?: Shipping;
-  cancellationRequest?: CancellationRequest;
-  cancellationReason?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-  // Virtuals
-  canCancel?: boolean;
-  isCompleted?: boolean;
-  paymentStatus?: PaymentStatus;
-  paymentMethod?: PaymentMethod;
-}
-
-// ==================== Request Payloads ====================
-
+/**
+ * Payload for Creating an Order (Web/API)
+ *
+ * NOTE: Cart items are fetched server-side from user's cart.
+ * FE only sends delivery/payment details.
+ *
+ * @see {@link file://d:/projects/ecom/bigboss/fe-prod/docs/api/commerce/checkout.md Checkout API Guide}
+ */
 export interface CreateOrderPayload {
-  deliveryAddress: DeliveryAddress;
-  delivery: Delivery;
-  /** Payment method shorthand (defaults to 'cash' if not provided) */
-  paymentMethod?: PaymentMethod;
-  /** Detailed payment data for verification (bKash TrxID, bank details, etc.) */
+  /** Delivery address (required) */
+  deliveryAddress: OrderAddress & {
+    recipientName: string;  // Required: Recipient name for delivery label
+    recipientPhone: string; // Required: Contact phone for delivery (01XXXXXXXXX)
+    addressLine1: string;   // Required: Street address
+    areaId: number;         // Required: Area ID from bd-areas constants
+    areaName: string;       // Required: Area name (e.g., "Mohammadpur")
+    zoneId: number;         // Required: Zone ID for pricing (1-6)
+    city: string;           // Required: City/District name
+  };
+
+  /** Delivery method and pricing (required) */
+  delivery: OrderDelivery & {
+    method: string; // Required: Delivery method from platform config
+    price: number;  // Required: Delivery price from platform config
+  };
+
+  /**
+   * Payment details for verification (optional, defaults to cash)
+   * Use paymentData.type for payment method (cash, bkash, nagad, rocket, bank_transfer, card)
+   */
   paymentData?: PaymentData;
-  isGift?: boolean; // True if ordering on behalf of someone else
+
+  /** True if ordering on behalf of someone else (gift order) */
+  isGift?: boolean;
+  /** Coupon code to apply */
   couponCode?: string;
+  /** Order notes */
   notes?: string;
+
+  /** Preferred branch ID for fulfillment */
+  branchId?: string;
+  /** Preferred branch slug (alternative to branchId) */
+  branchSlug?: string;
+  /** Idempotency key for safe retries (prevents duplicate orders) */
+  idempotencyKey?: string;
 }
 
+/**
+ * Payload for Updating Order Status (Admin)
+ * PATCH /orders/:id/status
+ */
+export interface UpdateStatusPayload {
+  status: OrderStatus;
+  /** Optional note for status change */
+  note?: string;
+}
+
+/**
+ * Payload for Cancelling an Order
+ * POST /orders/:id/cancel
+ */
 export interface CancelOrderPayload {
+  /** Cancellation reason */
   reason?: string;
+  /** Process refund if payment was verified */
   refund?: boolean;
 }
 
+/**
+ * Payload for Requesting Cancellation (awaits admin review)
+ * POST /orders/:id/cancel-request
+ */
 export interface CancelRequestPayload {
+  /** Reason for cancellation request */
   reason?: string;
 }
 
-export interface UpdateStatusPayload {
-  status: OrderStatus;
-  note?: string;
-}
-
+/**
+ * Payload for Fulfilling/Shipping an Order (Admin)
+ * POST /orders/:id/fulfill
+ */
 export interface FulfillOrderPayload {
+  /** Shipping tracking number */
   trackingNumber?: string;
+  /** Shipping carrier (e.g., Pathao, Redx) */
   carrier?: string;
+  /** Fulfillment notes */
   notes?: string;
+  /** Shipping date */
   shippedAt?: string;
-  estimatedDelivery?: string;
-}
-
-export interface RefundOrderPayload {
-  amount?: number; // In paisa, omit for full refund
-  reason: string;
-}
-
-export interface RequestShippingPayload {
-  provider: ShippingProvider;
-  /**
-   * If true, creates shipment via logistics provider API (RedX, Pathao)
-   * If false (default), just records tracking info manually
-   */
-  useProviderApi?: boolean;
-  /** Tracking number (for manual entry) */
-  trackingNumber?: string;
-  /** Consignment/parcel ID from provider */
-  consignmentId?: string;
-  /** Tracking URL */
-  trackingUrl?: string;
-  /** Shipping label URL */
-  labelUrl?: string;
   /** Estimated delivery date */
   estimatedDelivery?: string;
-  /** Parcel weight in grams (for API mode) */
-  weight?: number;
-  /** Special instructions (for API mode) */
-  instructions?: string;
-  metadata?: Record<string, unknown>;
+  /** Branch ID for inventory decrement (overrides order.branch) */
+  branchId?: string;
+  /** Branch slug (alternative to branchId) */
+  branchSlug?: string;
+  /**
+   * Record COGS expense transaction (default: false)
+   * Profit is already tracked in order via costPriceAtSale.
+   * Set true for explicit double-entry accounting.
+   */
+  recordCogs?: boolean;
 }
-
-export interface UpdateShippingPayload {
-  status: ShippingStatus;
-  trackingNumber?: string;
-  trackingUrl?: string;
-  consignmentId?: string;
-  estimatedDelivery?: string;
-  note?: string;
-  metadata?: Record<string, unknown>;
-}
-
-// ==================== API Response Types ====================
-// Note: order-api.ts imports ApiResponse and PaginatedResponse from api-factory
-
-// ==================== Delivery Options (for checkout UI) ====================
 
 /**
- * Delivery option for checkout UI
- * Transformed from platform config delivery options
+ * Payload for Refunding an Order (Admin)
+ * POST /orders/:id/refund
  */
-export interface DeliveryOption {
-  /** Unique delivery option identifier */
-  id: string;
-  /** Display name (e.g., "Standard Delivery", "Inside Dhaka") */
-  label: string;
-  /** Delivery cost/fee */
-  price: number;
-  /** Estimated delivery time (e.g., "3-5 days", "2 days") */
-  days: string;
-  /** Detailed description */
-  description?: string;
-  /** Whether this option is available */
-  isActive?: boolean;
+export interface RefundOrderPayload {
+  /** Refund amount in smallest unit (paisa). Omit for full refund. */
+  amount?: number;
+  /** Refund reason */
+  reason?: string;
 }
 
-// ==================== Query Params ====================
+/**
+ * Payload for Requesting Shipping Pickup (Admin)
+ * POST /orders/:id/shipping
+ */
+export interface RequestShippingPayload {
+  /** Shipping provider (required) */
+  provider: string;
+  /** Additional shipping options */
+  options?: Record<string, unknown>;
+}
 
-export interface OrderQueryParams {
-  page?: number;
-  limit?: number;
-  status?: OrderStatus;
-  sort?: string;
+/**
+ * Payload for Updating Shipping Status (Admin/Webhook)
+ * PATCH /orders/:id/shipping
+ */
+export interface UpdateShippingPayload {
+  /** Shipping status (required) */
+  status: string;
+  /** Status note */
+  note?: string;
+  /** Tracking number */
+  trackingNumber?: string;
+  /** Tracking URL */
+  trackingUrl?: string;
 }

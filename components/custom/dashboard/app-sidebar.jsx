@@ -7,6 +7,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { NavMain } from "@/components/custom/dashboard/nav-main";
 import { NavSecondary } from "@/components/custom/dashboard/nav-secondary";
 import { NavUser } from "@/components/custom/dashboard/nav-user";
+import { BranchSwitcher } from "@/components/custom/dashboard/branch-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -69,7 +70,7 @@ export function AppSidebar({ admin, user, userRoles = [], ...props }) {
           </SheetDescription>
         </VisuallyHidden>
       )}
-      <SidebarHeader>
+      <SidebarHeader className="gap-1">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -80,19 +81,19 @@ export function AppSidebar({ admin, user, userRoles = [], ...props }) {
               <a
                 href="/"
                 className={cn(
-                  "flex items-center",
+                  "flex items-center text-sidebar-foreground",
                   isCollapsed && !isMobile && "justify-center"
                 )}
               >
-                <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
                   <LayoutDashboard
                     size={18}
-                    className="text-primary-foreground"
+                    className="text-sidebar-primary-foreground"
                   />
                 </div>
                 <span
                   className={cn(
-                    "ml-2 font-semibold",
+                    "ml-2 font-semibold tracking-tight",
                     !isMobile && isCollapsed && "hidden"
                   )}
                 >
@@ -102,6 +103,7 @@ export function AppSidebar({ admin, user, userRoles = [], ...props }) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <BranchSwitcher />
       </SidebarHeader>
       <SidebarContent>
         {admin ? (

@@ -194,3 +194,97 @@ export const CATEGORIES = {
   { value: "other", label: "Other" },
   { value: "prefer-not-to-say", label: "Prefer not to say" },
 ];
+
+// Size Guide Data
+export interface SizeTableData {
+  category: string;
+  description: string;
+  headers: string[];
+  rows: string[][];
+}
+
+export interface FitType {
+  name: string;
+  description: string;
+  recommendation: string;
+}
+
+export const SIZE_GUIDE = {
+  sizeTables: [
+    {
+      category: "T-Shirts & Tops",
+      description: "All measurements are in inches. For the best fit, measure a similar garment that fits you well.",
+      headers: ["Size", "Chest", "Length", "Shoulder", "Sleeve"],
+      rows: [
+        ["XS", "34-36", "26", "16", "7.5"],
+        ["S", "36-38", "27", "17", "8"],
+        ["M", "38-40", "28", "18", "8.5"],
+        ["L", "40-42", "29", "19", "9"],
+        ["XL", "42-44", "30", "20", "9.5"],
+        ["XXL", "44-46", "31", "21", "10"],
+      ],
+    },
+    {
+      category: "Hoodies & Jackets",
+      description: "Outerwear measurements. Consider layering when choosing your size.",
+      headers: ["Size", "Chest", "Length", "Shoulder", "Sleeve"],
+      rows: [
+        ["XS", "36-38", "25", "17", "24"],
+        ["S", "38-40", "26", "18", "25"],
+        ["M", "40-42", "27", "19", "26"],
+        ["L", "42-44", "28", "20", "27"],
+        ["XL", "44-46", "29", "21", "28"],
+        ["XXL", "46-48", "30", "22", "29"],
+      ],
+    },
+    {
+      category: "Pants & Shorts",
+      description: "Waist is measured at the natural waistline. Inseam varies by style.",
+      headers: ["Size", "Waist", "Hip", "Inseam (Pants)", "Inseam (Shorts)"],
+      rows: [
+        ["XS", "28-30", "34-36", "30", "7"],
+        ["S", "30-32", "36-38", "31", "7.5"],
+        ["M", "32-34", "38-40", "32", "8"],
+        ["L", "34-36", "40-42", "32", "8.5"],
+        ["XL", "36-38", "42-44", "33", "9"],
+        ["XXL", "38-40", "44-46", "33", "9.5"],
+      ],
+    },
+  ] as SizeTableData[],
+  fitTypes: {
+    title: "Understanding Fit Types",
+    types: [
+      {
+        name: "Slim Fit",
+        description: "Tailored close to the body for a modern, streamlined look. Best for lean body types.",
+        recommendation: "If you prefer more room, consider sizing up.",
+      },
+      {
+        name: "Regular Fit",
+        description: "Classic cut with comfortable room through the body. Works well for most body types.",
+        recommendation: "Order your usual size for a balanced fit.",
+      },
+      {
+        name: "Relaxed Fit",
+        description: "Generous room throughout for maximum comfort. Ideal for a casual, laid-back style.",
+        recommendation: "Order your usual size or size down for a less oversized look.",
+      },
+      {
+        name: "Oversized Fit",
+        description: "Intentionally roomy with dropped shoulders. Perfect for streetwear aesthetics.",
+        recommendation: "These run large by design. Consider your usual size.",
+      },
+    ] as FitType[],
+  },
+  tips: {
+    title: "How to Measure",
+    items: [
+      "Use a soft measuring tape for accurate measurements.",
+      "Measure over light clothing or undergarments.",
+      "For chest, measure around the fullest part with arms at your sides.",
+      "For waist, measure at your natural waistline (usually at the belly button).",
+      "For hips, measure around the fullest part of your hips.",
+      "When in doubt between two sizes, choose the larger size for comfort.",
+    ],
+  },
+} as const;

@@ -80,10 +80,11 @@ class MediaApi {
     options?: FetchOptions;
   }): Promise<ApiResponse<Media>> {
     const formData = new FormData();
-    formData.append("file", file);
+    // Fields MUST come before files for Fastify multipart streaming parser
     if (folder) formData.append("folder", folder);
     if (alt) formData.append("alt", alt);
     if (title) formData.append("title", title);
+    formData.append("file", file);
 
     return handleApiRequest("POST", `${this.baseUrl}/upload`, {
       token,
@@ -117,8 +118,9 @@ class MediaApi {
     options?: FetchOptions;
   }): Promise<ApiResponse<Media[]>> {
     const formData = new FormData();
-    files.forEach((file) => formData.append("files[]", file));
+    // Fields MUST come before files for Fastify multipart streaming parser
     if (folder) formData.append("folder", folder);
+    files.forEach((file) => formData.append("files[]", file));
 
     return handleApiRequest("POST", `${this.baseUrl}/upload-multiple`, {
       token,

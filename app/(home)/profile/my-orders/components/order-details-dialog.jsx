@@ -21,6 +21,7 @@ import {
 import { useOrderActions } from "@/hooks/query/useOrders";
 import { getStatusColor } from "@/lib/utils";
 import { formatPrice } from "@/lib/constants";
+import { formatVariantAttributes } from "@/lib/commerce-utils";
 import {
   Dialog,
   DialogContent,
@@ -265,14 +266,17 @@ export default function OrderDetailsDialog({ order, onClose, token }) {
                           ? item.product
                           : item.product?.name || item.productName || 'Unknown Product'}
                       </p>
-                      {item.variations && item.variations.length > 0 && (
+                      {item.variantAttributes && (
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
-                          {item.variations.map((variation, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs font-normal">
-                              {variation.name}: {variation.option?.value || variation.option}
-                            </Badge>
-                          ))}
+                          <Badge variant="outline" className="text-xs font-normal">
+                            {formatVariantAttributes(item.variantAttributes)}
+                          </Badge>
                         </div>
+                      )}
+                      {item.variantSku && (
+                        <p className="text-xs text-muted-foreground font-mono">
+                          SKU: {item.variantSku}
+                        </p>
                       )}
                       <p className="text-sm text-muted-foreground mt-1">
                         Qty: {item.quantity} × {formatPrice(item.price)}
@@ -330,7 +334,7 @@ export default function OrderDetailsDialog({ order, onClose, token }) {
 
                 <div className="flex items-center gap-2.5">
                   <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm font-medium">{deliveryAddress.phone || "Phone not provided"}</span>
+                  <span className="text-sm font-medium">{deliveryAddress.recipientPhone || "Phone not provided"}</span>
                 </div>
               </div>
             </div>

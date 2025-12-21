@@ -142,12 +142,19 @@ export function useAdminOrderActions(token) {
   });
 
   // Fulfill order mutation (ship)
+  // Accepts branchId or branchSlug for inventory decrement
   const fulfillMutation = useMutation({
-    mutationFn: ({ orderId, trackingNumber, carrier, notes, estimatedDelivery }) =>
-      orderApi.fulfill({ token, id: orderId, data: { trackingNumber, carrier, notes, estimatedDelivery } }),
+    mutationFn: ({ orderId, trackingNumber, carrier, notes, estimatedDelivery, branchId, branchSlug }) =>
+      orderApi.fulfill({
+        token,
+        id: orderId,
+        data: { trackingNumber, carrier, notes, estimatedDelivery, branchId, branchSlug }
+      }),
     onSuccess: (result) => {
       // Invalidate all order-related queries
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      // Also invalidate branch/inventory queries since stock was decremented
+      queryClient.invalidateQueries({ queryKey: ["branches"] });
       toast.success(result.message || "Order shipped successfully");
     },
     onError: (error) => {

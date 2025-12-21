@@ -11,7 +11,7 @@ import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapp
 import { useCustomerActions, useCustomers } from "@/hooks/query/useCustomers";
 
 
-export function CustomersClient({ token, userRole }) {
+export function CustomersClient({ token, userRoles = [] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -69,7 +69,7 @@ export function CustomersClient({ token, userRole }) {
   );
 
   // Only allow delete for admin/superadmin roles
-  const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+  const isAdmin = userRoles.includes('admin') || userRoles.includes('superadmin');
 
   const columns = useMemo(
     () => customersColumns(handleEdit, isAdmin ? handleDelete : null),

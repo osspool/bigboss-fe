@@ -113,6 +113,12 @@ import {
     Camera,
     Scan,
     Pill,
+    Save,
+    Truck,
+    Receipt,
+    Trash2,
+    Loader2,
+    AlertTriangle,
   } from "lucide-react";
 
 
@@ -273,6 +279,16 @@ import {
     camera: Camera,
     scan: Scan,
     pill: Pill,
+    save: Save,
+    truck: Truck,
+    receipt: Receipt,
+    trash: Trash2,
+    'trash-2': Trash2,
+    loader: Loader2,
+    loader2: Loader2,
+    'loader-2': Loader2,
+    alertTriangle: AlertTriangle,
+    'alert-triangle': AlertTriangle,
   };
   
   

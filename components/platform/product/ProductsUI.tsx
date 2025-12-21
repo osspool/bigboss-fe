@@ -128,7 +128,11 @@ export function ProductsUI({
   // Handle filter changes
   const handleCategoryChange = useCallback((parent: string | null, child: string | null) => {
     setFilters(prev => ({ ...prev, parentCategory: parent, childCategory: child }));
-  }, []);
+    updateURL({
+      parentCategory: parent,
+      category: child,
+    });
+  }, [updateURL]);
 
   const handleTagToggle = useCallback((tag: string) => {
     setFilters(prev => ({

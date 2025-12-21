@@ -23,6 +23,8 @@ export function createCrudHooks({
   const config = {
     ...DEFAULT_QUERY_CONFIG,
     ...defaults,
+    // Preserve structuralSharing from defaults (can be false to disable)
+    structuralSharing: defaults.structuralSharing,
     messages: {
       createSuccess: `${singular} created successfully`,
       createError: `Failed to create ${singular.toLowerCase()}`,
@@ -55,6 +57,7 @@ export function createCrudHooks({
         staleTime: options.staleTime ?? config.staleTime,
         gcTime: options.gcTime ?? config.gcTime,
         refetchOnWindowFocus: options.refetchOnWindowFocus ?? config.refetchOnWindowFocus,
+        structuralSharing: options.structuralSharing ?? config.structuralSharing,
         ...options,
       },
       // Prefill detail cache to avoid redundant API calls
@@ -73,6 +76,7 @@ export function createCrudHooks({
       options: {
         staleTime: restOptions.staleTime ?? config.staleTime,
         gcTime: restOptions.gcTime ?? config.gcTime,
+        structuralSharing: restOptions.structuralSharing ?? config.structuralSharing,
         refetchInterval: restOptions.refetchInterval,
         refetchIntervalInBackground: restOptions.refetchIntervalInBackground,
         ...restOptions,

@@ -11,7 +11,7 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
 
   try {
-    const response = await productApi.getBySlug({ slug });
+    const response = await productApi.getBySlug(slug);
     const product = response?.data;
 
     if (!product) {
@@ -73,7 +73,7 @@ export default async function ProductSlugPage({ params }) {
     const session = await auth();
 
     // Fetch product by slug
-    const response = await productApi.getBySlug({ slug });
+    const response = await productApi.getBySlug(slug);
     const product = response?.data;
 
     if (!product) {
@@ -85,7 +85,7 @@ export default async function ProductSlugPage({ params }) {
     let recommendations = [];
 
     try {
-      const recsResponse = await productApi.getRecommendations({ productId });
+      const recsResponse = await productApi.getRecommendations(productId);
       recommendations = recsResponse?.data || [];
     } catch {
       // Silently fail - recommendations are not critical

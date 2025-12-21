@@ -38,11 +38,11 @@ export function NavMain({ items = [] }) {
   return (
     <nav aria-label="Main navigation" className="space-y-3">
       {groups.map((group) => (
-        <SidebarGroup key={group.title} className="mt-1">
-          <SidebarGroupLabel className="text-[11px] tracking-wide text-muted-foreground/90 px-2">
+        <SidebarGroup key={group.title} className="py-2">
+          <SidebarGroupLabel className="px-3 text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/60">
             {group.title}
           </SidebarGroupLabel>
-          <SidebarMenu className="gap-1">
+          <SidebarMenu className="gap-1.5">
             {group.items.map((item) => {
               const hasChildren = Array.isArray(item.items) && item.items.length > 0;
               const defaultOpen = !isMobile && isActivePartial(item.url);
@@ -52,15 +52,18 @@ export function NavMain({ items = [] }) {
                     <SidebarMenuButton
                       asChild
                       className={cn(
-                        "h-9 px-2 rounded-md hover:bg-accent/70",
-                        "data-[active=true]:bg-primary/10 data-[active=true]:text-primary",
+                        "h-9 px-3 text-[13px] font-medium text-sidebar-foreground/90",
+                        "hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+                        "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
                         "transition-colors"
                       )}
                       tooltip={state === "collapsed" ? item.title : undefined}
                       isActive={isActiveExact(item.url)}
                     >
                       <Link href={item.url} aria-current={isActiveExact(item.url) ? "page" : undefined} title={item.title}>
-                        {item.icon && <item.icon className="h-4 w-4 mr-2" />}
+                        {item.icon && (
+                          <item.icon className="h-4 w-4 text-sidebar-foreground/70" />
+                        )}
                         <span className="truncate">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -69,7 +72,7 @@ export function NavMain({ items = [] }) {
                       <>
                         <CollapsibleTrigger asChild>
                           <SidebarMenuAction
-                            className="ml-auto h-8 w-8 rounded-md hover:bg-accent/70 transition-colors data-[state=open]:rotate-90"
+                            className="ml-auto h-7 w-7 rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent/70 transition-colors data-[state=open]:rotate-90"
                             aria-label={`Toggle ${item.title} submenu`}
                             aria-expanded={defaultOpen}
                           >
@@ -77,14 +80,15 @@ export function NavMain({ items = [] }) {
                           </SidebarMenuAction>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <SidebarMenuSub className="ml-2 border-l pl-2">
+                          <SidebarMenuSub className="ml-3 gap-1 border-l border-sidebar-border/70 pl-3">
                             {item.items.map((sub) => (
                               <SidebarMenuSubItem key={sub.title}>
                                 <SidebarMenuSubButton
                                   asChild
                                   className={cn(
-                                    "h-8 px-2 rounded-md hover:bg-accent/60",
-                                    "data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
+                                    "h-8 px-2.5 text-[13px] text-sidebar-foreground/80",
+                                    "hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+                                    "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
                                   )}
                                   isActive={isActiveExact(sub.url)}
                                 >

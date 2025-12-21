@@ -1,7 +1,7 @@
 "use client";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
+import { FormSheet } from "@/components/custom/ui/sheet-wrapper";
 import { CustomerForm } from "./form/customer.form";
-import { Button } from "@/components/ui/button";
+import { useFormSubmitState } from "@/hooks/use-form-submit-state";
 
 /**
  * Customer Sheet Component
@@ -17,6 +17,7 @@ export function CustomerSheet({
   customer = null,
 }) {
   const isEdit = !!customer;
+  const { isSubmitting, handleSubmitStateChange } = useFormSubmitState();
 
   const handleSuccess = () => {
     if (!isEdit) onOpenChange(false);
@@ -25,32 +26,29 @@ export function CustomerSheet({
   const handleCancel = () => onOpenChange(false);
 
   return (
-    <SheetWrapper
+    <FormSheet
       open={open}
       onOpenChange={onOpenChange}
       title={isEdit ? "Edit Customer" : "Add New Customer"}
       description={isEdit ? "Update customer details" : "Create a new customer profile"}
       size="lg"
       className="px-4"
-      footer={(
-        <div className="flex gap-2 w-full">
-          <Button variant="outline" type="button" className="flex-1" onClick={handleCancel}>
-            {isEdit ? "Close" : "Cancel"}
-          </Button>
-          <Button type="submit" form="customer-sheet-form" className="flex-1">
-            {isEdit ? "Update Customer" : "Create Customer"}
-          </Button>
-        </div>
-      )}
+      formId="customer-sheet-form"
+      submitLabel={isEdit ? "Update Customer" : "Create Customer"}
+      cancelLabel={isEdit ? "Close" : "Cancel"}
+      submitDisabled={isSubmitting}
+      submitLoading={isSubmitting}
+      onCancel={handleCancel}
     >
       <CustomerForm
         token={token}
         customer={customer}
         onSuccess={handleSuccess}
         onCancel={handleCancel}
+        onSubmitStateChange={handleSubmitStateChange}
         formId="customer-sheet-form"
       />
-    </SheetWrapper>
+    </FormSheet>
   );
 }
 

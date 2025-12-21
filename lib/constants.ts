@@ -135,7 +135,7 @@ export const FOOTER_LINKS = {
       { label: "Shipping & Returns", href: "/returns" },
       { label: "Size Guide", href: "/size-guide" },
       { label: "FAQ", href: "/faqs" },
-      { label: "Track Order", href: "/track-order" },
+      // { label: "Track Order", href: "/track-order" },
     ],
   },
   // legal: {

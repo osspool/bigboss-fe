@@ -962,6 +962,117 @@ export const cmsPages: Record<string, CMSPage> = {
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-12-01'),
   },
+
+  shipping: {
+    name: 'Shipping & Delivery',
+    slug: 'shipping-delivery',
+    status: 'published',
+    content: {
+      title: 'Shipping & Delivery',
+      subtitle: 'Fast, reliable delivery across Bangladesh. We\'re committed to getting your order to you as quickly as possible.',
+      deliveryMethods: [
+        {
+          icon: 'Zap',
+          name: 'Express Delivery',
+          duration: '1-2 business days',
+          price: '৳120',
+          description: 'Priority handling and fastest delivery option. Available for Dhaka city.',
+        },
+        {
+          icon: 'Truck',
+          name: 'Standard Delivery',
+          duration: '3-5 business days',
+          price: '৳60',
+          description: 'Reliable delivery at an economical price. Available nationwide.',
+        },
+        {
+          icon: 'Gift',
+          name: 'Free Shipping',
+          duration: '3-5 business days',
+          price: 'Free',
+          description: 'Complimentary shipping on all orders over ৳2000.',
+        },
+      ],
+      deliveryAreas: {
+        title: 'Delivery Areas & Times',
+        areas: [
+          { name: 'Dhaka City', duration: '1-2 days', cost: '৳60 / Free over ৳2000' },
+          { name: 'Dhaka Suburbs', duration: '2-3 days', cost: '৳80 / Free over ৳2000' },
+          { name: 'Chittagong', duration: '3-4 days', cost: '৳100 / Free over ৳2500' },
+          { name: 'Sylhet', duration: '3-4 days', cost: '৳100 / Free over ৳2500' },
+          { name: 'Rajshahi', duration: '4-5 days', cost: '৳120 / Free over ৳2500' },
+          { name: 'Other Districts', duration: '4-5 days', cost: '৳120 / Free over ৳3000' },
+        ],
+      },
+      orderTracking: {
+        title: 'Track Your Order',
+        description: 'Stay updated on your order status every step of the way.',
+        steps: [
+          { title: 'Order Confirmed', description: 'Your order has been received and confirmed.' },
+          { title: 'Processing', description: 'We\'re preparing your items for shipment.' },
+          { title: 'Shipped', description: 'Your order is on its way! Check your email for tracking details.' },
+          { title: 'Out for Delivery', description: 'Your package is out for delivery today.' },
+          { title: 'Delivered', description: 'Your order has been delivered. Enjoy!' },
+        ],
+      },
+      policies: [
+        {
+          title: 'Shipping Cutoff Times',
+          content: 'Orders placed before 2:00 PM (BST) on business days are processed the same day. Orders placed after 2:00 PM or on weekends/holidays will be processed the next business day.',
+        },
+        {
+          title: 'Packaging',
+          content: 'All orders are carefully packaged to ensure your items arrive in perfect condition. We use eco-friendly packaging materials wherever possible.',
+        },
+        {
+          title: 'Delivery Attempts',
+          content: 'Our delivery partners will make up to 3 delivery attempts. If unsuccessful, the package will be returned to our warehouse and you will be contacted for re-delivery arrangements.',
+        },
+        {
+          title: 'Cash on Delivery (COD)',
+          content: 'We offer Cash on Delivery for your convenience. Please have the exact amount ready as delivery personnel may not carry change.',
+          list: [
+            'Available for orders up to ৳10,000',
+            'No additional charges for COD',
+            'Payment collected at time of delivery',
+          ],
+        },
+      ],
+      faq: [
+        {
+          question: 'How can I track my order?',
+          answer: 'Once your order is shipped, you\'ll receive an SMS and email with your tracking number. You can also track your order through your account dashboard.',
+        },
+        {
+          question: 'Can I change my delivery address after ordering?',
+          answer: 'Address changes are possible if the order hasn\'t been shipped yet. Please contact our support team immediately with your order number and new address.',
+        },
+        {
+          question: 'What if I\'m not home during delivery?',
+          answer: 'Our delivery partner will attempt to contact you before delivery. You can also leave specific delivery instructions during checkout.',
+        },
+        {
+          question: 'Do you deliver on weekends?',
+          answer: 'Yes, we deliver on Saturdays in most areas. Sunday deliveries may be available in select locations within Dhaka.',
+        },
+      ],
+      contactSection: {
+        title: 'Need Help?',
+        description: 'Our customer service team is available to assist you with any shipping-related questions.',
+        email: 'support@bigboss.com',
+        phone: '+880 1XXX-XXXXXX',
+        hours: 'Sunday - Thursday, 10AM - 6PM (BST)',
+      },
+    },
+    metadata: {
+      title: 'Shipping & Delivery - BigBoss',
+      description: 'Learn about our shipping options, delivery times, and tracking your BigBoss order.',
+      keywords: ['shipping', 'delivery', 'tracking', 'bigboss'],
+    },
+    publishedAt: new Date('2024-01-01'),
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-12-01'),
+  },
 };
 
 // Helper function to get page data

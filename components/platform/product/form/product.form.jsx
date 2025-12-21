@@ -10,16 +10,27 @@ import { createProductFormSchema } from "./product-form-schema";
 import { useProductActions } from "@/hooks/query/useProducts";
 import { DynamicTabs } from "@/components/custom/ui/tabs-wrapper";
 import { revalidateProduct } from "@/lib/revalidation";
+import { useCategoryTree, getParentCategoryOptions, getAllCategoryOptions } from "@/hooks/query/useCategories";
+import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 export function ProductForm({
   token,
   product = null,
   onSuccess,
   onCancel,
+  onSubmitStateChange,
   formId = "product-sheet-form",
 }) {
   const isEdit = !!product;
   const [activeTab, setActiveTab] = useState("basic");
+
+  // Fetch category tree for dynamic category options
+  const { data: treeResponse } = useCategoryTree(token);
+  const categoryTree = treeResponse?.data || [];
+
+  // Build category options from tree
+  const parentCategoryOptions = useMemo(() => getParentCategoryOptions(categoryTree), [categoryTree]);
+  const categoryOptions = useMemo(() => getAllCategoryOptions(categoryTree), [categoryTree]);
 
   const defaultValues = useMemo(
     () => ({
@@ -30,6 +41,7 @@ export function ProductForm({
       quantity: product?.quantity ?? 0, // Read-only, managed by inventory service
       category: product?.category || "",
       parentCategory: product?.parentCategory || "",
+      barcode: product?.barcode || "",
       images: product?.images?.map(img => ({
         ...img,
         variants: {
@@ -37,14 +49,16 @@ export function ProductForm({
           medium: img.variants?.medium || "",
         },
       })) || [],
-      variations: product?.variations?.map(variation => ({
-        name: variation.name || "",
-        options: variation.options?.map(option => ({
-          value: option.value || "",
-          priceModifier: option.priceModifier ?? 0,
-          quantity: option.quantity ?? 0,
-          images: option.images || [],
-        })) || [{ value: "", priceModifier: 0, quantity: 0 }],
+      variationAttributes: product?.variationAttributes?.map(attr => ({
+        name: attr.name || "",
+        values: attr.values || [],
+      })) || [],
+      variants: product?.variants?.map(variant => ({
+        sku: variant.sku || "",
+        attributes: variant.attributes || {},
+        priceModifier: variant.priceModifier ?? 0,
+        barcode: variant.barcode || "",
+        isActive: variant.isActive ?? true,
       })) || [],
       tags: product?.tags || [],
       style: product?.style || [],
@@ -72,13 +86,17 @@ export function ProductForm({
   const isSubmitting = isCreating || isUpdating;
   const formErrors = form.formState.errors;
 
+  useNotifySubmitState(isSubmitting, onSubmitStateChange);
+
   // Create form schema with tabs
   const formSchema = useMemo(
     () => createProductFormSchema({
       isEdit,
       product,
+      parentCategoryOptions,
+      categoryOptions,
     }),
-    [isEdit, product]
+    [isEdit, product, parentCategoryOptions, categoryOptions]
   );
 
   const handleSubmitForm = useCallback(
@@ -93,6 +111,7 @@ export function ProductForm({
           ...(data.shortDescription && { shortDescription: data.shortDescription }),
           ...(data.description && { description: data.description }),
           ...(data.parentCategory && { parentCategory: data.parentCategory }),
+          ...(data.barcode && { barcode: data.barcode }),
         };
 
         // Clean up images array - only include complete images
@@ -137,25 +156,38 @@ export function ProductForm({
           cleanData.style = data.style.filter((s) => s && s.trim());
         }
 
-        // Clean up variations array
-        if (data.variations && Array.isArray(data.variations) && data.variations.length > 0) {
-          const cleanedVariations = data.variations
-            .filter((variation) => variation.name && variation.name.trim())
-            .map((variation) => ({
-              name: variation.name.trim(),
-              options: variation.options
-                .filter((option) => option.value && option.value.trim())
-                .map((option) => ({
-                  value: option.value.trim(),
-                  priceModifier: Number(option.priceModifier) || 0,
-                  quantity: Number(option.quantity) || 0,
-                  ...(option.images?.length > 0 && { images: option.images }),
-                })),
+        // Clean up variationAttributes array
+        if (data.variationAttributes && Array.isArray(data.variationAttributes) && data.variationAttributes.length > 0) {
+          const cleanedAttributes = data.variationAttributes
+            .filter((attr) => attr.name && attr.name.trim() && attr.values?.length > 0)
+            .map((attr) => ({
+              name: attr.name.trim(),
+              values: attr.values.filter((v) => v && v.trim()).map((v) => v.trim()),
             }))
-            .filter((variation) => variation.options.length > 0);
+            .filter((attr) => attr.values.length > 0);
 
-          if (cleanedVariations.length > 0) {
-            cleanData.variations = cleanedVariations;
+          if (cleanedAttributes.length > 0) {
+            cleanData.variationAttributes = cleanedAttributes;
+          }
+        }
+
+        // Clean up variants array (optional overrides for initial priceModifiers or updates)
+        if (data.variants && Array.isArray(data.variants) && data.variants.length > 0) {
+          const cleanedVariants = data.variants
+            .filter((variant) => {
+              // For updates, must have SKU. For create, must have attributes
+              return (isEdit && variant.sku) || (!isEdit && variant.attributes && Object.keys(variant.attributes).length > 0);
+            })
+            .map((variant) => ({
+              ...(variant.sku && { sku: variant.sku }),
+              ...(variant.attributes && { attributes: variant.attributes }),
+              ...(variant.priceModifier !== undefined && { priceModifier: Number(variant.priceModifier) || 0 }),
+              ...(variant.barcode && { barcode: variant.barcode }),
+              ...(variant.isActive !== undefined && { isActive: variant.isActive }),
+            }));
+
+          if (cleanedVariants.length > 0) {
+            cleanData.variants = cleanedVariants;
           }
         }
 
@@ -202,7 +234,7 @@ export function ProductForm({
 
   const handleFormError = useCallback(() => {
     toast.error("Please fix the validation errors before submitting");
-    
+
     // Find which tab has errors and switch to it
     const errorFields = Object.keys(formErrors);
     if (errorFields.length > 0) {
@@ -210,8 +242,9 @@ export function ProductForm({
       const basicFields = ["name", "shortDescription", "description", "category", "parentCategory", "tags", "style"];
       const mediaFields = ["images"];
       const pricingFields = ["basePrice", "isActive", "discount"];
-      const variationFields = ["variations"];
-      
+      const variationFields = ["variationAttributes", "variants"];
+      const barcodeFields = ["barcode", "sku"];
+
       for (const field of errorFields) {
         if (basicFields.some(f => field.startsWith(f))) {
           setActiveTab("basic");
@@ -227,6 +260,10 @@ export function ProductForm({
         }
         if (variationFields.some(f => field.startsWith(f))) {
           setActiveTab("variations");
+          break;
+        }
+        if (barcodeFields.some(f => field.startsWith(f))) {
+          setActiveTab("barcode");
           break;
         }
       }

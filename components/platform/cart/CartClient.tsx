@@ -8,7 +8,7 @@ import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/query/useCart";
 import { formatPrice } from "@/lib/constants";
-import { calculateItemPrice, getProductImage } from "@/lib/commerce-utils";
+import { calculateItemPrice, getProductImage, getCartItemVariant, formatVariantAttributes } from "@/lib/commerce-utils";
 import type { CartItem } from "@/types";
 
 interface CartClientProps {
@@ -80,6 +80,8 @@ export default function CartClient({ token }: CartClientProps) {
               {items.map((item: CartItem) => {
                 const itemPrice = calculateItemPrice(item);
                 const { product } = item;
+                const variant = getCartItemVariant(item);
+                const variantLabel = variant?.attributes ? formatVariantAttributes(variant.attributes) : null;
 
                 return (
                   <div key={item._id} className="py-6 first:pt-0">
@@ -108,16 +110,12 @@ export default function CartClient({ token }: CartClientProps) {
                             >
                               {product?.name || "Product"}
                             </Link>
-                            {/* Variations */}
-                            {item.variations?.length ? (
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-muted-foreground">
-                                {item.variations.map((v, idx) => (
-                                  <span key={`${v.name}-${idx}`}>
-                                    {v.name}: <span className="text-foreground">{v.option?.value}</span>
-                                  </span>
-                                ))}
+                            {/* Variant Info */}
+                            {variantLabel && (
+                              <div className="mt-2 text-sm text-muted-foreground">
+                                {variantLabel}
                               </div>
-                            ) : null}
+                            )}
                           </div>
                           <button
                             onClick={() => removeCartItem(item._id)}

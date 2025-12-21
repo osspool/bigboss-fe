@@ -1,100 +1,123 @@
-// @/api/platform/transaction.types.ts
-import type {
-  PaymentMethod,
-  PaymentDetails,
-  GatewayInfo,
-} from "./common.types";
-
 /**
  * Transaction Types
- * Aligned with Transaction model and @classytic/revenue
+ *
+ * Sources:
+ * - modules/transaction/transaction.model.js
+ * - common/revenue/enums.js
  */
 
-// ============ Enums/Unions ============
-
-export type TransactionType = "income" | "expense";
-
-export type TransactionStatus =
-  | "pending"
-  | "payment_initiated"
-  | "processing"
-  | "requires_action"
-  | "verified"
-  | "completed"
-  | "failed"
-  | "cancelled"
-  | "expired"
-  | "refunded"
-  | "partially_refunded";
-
-export type TransactionCategory =
-  | "order_purchase"
-  | "order_refund"
-  | "capital_injection"
-  | "capital_withdrawal"
-  | "expense"
-  | "commission"
-  | "other";
-
-export type TransactionReferenceModel = "Order" | "Commission" | "Expense";
-
-// ============ Interfaces ============
-
-export interface TransactionWebhookData {
-  eventId?: string;
-  eventType?: string;
-  receivedAt?: string;
-  processedAt?: string;
-  data?: unknown;
+export enum TransactionType {
+  INCOME = 'income',
+  EXPENSE = 'expense',
 }
 
-export interface TransactionEntity {
-  referenceModel: TransactionReferenceModel;
-  referenceId: string;
+export enum TransactionStatus {
+  PENDING = 'pending',
+  VERIFIED = 'verified',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled',
+  REFUNDED = 'refunded',
 }
 
 /**
- * Full Transaction document
- * Matches backend Transaction model schema
+ * Transaction Categories
+ * Maps to common/revenue/enums.js TRANSACTION_CATEGORY
+ */
+export enum TransactionCategory {
+  // Revenue
+  ORDER_PURCHASE = 'order_purchase',
+  ORDER_SUBSCRIPTION = 'order_subscription',
+  WHOLESALE_SALE = 'wholesale_sale',
+  PLATFORM_SUBSCRIPTION = 'platform_subscription',
+  CREATOR_SUBSCRIPTION = 'creator_subscription',
+  ENROLLMENT_PURCHASE = 'enrollment_purchase',
+  ENROLLMENT_SUBSCRIPTION = 'enrollment_subscription',
+
+  // Inventory
+  INVENTORY_PURCHASE = 'inventory_purchase',
+  PURCHASE_RETURN = 'purchase_return',
+  INVENTORY_LOSS = 'inventory_loss',
+  INVENTORY_ADJUSTMENT = 'inventory_adjustment',
+  COGS = 'cogs',
+
+  // Operational Expenses
+  RENT = 'rent',
+  UTILITIES = 'utilities',
+  EQUIPMENT = 'equipment',
+  SUPPLIES = 'supplies',
+  MAINTENANCE = 'maintenance',
+  MARKETING = 'marketing',
+  OTHER_EXPENSE = 'other_expense',
+
+  // Operational Income
+  CAPITAL_INJECTION = 'capital_injection',
+  RETAINED_EARNINGS = 'retained_earnings',
+  TIP_INCOME = 'tip_income',
+  OTHER_INCOME = 'other_income',
+}
+
+/**
+ * Payment Methods (Bangladesh)
+ */
+export enum PaymentMethod {
+  CASH = 'cash',
+  BKASH = 'bkash',
+  NAGAD = 'nagad',
+  ROCKET = 'rocket',
+  BANK_TRANSFER = 'bank_transfer',
+  CARD = 'card',
+  ONLINE = 'online',
+  MANUAL = 'manual',
+}
+
+export interface TransactionPaymentDetails {
+  walletNumber?: string;
+  walletType?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+  proofUrl?: string;
+}
+
+/**
+ * Transaction Document
  */
 export interface Transaction {
   _id: string;
+  amount: number; // In smallest unit (e.g. paisa)
+  type: TransactionType | string;
+  method: string;
+  status: TransactionStatus | string;
 
-  // Core fields
-  amount: number; // smallest currency unit (e.g., paisa)
-  type: TransactionType;
-  method: PaymentMethod;
-  status: TransactionStatus;
-  category: TransactionCategory | string;
-  currency: string; // e.g., BDT
+  category: string; // e.g. 'order_purchase', 'rent', 'cogs'
 
-  // Reference to related entity (polymorphic)
-  referenceModel: TransactionReferenceModel;
+  source: 'web' | 'pos' | 'api';
+
+  referenceModel: string;
   referenceId: string;
 
-  // Source tracking (for channel analytics)
-  source?: 'web' | 'pos' | 'api';
-
-  // Branch reference (for multi-location tracking)
   branch?: string;
+  currency?: string; // Default: 'BDT'
 
-  // Payment information
-  gateway?: GatewayInfo;
-  paymentDetails?: PaymentDetails;
-  metadata?: Record<string, unknown>;
+  gateway?: {
+    type: string;
+    paymentUrl?: string;
+    transactionId?: string;
+    sessionId?: string;
+    paymentIntentId?: string;
+  };
 
-  // Idempotency
-  idempotencyKey?: string;
+  paymentDetails?: TransactionPaymentDetails;
 
-  // Webhook tracking
-  webhook?: TransactionWebhookData;
+  metadata?: Record<string, any>;
 
-  // Verification tracking
+  // Verification
   verifiedBy?: string;
   verifiedAt?: string;
-
-  // Status timestamps
   paidAt?: string;
+
+  // Failure tracking
   failedAt?: string;
   failureReason?: string;
 
@@ -103,11 +126,9 @@ export interface Transaction {
   refundedAmount?: number;
   refundReason?: string;
 
-  // Additional info
   notes?: string;
-  transactionDate?: string; // When transaction occurred (vs createdAt)
 
-  // Audit timestamps
+  transactionDate: string;
   createdAt: string;
   updatedAt: string;
 
@@ -116,126 +137,86 @@ export interface Transaction {
   amountInUnits?: number;
 }
 
-// ============ Request/Response Payloads ============
-
 /**
- * Transaction payload for create/update
- * Most fields optional - backend handles validation via schema rules
+ * Payload to create a Manual Transaction (OpEx, CapEx)
  */
-export interface TransactionPayload {
-  amount?: number;
-  type?: TransactionType;
-  method?: PaymentMethod;
-  status?: TransactionStatus;
-  category?: TransactionCategory | string;
-  currency?: string;
-  referenceModel?: TransactionReferenceModel;
-  referenceId?: string;
-  source?: 'web' | 'pos' | 'api';
-  branch?: string;
-  paymentDetails?: PaymentDetails;
-  metadata?: Record<string, unknown>;
+export interface CreateTransactionPayload {
+  category: string;
+  amount: number; // In main unit (e.g. BDT) - Backend converts to smallest
+  method: string;
+  
+  date?: string;
   notes?: string;
-  transactionDate?: string; // ISO 8601 date-time
-  failureReason?: string;
-  refundReason?: string;
+  
+  paymentDetails?: TransactionPaymentDetails;
+  
+  reference?: string; // Optional text reference
 }
 
 /**
- * Query parameters for transaction filtering
+ * Financial Report Response
  */
-export interface TransactionQueryParams {
-  // Pagination
-  page?: number;
-  limit?: number;
-  after?: string;
-
-  // Filters
-  customerId?: string;
-  orderId?: string;
-  referenceId?: string;
-  referenceModel?: TransactionReferenceModel;
-  type?: TransactionType;
-  method?: PaymentMethod;
-  category?: string;
-  status?: TransactionStatus;
-  source?: 'web' | 'pos' | 'api';
-  branch?: string;
-  transactionDate?: string; // ISO date or range
-
-  // Populate
-  populate?: string | string[];
-
-  // Sort
-  sort?: string | Record<string, 1 | -1 | 'asc' | 'desc'>;
-
-  // Allow extra filters without type errors
-  [key: string]: unknown;
+export interface FinancialReport {
+  income: number;
+  expense: number;
+  net: number;
+  breakdown: Record<string, number>;
 }
 
-// ============ Report Types ============
-
 /**
- * Profit & Loss Report
+ * Statement Row (for CSV/JSON export)
+ * GET /transactions/statement
  */
-export interface ProfitLossReport {
-  startDate: string;
-  endDate: string;
-  income: {
-    total: number;
-    count: number;
-    categories: Array<{
-      category: string;
-      amount: number;
-      count: number;
-    }>;
-  };
-  expenses: {
-    total: number;
-    count: number;
-    categories: Array<{
-      category: string;
-      amount: number;
-      count: number;
-    }>;
-  };
-  netProfit: number;
+export interface StatementRow {
+  transactionId: string;
+  transactionDate: string | null;
+  createdAt: string | null;
+  status: string;
+  type: string;
+  source: string;
+  branchCode: string | null;
+  branchId: string | null;
+  method: string;
+  amountBdt: number;
+  currency: string;
+  referenceModel: string;
+  referenceId: string | null;
+  orderId: string | null;
+  orderCustomerName: string | null;
+  vatInvoiceNumber: string | null;
+  vatSellerBin: string | null;
+  paymentReference: string | null;
+  narration: string | null;
 }
 
 /**
- * Category Breakdown Report
+ * Statement Export Response (JSON format)
  */
-export interface CategoryReport {
-  startDate: string;
-  endDate: string;
-  type: TransactionType;
-  categories: Array<{
-    category: string;
-    amount: number;
-    count: number;
-    percentage: number;
-  }>;
-  total: number;
+export interface StatementResponse {
+  success: boolean;
+  count: number;
+  data: StatementRow[];
 }
 
 /**
- * Cash Flow Report (monthly trend)
+ * Cash Flow Report Response
  */
 export interface CashFlowReport {
-  months: Array<{
-    month: string; // YYYY-MM
+  months: {
+    month: string;
     income: number;
-    expenses: number;
-    netProfit: number;
-  }>;
-  summary: {
-    totalIncome: number;
-    totalExpenses: number;
-    totalNetProfit: number;
-    avgMonthlyIncome: number;
-    avgMonthlyExpenses: number;
-  };
+    expense: number;
+    net: number;
+  }[];
 }
 
-// Re-export payment types for convenience
-export type { PaymentMethod, PaymentDetails, GatewayInfo } from "./common.types";
+/**
+ * Category Report Response
+ */
+export interface CategoryReport {
+  categories: {
+    category: string;
+    total: number;
+    count: number;
+  }[];
+}

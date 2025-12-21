@@ -9,7 +9,11 @@ import Link from "next/link";
  * Shown when a logged-in user doesn't have permission to access the dashboard.
  * Provides clear messaging and a way to log out or go back home.
  */
-export function AccessDenied({ user }) {
+export function AccessDenied({
+  user,
+  title = "Access Restricted",
+  description = "Your account doesn't have permission to access this area.",
+}) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
       <div className="max-w-md w-full text-center space-y-8">
@@ -20,11 +24,9 @@ export function AccessDenied({ user }) {
 
         {/* Message */}
         <div className="space-y-3">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            Access Restricted
-          </h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{title}</h1>
           <p className="text-slate-600 dark:text-slate-400">
-            Hi{user?.name ? ` ${user.name}` : ""}, your account doesn't have permission to access the admin dashboard.
+            Hi{user?.name ? ` ${user.name}` : ""}, {description}
           </p>
           {user?.email && (
             <p className="text-sm text-slate-500 dark:text-slate-500 flex items-center justify-center gap-2">
@@ -55,7 +57,7 @@ export function AccessDenied({ user }) {
 
         {/* Help text */}
         <p className="text-xs text-slate-500 dark:text-slate-600">
-          If you believe you should have access, please contact the administrator.
+          If you believe you should have access, please contact an administrator.
         </p>
       </div>
     </div>

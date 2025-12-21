@@ -1,7 +1,7 @@
 "use client";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
+import { FormSheet } from "@/components/custom/ui/sheet-wrapper";
 import { CouponForm } from "./form/coupon.form";
-import { Button } from "@/components/ui/button";
+import { useFormSubmitState } from "@/hooks/use-form-submit-state";
 
 /**
  * Coupon Sheet Component
@@ -17,6 +17,7 @@ export function CouponSheet({
   coupon = null,
 }) {
   const isEdit = !!coupon;
+  const { isSubmitting, handleSubmitStateChange } = useFormSubmitState();
 
   const handleSuccess = () => {
     if (!isEdit) onOpenChange(false);
@@ -25,31 +26,28 @@ export function CouponSheet({
   const handleCancel = () => onOpenChange(false);
 
   return (
-    <SheetWrapper
+    <FormSheet
       open={open}
       onOpenChange={onOpenChange}
       title={isEdit ? "Edit Coupon" : "Add New Coupon"}
       description={isEdit ? "Update coupon details and settings" : "Create a new discount coupon"}
       size="lg"
       className="px-4"
-      footer={(
-        <div className="flex gap-2 w-full">
-          <Button variant="outline" type="button" className="flex-1" onClick={handleCancel}>
-            {isEdit ? "Close" : "Cancel"}
-          </Button>
-          <Button type="submit" form="coupon-sheet-form" className="flex-1">
-            {isEdit ? "Update Coupon" : "Create Coupon"}
-          </Button>
-        </div>
-      )}
+      formId="coupon-sheet-form"
+      submitLabel={isEdit ? "Update Coupon" : "Create Coupon"}
+      cancelLabel={isEdit ? "Close" : "Cancel"}
+      submitDisabled={isSubmitting}
+      submitLoading={isSubmitting}
+      onCancel={handleCancel}
     >
       <CouponForm
         token={token}
         coupon={coupon}
         onSuccess={handleSuccess}
         onCancel={handleCancel}
+        onSubmitStateChange={handleSubmitStateChange}
         formId="coupon-sheet-form"
       />
-    </SheetWrapper>
+    </FormSheet>
   );
 }

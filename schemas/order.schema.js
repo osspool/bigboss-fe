@@ -27,7 +27,7 @@ import { z } from "zod";
 
 export const ORDER_STATUS_VALUES = ['pending', 'processing', 'confirmed', 'shipped', 'delivered', 'cancelled'];
 export const PAYMENT_STATUS_VALUES = ['pending', 'verified', 'failed', 'refunded', 'partially_refunded', 'cancelled'];
-export const PAYMENT_METHOD_VALUES = ['cash', 'bkash', 'nagad', 'rocket', 'bank'];
+export const PAYMENT_METHOD_VALUES = ['cash', 'bkash', 'nagad', 'rocket', 'bank_transfer'];
 export const SHIPPING_PROVIDER_VALUES = ['redx', 'pathao', 'steadfast', 'paperfly', 'sundarban', 'sa_paribahan', 'dhl', 'fedex', 'other'];
 export const SHIPPING_STATUS_VALUES = ['pending', 'requested', 'picked_up', 'in_transit', 'out_for_delivery', 'delivered', 'failed_attempt', 'returned', 'cancelled'];
 
@@ -44,7 +44,7 @@ const deliveryAddressSchema = z.object({
   state: z.string().optional(),
   postalCode: z.string().optional(),
   country: z.string().optional(),
-  phone: z.string().min(10, "Phone must be at least 10 digits"),
+  recipientPhone: z.string().min(10, "Phone must be at least 10 digits"),
   recipientName: z.string().optional(),
 });
 
@@ -100,20 +100,30 @@ export const orderUpdateSchema = z.object({
 
 /**
  * Order item schema (read-only, from checkout)
+ *
+ * Backend captures variant details at order time:
+ * - variantSku: SKU for inventory tracking
+ * - variantAttributes: Snapshot of attributes (e.g., { size: "M", color: "Red" })
+ * - variantPriceModifier: Snapshot of price modifier at order time
  */
 const orderItemSchema = z.object({
   product: z.string(),
   productName: z.string(),
   productSlug: z.string().optional(),
-  variations: z.array(z.object({
-    name: z.string(),
-    option: z.object({
-      value: z.string(),
-      priceModifier: z.number().optional(),
-    }),
-  })).optional(),
+  /** SKU of the specific variant for inventory tracking */
+  variantSku: z.string().optional(),
+  /** Snapshot of variant attributes at order time (e.g., { size: "M", color: "Red" }) */
+  variantAttributes: z.record(z.string(), z.string()).optional(),
+  /** Snapshot of variant price modifier at order time */
+  variantPriceModifier: z.number().optional(),
+  /** Cost price snapshot at order time (admin-only field) */
+  costPriceAtSale: z.number().optional(),
   quantity: z.number(),
   price: z.number(),
+  /** VAT rate applied to this item (percentage) */
+  vatRate: z.number().optional(),
+  /** VAT amount for this line item */
+  vatAmount: z.number().optional(),
 });
 
 /**
@@ -250,7 +260,7 @@ export const defaultOrderUpdateValues = {
     state: "",
     postalCode: "",
     country: "",
-    phone: "",
+    recipientPhone: "",
     recipientName: "",
   },
   delivery: {
@@ -285,7 +295,7 @@ export function normalizeOrderForForm(order) {
       state: order.deliveryAddress?.state || "",
       postalCode: order.deliveryAddress?.postalCode || "",
       country: order.deliveryAddress?.country || "",
-      phone: order.deliveryAddress?.phone || "",
+      recipientPhone: order.deliveryAddress?.recipientPhone || "",
       recipientName: order.deliveryAddress?.recipientName || "",
     },
     delivery: {

@@ -1,11 +1,11 @@
 import { Truck, Check } from "lucide-react";
 import { formatPrice } from "@/lib/constants";
-import { DeliveryOption } from "@/types";
+import type { DeliveryOption } from "@/types";
 import { cn } from "@/lib/utils";
 
 export const DELIVERY_OPTIONS: DeliveryOption[] = [
-  { id: "standard", label: "Standard Delivery", price: 150, days: "3-5 business days" },
-  { id: "express", label: "Express Delivery", price: 300, days: "1-2 business days" },
+  { method: "standard", label: "Standard Delivery", price: 150, estimatedDays: "3-5 business days" },
+  { method: "express", label: "Express Delivery", price: 300, estimatedDays: "1-2 business days" },
 ];
 
 interface DeliveryOptionsProps {
@@ -41,12 +41,12 @@ export function DeliveryOptions({
 
       <div className="grid gap-3">
         {options.map((option) => {
-          const isFree = qualifiesForFreeShipping && option.id === "standard";
-          const isSelected = selected?.id === option.id;
+          const isFree = qualifiesForFreeShipping && option.method === "standard";
+          const isSelected = selected?.method === option.method;
 
           return (
             <label
-              key={option.id}
+              key={option.method}
               className={cn(
                 "flex items-center justify-between p-4 border cursor-pointer transition-all",
                 isSelected
@@ -76,7 +76,7 @@ export function DeliveryOptions({
                 </div>
                 <div>
                   <p className="font-medium">{option.label}</p>
-                  <p className="text-sm text-muted-foreground">{option.days}</p>
+                  <p className="text-sm text-muted-foreground">{option.estimatedDays}</p>
                 </div>
               </div>
               <span className={cn("font-medium", isFree && "line-through text-muted-foreground")}>

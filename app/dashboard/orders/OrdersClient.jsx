@@ -10,24 +10,25 @@ import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapp
 import { OrderSheet } from "@/components/platform/order/form/order-sheet";
 import { orderColumns } from "./order-columns";
 import { OrdersSearch } from "./OrdersSearch";
-import { 
-  useOrdersList, 
-  useAdminCrudActions, 
-  useAdminOrderActions 
+import {
+  useOrdersList,
+  useAdminCrudActions,
+  useAdminOrderActions,
 } from "@/hooks/query/useOrders";
 
 export function OrdersClient({ token, initialLimit = 15 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Sheet state for viewing/editing orders
+  // Sheet state - store only the ID, derive order from list
+  // This ensures sheet always shows fresh data after ANY mutation
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
 
   const handleOpenChange = useCallback((isOpen) => {
     setOpen(isOpen);
     if (!isOpen) {
-      setSelected(null);
+      setSelectedId(null);
     }
   }, []);
 
@@ -44,9 +45,9 @@ export function OrdersClient({ token, initialLimit = 15 }) {
     
     // Search params
     const orderId = searchParams.get("_id");
-    const customerPhone = searchParams.get("deliveryAddress.phone");
+    const customerPhone = searchParams.get("deliveryAddress.recipientPhone");
     if (orderId) params._id = orderId;
-    if (customerPhone) params["deliveryAddress.phone"] = customerPhone;
+    if (customerPhone) params["deliveryAddress.recipientPhone"] = customerPhone;
     
     // Filter params
     const status = searchParams.get("status");
@@ -75,18 +76,29 @@ export function OrdersClient({ token, initialLimit = 15 }) {
   );
 
   const { remove: deleteOrder, isDeleting } = useAdminCrudActions();
-  const { 
-    updateStatus, 
+  const {
+    updateStatus,
     isUpdatingStatus,
     cancelOrder,
     isCancelling,
   } = useAdminOrderActions(token);
 
+  // Derive selected order from list - always fresh after any mutation
+  // Works for: status updates, payment verification, cancellation, etc.
+  // Create a shallow copy to ensure React detects the change even with structural sharing
+  const selectedOrder = useMemo(() => {
+    if (!selectedId || orders.length === 0) return null;
+    const found = orders.find((o) => o._id === selectedId);
+    // Shallow copy ensures new reference when order data changes
+    // This prevents React Query's structural sharing from blocking re-renders
+    return found ? { ...found } : null;
+  }, [selectedId, orders]);
+
   // ==================== Handlers ====================
 
-  // View/Edit - open sheet with order data from list
+  // View/Edit - store ID only, order is derived from list
   const handleEdit = useCallback((order) => {
-    setSelected(order);
+    setSelectedId(order._id);
     setOpen(true);
   }, []);
 
@@ -185,12 +197,12 @@ export function OrdersClient({ token, initialLimit = 15 }) {
         />
       </ErrorBoundaryWrapper>
 
-      {/* Order Sheet - uses data from list API directly */}
+      {/* Order Sheet - order derived from list, always fresh */}
       <OrderSheet
         token={token}
         open={open}
         onOpenChange={handleOpenChange}
-        order={selected}
+        order={selectedOrder}
       />
     </div>
   );

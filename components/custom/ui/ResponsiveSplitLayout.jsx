@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useSyncExternalStore } from 'react';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -10,6 +10,23 @@ import { DynamicTabs } from "@/components/custom/ui/tabs-wrapper";
 import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 
+function useMediaQuery(query, defaultValue = false) {
+  const getSnapshot = () => window.matchMedia(query).matches;
+
+  const getServerSnapshot = () => defaultValue;
+
+  const subscribe = (onStoreChange) => {
+    const media = window.matchMedia(query);
+
+    const handler = () => onStoreChange();
+    media.addEventListener("change", handler);
+
+    return () => media.removeEventListener("change", handler);
+  };
+
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+
 export const ResponsiveSplitLayout = ({
   leftPanel,
   rightPanel,
@@ -17,6 +34,8 @@ export const ResponsiveSplitLayout = ({
   leftPanelClassName,
   rightPanelClassName,
   variant = 'default', // 'default' | 'tabs' | 'fixed'
+  desktopVariant, // optional override for desktop
+  mobileVariant, // optional override for mobile
   defaultLayout = [50, 50],
   minSizes = [20, 20],
   rightPanelWidth = 400, // Fixed width for right panel when variant is 'fixed'
@@ -25,7 +44,6 @@ export const ResponsiveSplitLayout = ({
   forceMobile = false, // Force mobile layout regardless of screen size
   forceDesktop = false, // Force desktop layout regardless of screen size
 }) => {
-  const [windowWidth, setWindowWidth] = useState(0);
   const [mobileView, setMobileView] = useState('left');
 
   // Breakpoint values
@@ -36,30 +54,15 @@ export const ResponsiveSplitLayout = ({
     xl: 1280,
   };
 
-  // Update window width
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
+  const mobileMaxWidth = breakpoints[mobileBreakpoint] - 1;
+  const isMobileMedia = useMediaQuery(`(max-width: ${mobileMaxWidth}px)`, false);
+  const isMobile = forceDesktop ? false : forceMobile ? true : isMobileMedia;
 
-    // Set initial width
-    handleResize();
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Determine if we should use mobile layout
-  const shouldUseMobileLayout = () => {
-    if (forceDesktop) return false;
-    if (forceMobile) return true;
-    return windowWidth < breakpoints[mobileBreakpoint];
-  };
-
-  const isMobile = shouldUseMobileLayout();
+  const effectiveMobileVariant = mobileVariant ?? variant;
+  const effectiveDesktopVariant = desktopVariant ?? variant;
 
   // Mobile view with tabs using TabsWrapper
-  if (isMobile && variant === 'tabs') {
+  if (isMobile && effectiveMobileVariant === 'tabs') {
     const tabs = [
       {
         value: 'left',
@@ -164,7 +167,7 @@ export const ResponsiveSplitLayout = ({
   }
 
   // Desktop view with fixed right panel width
-  if (variant === 'fixed') {
+  if (effectiveDesktopVariant === 'fixed') {
     return (
       <div className={cn("flex h-full", className)}>
         {/* Left Panel - Takes remaining space */}
@@ -176,12 +179,16 @@ export const ResponsiveSplitLayout = ({
         </div>
 
         {/* Right Panel - Fixed width */}
-        <div 
+        <div
           className={cn(
-            "overflow-auto flex-shrink-0",
+            "overflow-auto",
             rightPanelClassName
           )}
-          style={{ width: rightPanelWidth }}
+          style={{
+            width: rightPanelWidth,
+            minWidth: rightPanelWidth,
+            flexShrink: 0
+          }}
         >
           {rightPanel.content}
         </div>

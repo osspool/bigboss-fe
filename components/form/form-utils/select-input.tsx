@@ -186,28 +186,49 @@ export default function SelectInput({
       return item.label;
     };
 
+    const getUniqueReactKey = (
+      item: SelectOption,
+      fallback: string,
+      seen: Map<string, number>
+    ): string => {
+      const itemValue = getItemValue(item, fallback);
+      const itemLabel = getItemLabel(item);
+      const baseKey = `${itemValue}::${itemLabel}`;
+      const nextCount = (seen.get(baseKey) ?? 0) + 1;
+      seen.set(baseKey, nextCount);
+      return nextCount === 1 ? baseKey : `${baseKey}::${nextCount}`;
+    };
+
     // Render grouped options
     const renderGroupedContent = () => {
       if (groups.length === 0) return null;
 
-      return groups.map((group, groupIdx) => (
-        <SelectGroup key={`group-${groupIdx}`}>
-          {group.label && <SelectLabel>{group.label}</SelectLabel>}
-          {group.items.map((item, idx) => {
-            const itemValue = getItemValue(item, `item-${groupIdx}-${idx}`);
-            return (
-              <SelectItem
-                key={itemValue}
-                value={itemValue}
-                className={cn("cursor-pointer", itemClassName)}
-                disabled={item.disabled}
-              >
-                {getItemLabel(item)}
-              </SelectItem>
-            );
-          })}
-        </SelectGroup>
-      ));
+      return groups.map((group, groupIdx) => {
+        const seenKeys = new Map<string, number>();
+
+        return (
+          <SelectGroup key={`group-${groupIdx}`}>
+            {group.label && <SelectLabel>{group.label}</SelectLabel>}
+            {group.items.map((item, idx) => {
+              const itemValue = getItemValue(item, `item-${groupIdx}-${idx}`);
+              return (
+                <SelectItem
+                  key={getUniqueReactKey(
+                    item,
+                    `item-${groupIdx}-${idx}`,
+                    seenKeys
+                  )}
+                  value={itemValue}
+                  className={cn("cursor-pointer", itemClassName)}
+                  disabled={item.disabled}
+                >
+                  {getItemLabel(item)}
+                </SelectItem>
+              );
+            })}
+          </SelectGroup>
+        );
+      });
     };
 
     // Render flat options
@@ -220,11 +241,12 @@ export default function SelectInput({
         );
       }
 
+      const seenKeys = new Map<string, number>();
       return displayItems.map((item, idx) => {
         const itemValue = getItemValue(item, `item-${idx}`);
         return (
           <SelectItem
-            key={itemValue}
+            key={getUniqueReactKey(item, `item-${idx}`, seenKeys)}
             value={itemValue}
             className={cn("cursor-pointer", itemClassName)}
             disabled={item.disabled}

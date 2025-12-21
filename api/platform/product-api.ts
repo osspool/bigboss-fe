@@ -1,88 +1,70 @@
-// @/api/platform/product-api.ts
-import { BaseApi, type ApiResponse, type RequestOptions } from "../api-factory";
-import { handleApiRequest } from "../api-handler";
-import type { Product, ProductPayload } from "@/types/product.types";
-
-type FetchOptions = Omit<RequestOptions, "token" | "organizationId">;
+import { BaseApi } from '@/api/api-factory';
+import { Product, ProductPayload } from '@/types/product.types';
 
 /**
- * Product API - Typed CRUD + Custom Endpoints
- *
- * Uses BaseApi for standard CRUD. Only custom endpoints defined here.
- * No organization/multi-tenancy - uses default BaseApi behavior.
- *
- * Standard CRUD (inherited from BaseApi):
- * - getAll({ params }) - list with filtering, search, pagination
- * - getById({ id }) - get by ID
- * - create({ token, data }) - admin only
- * - update({ token, id, data }) - admin only
- * - delete({ token, id }) - admin only
- *
- * Custom Endpoints:
- * - getBySlug({ slug }) - SEO-friendly lookup
- * - getRecommendations({ productId }) - related products
- *
- * Usage:
- * - productApi.getAll({ params: { category: 'mens', 'basePrice[lte]': 1000 }})
- * - productApi.getBySlug({ slug: 'cool-tshirt' })
+ * Product API Client
+ * Extends BaseApi with product-specific endpoints
  */
 class ProductApi extends BaseApi<Product, ProductPayload, ProductPayload> {
-  constructor(config = {}) {
-    super("products", config);
-  }
-
   /**
-   * Get product by slug (SEO-friendly URL)
-   * GET /products/slug/:slug
+   * Get product by slug
+   * (Public endpoint)
    */
-  async getBySlug({
-    slug,
-    options = {},
-  }: {
-    slug: string;
-    options?: FetchOptions;
-  }): Promise<ApiResponse<Product>> {
-    if (!slug) {
-      throw new Error("Slug is required");
-    }
-
-    return handleApiRequest("GET", `${this.baseUrl}/slug/${slug}`, {
-      cache: this.config.cache,
+  async getBySlug(slug: string, options = {}) {
+    return this.request<any>('GET', `${this.baseUrl}/slug/${slug}`, {
       ...options,
     });
   }
 
   /**
    * Get product recommendations
-   * GET /products/:productId/recommendations
-   *
-   * Returns up to 4 products from the same category, sorted by total sales
-   *
-   * @example
-   * productApi.getRecommendations({ productId: '123abc' })
+   * (Public endpoint)
    */
-  async getRecommendations({
-    productId,
-    options = {},
-  }: {
-    productId: string;
-    options?: FetchOptions;
-  }): Promise<ApiResponse<Product[]>> {
-    if (!productId) {
-      throw new Error("Product ID is required");
-    }
+  async getRecommendations(productId: string, options = {}) {
+    return this.request<any>('GET', `${this.baseUrl}/${productId}/recommendations`, {
+      ...options,
+    });
+  }
 
-    return handleApiRequest(
-      "GET",
-      `${this.baseUrl}/${productId}/recommendations`,
-      {
-        cache: this.config.cache,
+  /**
+   * Get soft-deleted products (Recycle Bin)
+   * (Admin only)
+   */
+  async getDeleted(params = {}, options = {}) {
+    return this.request<any>('GET', `${this.baseUrl}/deleted`, {
+      params,
+      ...options,
+    });
+  }
+
+  /**
+   * Restore a soft-deleted product
+   * (Admin only)
+   */
+  async restore(id: string, options = {}) {
+    return this.request<any>('POST', `${this.baseUrl}/${id}/restore`, {
+      ...options,
+    });
+  }
+
+  /**
+   * Permanently delete a product (Hard delete)
+   * (Admin only - use with caution)
+   */
+  async hardDelete(id: string, options = {}) {
+    return this.delete({
+      id,
+      options: {
         ...options,
+        // @ts-ignore
+        params: { hard: 'true' }
       }
-    );
+    });
   }
 }
 
-// Create and export a singleton instance
-export const productApi = new ProductApi();
-export { ProductApi };
+/**
+ * Export singleton instance
+ */
+export const productApi = new ProductApi('products');
+export default productApi;

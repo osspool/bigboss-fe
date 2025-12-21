@@ -6,9 +6,8 @@ import { DashboardUi } from "./components/DashboardUi";
 /**
  * Dashboard Page
  * 
- * Note: Auth and admin role checks are handled in the layout's
- * DashboardAuthWrapper component. By the time this page renders,
- * we're guaranteed to have an authenticated admin user.
+ * Note: Auth and staff access checks are handled in the layout's
+ * DashboardAuthWrapper component.
  */
 export default async function DashboardPage() {
   const session = await auth();

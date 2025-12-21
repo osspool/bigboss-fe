@@ -207,7 +207,7 @@ export const DynamicTabs = memo(function DynamicTabs({
         ),
         listWrapper: cn("w-full px-6", listWrapperClassName),
         flexList: cn(
-            "grid auto-cols-fr items-center justify-center gap-1 h-auto",
+            "flex flex-wrap items-center justify-center gap-1 h-auto",
             variant === "underline"
                 ? "rounded-none border-b border-border/60 bg-transparent p-0 shadow-none gap-6"
                 : "rounded-md p-1 shadow-sm backdrop-blur-sm",
@@ -238,12 +238,8 @@ export const DynamicTabs = memo(function DynamicTabs({
             {/* List wrapper for flex layouts */}
             {isFlexLayout ? (
                 <div className={computedClasses.listWrapper}>
-                    <TabsList 
+                    <TabsList
                         className={computedClasses.flexList}
-                        style={{ 
-                            display: 'grid', 
-                            gridTemplateColumns 
-                        }}
                     >
                         {tabs.map((tab) => (
                             <TabTrigger
@@ -251,7 +247,7 @@ export const DynamicTabs = memo(function DynamicTabs({
                                 value={tab.value}
                                 variant={variant}
                                 disabled={tab.disabled}
-                                className="justify-center px-2 py-1.5 text-xs sm:text-sm"
+                                className="justify-center px-3 py-2 text-xs sm:text-sm shrink-0"
                             >
                                 {tab.icon}
                                 {tab.hideTextOnMobile ? (

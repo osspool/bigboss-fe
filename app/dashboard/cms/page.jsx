@@ -5,7 +5,7 @@ import { CMSLibraryClient } from "./CMSLibraryClient";
 export default async function CMSLibraryPage() {
   const session = await auth();
   const token = session?.accessToken ?? "";
-  const userRole = session?.user?.role ?? "user";
+  const userRoles = session?.user?.roles ?? [];
 
   const breadcrumbItems = [
     { label: "Dashboard", href: "/dashboard" },
@@ -16,7 +16,7 @@ export default async function CMSLibraryPage() {
     <div className="flex flex-1 flex-col gap-2">
       <PageHeader items={breadcrumbItems} />
       <div className="flex-1">
-        <CMSLibraryClient token={token} userRole={userRole} />
+        <CMSLibraryClient token={token} userRoles={userRoles} />
       </div>
     </div>
   );

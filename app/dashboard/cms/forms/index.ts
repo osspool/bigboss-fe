@@ -11,6 +11,7 @@ import { returnsPageSchema } from "./returns-page-schema";
 import { sizeGuidePageSchema } from "./size-guide-page-schema";
 import { aboutPageSchema } from "./about-page-schema";
 import { termsPageSchema } from "./terms-page-schema";
+import { shippingPageSchema } from "./shipping-page-schema";
 
 /**
  * Schema map - slug to form schema
@@ -25,7 +26,7 @@ const schemaMap: Record<string, () => unknown> = {
   cookies: privacyPageSchema, // Uses same schema as privacy
   "returns-refunds": returnsPageSchema,
   "size-guide": sizeGuidePageSchema,
-  "shipping-delivery": termsPageSchema, // Uses same schema as terms (text page)
+  "shipping-delivery": shippingPageSchema,
 };
 
 /**
@@ -56,4 +57,5 @@ export {
   sizeGuidePageSchema,
   aboutPageSchema,
   termsPageSchema,
+  shippingPageSchema,
 };

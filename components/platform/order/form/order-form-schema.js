@@ -20,9 +20,9 @@ export const PAYMENT_STATUS_OPTIONS = PAYMENT_STATUS_VALUES.map(v => ({
   label: v.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }));
 
-export const PAYMENT_METHOD_OPTIONS = PAYMENT_METHOD_VALUES.map(v => ({ 
-  value: v, 
-  label: v === 'bkash' ? 'bKash' : v === 'nagad' ? 'Nagad' : v.charAt(0).toUpperCase() + v.slice(1)
+export const PAYMENT_METHOD_OPTIONS = PAYMENT_METHOD_VALUES.map(v => ({
+  value: v,
+  label: v === 'bkash' ? 'bKash' : v === 'nagad' ? 'Nagad' : v === 'bank_transfer' ? 'Bank Transfer' : v.charAt(0).toUpperCase() + v.slice(1)
 }));
 
 export const SHIPPING_PROVIDER_OPTIONS = SHIPPING_PROVIDER_VALUES.map(v => ({
@@ -69,7 +69,7 @@ export const deliveryAddressSchema = {
         placeholder: "Full name",
         description: "For gift orders or different recipient",
       }),
-      field.tel("deliveryAddress.phone", "Phone", {
+      field.tel("deliveryAddress.recipientPhone", "Recipient Phone", {
         required: true,
         placeholder: "01XXXXXXXXX",
         description: "Contact phone for delivery",

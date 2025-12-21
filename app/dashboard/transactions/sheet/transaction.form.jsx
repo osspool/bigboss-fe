@@ -12,12 +12,14 @@ import {
   TRANSACTION_STATUS,
 } from "@/constants/enums/monetization.enum";
 import { useTransactionActions } from "@/hooks/query/useTransactions";
+import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 export function TransactionForm({
   token,
   transaction = null,
   onSuccess,
   onCancel,
+  onSubmitStateChange,
   formId = "transaction-sheet-form",
 }) {
   const isEdit = !!transaction;
@@ -158,6 +160,8 @@ export function TransactionForm({
     useTransactionActions();
   const isSubmitting = isCreating || isUpdating;
   const formErrors = form.formState.errors;
+
+  useNotifySubmitState(isSubmitting, onSubmitStateChange);
 
   // Create form schema with current state
   const formSchema = useMemo(

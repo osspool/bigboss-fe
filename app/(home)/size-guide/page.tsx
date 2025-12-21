@@ -58,8 +58,8 @@ export default async function SizeGuidePage() {
         </Container>
       </Section>
 
-      {/* Size Tables */}
-      <SizeGuideClient content={content} />
+      {/* Size Tables - Uses constants for consistent sizing data */}
+      <SizeGuideClient />
 
       {/* Help Section */}
       {content.helpSection && (

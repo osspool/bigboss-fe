@@ -26,21 +26,36 @@ const imageSchema = z.object({
 });
 
 /**
- * Variation option schema for product variations
+ * Variation Attribute schema - Defines what variation dimensions exist
+ * Backend auto-generates all variant combinations from this
+ * @example { name: "Size", values: ["S", "M", "L"] }
  */
-const variationOptionSchema = z.object({
-  value: z.string().min(1, "Option value is required"),
-  priceModifier: z.coerce.number().default(0),
-  quantity: z.coerce.number().int().min(0).default(0),
-  images: z.array(imageSchema).optional().default([]),
+const variationAttributeSchema = z.object({
+  name: z.string().min(1, "Attribute name is required"),
+  values: z.array(z.string().min(1, "Value cannot be empty")).min(1, "At least one value is required"),
 });
 
 /**
- * Variation schema for product variations (e.g., Size, Color)
+ * Product Variant Payload schema - For setting initial variant overrides or updates
+ * Use attributes for CREATE (to match generated variants), sku for UPDATE
  */
-const variationSchema = z.object({
-  name: z.string().min(1, "Variation name is required"),
-  options: z.array(variationOptionSchema).min(1, "At least one option is required"),
+const productVariantPayloadSchema = z.object({
+  sku: z.string().optional(), // For updates
+  attributes: z.record(z.string(), z.string()).optional(), // For initial creation
+  priceModifier: z.coerce.number().default(0).optional(),
+  costPrice: z.coerce.number().min(0).optional(),
+  vatRate: z.coerce.number().min(0).max(100).optional().nullable(), // Per-variant VAT override (null = inherit)
+  barcode: z.string().optional(),
+  images: z.array(imageSchema).optional(),
+  shipping: z.object({
+    weightGrams: z.number().optional(),
+    dimensionsCm: z.object({
+      length: z.number().optional(),
+      width: z.number().optional(),
+      height: z.number().optional(),
+    }).optional(),
+  }).optional(),
+  isActive: z.boolean().optional(),
 });
 
 /**
@@ -67,12 +82,17 @@ const discountSchema = z.object({
  * - basePrice (min: 0)
  *
  * Optional fields:
- * - description
+ * - description, shortDescription
  * - parentCategory
  * - images
- * - tags
+ * - tags, style
  * - discount
  * - isActive
+ * - sku (auto-generated if not provided)
+ * - costPrice (admin-only, for profit margin calculation)
+ * - vatRate (null = inherit from category/platform)
+ * - variationAttributes, variants
+ * - barcode
  *
  * System-managed (DO NOT send):
  * - slug (auto-generated from name)
@@ -100,6 +120,21 @@ export const productCreateSchema = z.object({
   basePrice: z.coerce.number()
     .min(0, "Price must be a positive number"),
 
+  costPrice: z.coerce.number()
+    .min(0, "Cost price must be a positive number")
+    .optional(),
+
+  vatRate: z.coerce.number()
+    .min(0, "VAT rate must be between 0 and 100")
+    .max(100, "VAT rate must be between 0 and 100")
+    .optional()
+    .nullable(), // null = inherit from category/platform
+
+  sku: z.string()
+    .max(100, "SKU must be less than 100 characters")
+    .optional()
+    .or(z.literal("")),
+
   // quantity is system-managed by inventory service - read-only display only
   quantity: z.coerce.number().int().min(0).optional(),
 
@@ -110,9 +145,15 @@ export const productCreateSchema = z.object({
     .optional()
     .or(z.literal("")),
 
+  barcode: z.string()
+    .optional()
+    .or(z.literal("")),
+
   images: z.array(imageSchema).optional().default([]),
 
-  variations: z.array(variationSchema).optional().default([]),
+  variationAttributes: z.array(variationAttributeSchema).optional().default([]),
+
+  variants: z.array(productVariantPayloadSchema).optional().default([]),
 
   tags: z.array(z.string()).optional().default([]),
 
@@ -128,11 +169,14 @@ export const productCreateSchema = z.object({
  * Per API guide: All product fields can be updated EXCEPT system-managed fields
  *
  * Allowed fields:
- * - name, description, basePrice, quantity, category, parentCategory
- * - images, tags, discount, isActive
+ * - name, description, shortDescription, basePrice, category, parentCategory
+ * - images, tags, style, discount, isActive
+ * - sku, costPrice, vatRate, barcode
+ * - variationAttributes, variants
  *
  * DO NOT send:
  * - slug (system-managed)
+ * - quantity (managed by inventory service)
  * - totalSales, averageRating, numReviews, stats.* (system-managed)
  */
 export const productUpdateSchema = z.object({
@@ -155,6 +199,21 @@ export const productUpdateSchema = z.object({
     .min(0, "Price must be a positive number")
     .optional(),
 
+  costPrice: z.coerce.number()
+    .min(0, "Cost price must be a positive number")
+    .optional(),
+
+  vatRate: z.coerce.number()
+    .min(0, "VAT rate must be between 0 and 100")
+    .max(100, "VAT rate must be between 0 and 100")
+    .optional()
+    .nullable(), // null = inherit from category/platform
+
+  sku: z.string()
+    .max(100, "SKU must be less than 100 characters")
+    .optional()
+    .or(z.literal("")),
+
   // quantity is system-managed by inventory service - read-only display only
   quantity: z.coerce.number().int().min(0).optional(),
 
@@ -166,9 +225,15 @@ export const productUpdateSchema = z.object({
     .optional()
     .or(z.literal("")),
 
+  barcode: z.string()
+    .optional()
+    .or(z.literal("")),
+
   images: z.array(imageSchema).optional(),
 
-  variations: z.array(variationSchema).optional(),
+  variationAttributes: z.array(variationAttributeSchema).optional(),
+
+  variants: z.array(productVariantPayloadSchema).optional(),
 
   tags: z.array(z.string()).optional(),
 
@@ -187,9 +252,14 @@ export const productViewSchema = z.object({
   _id: z.string(),
   name: z.string(),
   slug: z.string(),
+  sku: z.string().optional(),
   description: z.string().optional(),
   basePrice: z.number(),
+  costPrice: z.number().optional(), // Role-restricted (admin only)
+  vatRate: z.number().optional().nullable(), // null = inherit from category/platform
   currentPrice: z.number().optional(),
+  profitMargin: z.number().optional(), // Role-restricted (admin only)
+  profitMarginPercent: z.number().optional(), // Role-restricted (admin only)
   quantity: z.number(),
   category: z.string(),
   parentCategory: z.string().optional(),

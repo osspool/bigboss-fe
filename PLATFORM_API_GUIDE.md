@@ -9,25 +9,23 @@ Singleton platform configuration API - stores all platform-wide settings in one 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | `GET` | `/api/v1/platform/config` | Public | Get platform config (supports field selection) |
-| `PATCH` | `/api/v1/platform/config` | Admin | Update platform config (including deliveryOptions) |
+| `PATCH` | `/api/v1/platform/config` | Admin | Update platform config |
 
 ---
 
-## Config Endpoints
-
-### Get Platform Configuration
+## Get Platform Configuration
 
 ```http
 GET /api/v1/platform/config
 ```
 
-Returns full config or selected fields via query param. Use `deliveryOptions` selection for delivery choices.
+Returns full config or selected fields via query param.
 
 **Field Selection:**
 ```http
-GET /api/v1/platform/config?select=payment,deliveryOptions
+GET /api/v1/platform/config?select=paymentMethods
+GET /api/v1/platform/config?select=checkout,vat
 GET /api/v1/platform/config?select=policies
-GET /api/v1/platform/config?select=deliveryOptions
 ```
 
 **Response:**
@@ -37,72 +35,98 @@ GET /api/v1/platform/config?select=deliveryOptions
   "data": {
     "_id": "...",
     "platformName": "Big Boss Retail",
-    "payment": {
-      "cash": { "enabled": true },
-      "bkash": { "walletNumber": "017...", "walletName": "...", "note": "..." },
-      "nagad": { "walletNumber": "...", "walletName": "...", "note": "..." },
-      "rocket": { "walletNumber": "...", "walletName": "...", "note": "..." },
-      "bank": {
-        "bankName": "...",
-        "accountNumber": "...",
-        "accountName": "...",
-        "branchName": "...",
-        "routingNumber": "...",
-        "swiftCode": "...",
-        "note": "..."
-      }
-    },
-    "deliveryOptions": [
+    "paymentMethods": [
       {
         "_id": "...",
-        "name": "Inside Dhaka",
-        "region": "dhaka",
-        "price": 60,
-        "estimatedDays": 2,
+        "type": "cash",
+        "name": "Cash",
         "isActive": true
       },
       {
         "_id": "...",
-        "name": "Outside Dhaka",
-        "region": "outside_dhaka",
-        "price": 120,
-        "estimatedDays": 5,
+        "type": "mfs",
+        "provider": "bkash",
+        "name": "bKash Personal",
+        "walletNumber": "01712345678",
+        "walletName": "Big Boss Store",
+        "isActive": true
+      },
+      {
+        "_id": "...",
+        "type": "mfs",
+        "provider": "nagad",
+        "name": "Nagad Merchant",
+        "walletNumber": "01812345678",
+        "walletName": "Big Boss",
+        "isActive": true
+      },
+      {
+        "_id": "...",
+        "type": "bank_transfer",
+        "name": "DBBL Transfer",
+        "bankName": "Dutch Bangla Bank",
+        "accountNumber": "1234567890",
+        "accountName": "Big Boss Ltd",
+        "branchName": "Gulshan",
+        "routingNumber": "090261234",
+        "isActive": true
+      },
+      {
+        "_id": "...",
+        "type": "card",
+        "name": "City Bank Cards",
+        "bankName": "City Bank",
+        "cardTypes": ["visa", "mastercard"],
+        "note": "2% surcharge applies",
         "isActive": true
       }
     ],
+    "checkout": {
+      "allowStorePickup": true,
+      "deliveryFeeSource": "static",
+      "freeDeliveryThreshold": 2000,
+      "deliveryZones": [
+        { "name": "Inside Dhaka", "region": "dhaka", "price": 60, "estimatedDays": 2, "isActive": true },
+        { "name": "Outside Dhaka", "region": "outside_dhaka", "price": 120, "estimatedDays": 5, "isActive": true }
+      ]
+    },
+    "vat": {
+      "isRegistered": true,
+      "bin": "1234567890123",
+      "defaultRate": 15,
+      "pricesIncludeVat": true
+    },
     "policies": {
-      "termsAndConditions": "...",
-      "privacyPolicy": "...",
       "refundPolicy": "...",
       "shippingPolicy": "..."
-    },
-    "isSingleton": true,
-    "createdAt": "...",
-    "updatedAt": "..."
+    }
   }
 }
 ```
 
 ---
 
-### Update Platform Configuration
+## Update Platform Configuration
 
 ```http
 PATCH /api/v1/platform/config
 Authorization: Bearer <admin_token>
 ```
 
-Partial update - send only fields to update (including `deliveryOptions` array).
+Partial update - send only fields to update.
 
 **Request:**
 ```json
 {
   "platformName": "My Store",
-  "payment": {
-    "bkash": { "walletNumber": "01712345678", "walletName": "My Store", "note": "Personal" }
-  },
-  "policies": {
-    "refundPolicy": "https://example.com/refund"
+  "paymentMethods": [
+    { "type": "cash", "name": "Cash", "isActive": true },
+    { "type": "mfs", "provider": "bkash", "name": "bKash", "walletNumber": "01712345678", "walletName": "My Store" }
+  ],
+  "checkout": {
+    "deliveryZones": [
+      { "name": "Dhaka City", "region": "dhaka", "price": 70, "estimatedDays": 1 }
+    ]
   }
 }
 ```
@@ -111,78 +135,132 @@ Partial update - send only fields to update (including `deliveryOptions` array).
 
 ---
 
-## Managing Delivery Options (via Config)
+## Payment Methods
 
-- Delivery options live in `platform.config.deliveryOptions` (embedded array).
-- Fetch (public): `GET /api/v1/platform/config?select=deliveryOptions`
-- Update/add/remove (admin): `PATCH /api/v1/platform/config` with the updated `deliveryOptions` array.
+Flexible array supporting multiple accounts per type.
+
+### Payment Types
+
+| Type | Description | Required Fields |
+|------|-------------|-----------------|
+| `cash` | Cash on delivery / in-store | `name` |
+| `mfs` | Mobile Financial Services | `name`, `provider`, `walletNumber` |
+| `bank_transfer` | Bank account transfers | `name`, `bankName`, `accountNumber` |
+| `card` | Credit/Debit cards | `name`, `bankName`, `cardTypes` |
+
+### MFS Providers
+
+- `bkash` - bKash
+- `nagad` - Nagad
+- `rocket` - Rocket
+- `upay` - Upay
+
+### Card Types
+
+- `visa`
+- `mastercard`
+- `amex`
+- `unionpay`
+- `other`
+
+### Payment Method Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | string | `cash`, `mfs`, `bank_transfer`, `card` |
+| `name` | string | Display name (e.g., "bKash Personal") |
+| `provider` | string | MFS provider (bkash, nagad, etc.) |
+| `walletNumber` | string | MFS wallet number |
+| `walletName` | string | MFS wallet name |
+| `bankName` | string | Bank name |
+| `accountNumber` | string | Bank account number |
+| `accountName` | string | Bank account holder name |
+| `branchName` | string | Bank branch |
+| `routingNumber` | string | Bank routing number |
+| `cardTypes` | array | Card types accepted |
+| `note` | string | Additional notes |
+| `isActive` | boolean | Whether method is available |
 
 ---
 
-## Data Schema
+## Delivery Zones
 
-### Delivery Option Fields
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Display name (e.g., "Inside Dhaka") |
-| `region` | string | Yes | Region identifier (e.g., "dhaka", "outside_dhaka") |
-| `price` | number | Yes | Delivery price in BDT (must be ≥ 0) |
-| `estimatedDays` | number | No | Estimated delivery days |
-| `isActive` | boolean | No | Whether option is available (default: true) |
-
-### Payment Config Fields
+Static zone-based delivery pricing (in `checkout.deliveryZones`).
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `payment.cash.enabled` | boolean | Enable COD |
-| `payment.bkash` | object | `{ walletNumber, walletName, note }` |
-| `payment.nagad` | object | `{ walletNumber, walletName, note }` |
-| `payment.rocket` | object | `{ walletNumber, walletName, note }` |
-| `payment.bank` | object | `{ bankName, accountNumber, accountName, branchName, routingNumber, swiftCode, note }` |
+| `name` | string | Display name (e.g., "Inside Dhaka") |
+| `region` | string | Region identifier |
+| `price` | number | Delivery price in BDT |
+| `estimatedDays` | number | Estimated delivery days |
+| `isActive` | boolean | Whether zone is available |
 
-### Policy Fields
+---
+
+## VAT Configuration
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `policies.termsAndConditions` | string | Terms URL or content |
-| `policies.privacyPolicy` | string | Privacy URL or content |
-| `policies.refundPolicy` | string | Refund URL or content |
-| `policies.shippingPolicy` | string | Shipping URL or content |
+| `vat.isRegistered` | boolean | VAT registration status |
+| `vat.bin` | string | Business Identification Number (13 digits) |
+| `vat.registeredName` | string | Business name as registered |
+| `vat.defaultRate` | number | Default VAT rate (%) |
+| `vat.pricesIncludeVat` | boolean | Whether catalog prices include VAT |
+| `vat.invoice.prefix` | string | Invoice number prefix |
+| `vat.invoice.showVatBreakdown` | boolean | Show VAT on invoices |
 
 ---
 
 ## Frontend Usage
 
-### Checkout - Load Delivery Options
+### Load Payment Methods for Checkout/POS
 
 ```javascript
-const { data: { deliveryOptions } } = await fetch('/api/v1/platform/config?select=deliveryOptions').then(r => r.json());
+const { data } = await fetch('/api/v1/platform/config?select=paymentMethods').then(r => r.json());
 
-// Populate dropdown (filter isActive on FE if desired)
-deliveryOptions.forEach(opt => {
-  // { _id, name, region, price, estimatedDays, isActive }
-});
+// Filter active methods
+const activePayments = data.paymentMethods.filter(m => m.isActive);
+
+// Group by type
+const mfsMethods = activePayments.filter(m => m.type === 'mfs');
+const bankMethods = activePayments.filter(m => m.type === 'bank_transfer');
+const cardMethods = activePayments.filter(m => m.type === 'card');
 ```
 
-### Checkout - Load Payment Methods
+### Load Delivery Options for Checkout
 
 ```javascript
-const { data: config } = await fetch('/api/v1/platform/config?select=payment').then(r => r.json());
+const { data } = await fetch('/api/v1/platform/config?select=checkout').then(r => r.json());
 
-// config.payment.bkash.walletNumber → show bKash number
-// config.payment.cash.enabled → show COD option
+// Get active zones
+const zones = data.checkout.deliveryZones.filter(z => z.isActive);
+
+// Check free delivery
+const freeThreshold = data.checkout.freeDeliveryThreshold;
+const deliveryCharge = subtotal >= freeThreshold ? 0 : selectedZone.price;
 ```
 
-### Admin - Update bKash Number
+### Admin - Add Payment Method
 
 ```javascript
-await fetch('/api/platform/config', {
+// Get current config
+const { data: config } = await fetch('/api/v1/platform/config?select=paymentMethods').then(r => r.json());
+
+// Add new method
+const updated = [...config.paymentMethods, {
+  type: 'mfs',
+  provider: 'nagad',
+  name: 'Nagad Business',
+  walletNumber: '01912345678',
+  walletName: 'Shop Name',
+  isActive: true,
+}];
+
+// Update
+await fetch('/api/v1/platform/config', {
   method: 'PATCH',
   headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    payment: { bkash: { walletNumber: '01812345678' } }
-  })
+  body: JSON.stringify({ paymentMethods: updated }),
 });
 ```
 
@@ -191,6 +269,6 @@ await fetch('/api/platform/config', {
 ## Notes
 
 - **Singleton:** Only one platform config document exists; auto-created with defaults if missing.
-- **Field Selection:** Use `?select=field1,field2` to fetch only needed fields (reduces payload).
-- **Delivery in Config:** Delivery options are embedded in platform config but have dedicated CRUD routes for convenience.
-- **Migration:** If you had a separate `DeliveryPricing` collection, migrate data to `deliveryOptions` array in platform config.
+- **Field Selection:** Use `?select=field1,field2` to fetch only needed fields.
+- **Payment Methods:** Multiple accounts per type supported (e.g., multiple bKash numbers).
+- **Delivery Zones:** Simple zone-based pricing. For courier API pricing, set `checkout.deliveryFeeSource: 'provider'`.

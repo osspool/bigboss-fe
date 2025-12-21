@@ -129,14 +129,17 @@ export interface Stats {
 export type PaymentGatewayType = "manual" | "stripe" | "sslcommerz";
 
 /**
- * Supported payment methods
- * Matches backend: common/revenue/enums.js PAYMENT_METHOD + 'card' + 'manual'
+ * Supported payment methods for orders/transactions
+ * Matches backend: common/revenue/enums.js PAYMENT_METHOD + 'manual'
+ *
+ * For MFS (Mobile Financial Services): bkash, nagad, rocket
+ * These map directly to platform config's PaymentMethodConfig.provider field
  */
 export type PaymentMethod =
   | "bkash"
   | "nagad"
   | "rocket"
-  | "bank"
+  | "bank_transfer"
   | "card"
   | "online"
   | "cash"
@@ -150,6 +153,37 @@ export type PaymentStatus =
   | "verified"
   | "failed"
   | "refunded"
+  | "partially_refunded"
+  | "cancelled";
+
+/**
+ * Shipping provider types
+ * Based on: order.md shipping providers
+ */
+export type ShippingProvider =
+  | "redx"
+  | "pathao"
+  | "steadfast"
+  | "paperfly"
+  | "sundarban"
+  | "sa_paribahan"
+  | "dhl"
+  | "fedex"
+  | "other";
+
+/**
+ * Shipping status lifecycle
+ * Based on: order.md shipping status flow
+ */
+export type ShippingStatus =
+  | "pending"
+  | "requested"
+  | "picked_up"
+  | "in_transit"
+  | "out_for_delivery"
+  | "delivered"
+  | "failed_attempt"
+  | "returned"
   | "cancelled";
 
 /**
@@ -178,49 +212,122 @@ export interface GatewayInfo {
   expiresAt?: string;
 }
 
-// ==================== Platform Payment Config Types ====================
+// ==================== Platform Payment Method Types ====================
 
 /**
- * Manual payment methods (excludes automated gateways)
- * Used for displaying payment options to customers
+ * Payment method types
+ * - cash: Cash on delivery / in-store
+ * - mfs: Mobile Financial Services (bKash, Nagad, Rocket, Upay)
+ * - bank_transfer: Bank account transfers
+ * - card: Credit/Debit cards
  */
-export type ManualPaymentMethod = 'bkash' | 'nagad' | 'rocket' | 'bank' | 'cash';
+export type PaymentMethodType = 'cash' | 'mfs' | 'bank_transfer' | 'card';
 
 /**
- * Mobile wallet payment details (bKash, Nagad, Rocket)
- * From platform.model.js walletDetailsSchema
+ * MFS (Mobile Financial Service) providers
  */
-export interface WalletDetails {
+export type MfsProvider = 'bkash' | 'nagad' | 'rocket' | 'upay';
+
+/**
+ * Card types accepted
+ */
+export type CardType = 'visa' | 'mastercard' | 'amex' | 'unionpay' | 'other';
+
+/**
+ * Platform Payment Method
+ * Flexible structure supporting multiple accounts per type
+ */
+export interface PaymentMethodConfig {
+  _id?: string;
+  /** Payment type */
+  type: PaymentMethodType;
+  /** Display name (e.g., "bKash Personal", "City Bank Cards") */
+  name: string;
+  /** MFS provider (bkash, nagad, rocket, upay) - for type: 'mfs' */
+  provider?: MfsProvider;
+  /** MFS wallet number */
   walletNumber?: string;
+  /** MFS wallet name */
   walletName?: string;
-  note?: string;
-}
-
-/**
- * Bank account payment details
- * From platform.model.js bankDetailsSchema
- */
-export interface BankDetails {
+  /** Bank name - for type: 'bank_transfer' or 'card' */
   bankName?: string;
+  /** Bank account number */
   accountNumber?: string;
+  /** Bank account holder name */
   accountName?: string;
+  /** Bank branch name */
   branchName?: string;
+  /** Bank routing number */
   routingNumber?: string;
-  swiftCode?: string;
+  /** Card types accepted - for type: 'card' */
+  cardTypes?: CardType[];
+  /** Additional notes */
   note?: string;
+  /** Whether this method is active */
+  isActive?: boolean;
+}
+
+// ==================== VAT/Tax Configuration Types ====================
+
+/**
+ * Category-specific VAT rate
+ */
+export interface CategoryVatRate {
+  category: string;
+  rate: number;
+  description?: string;
 }
 
 /**
- * Platform payment configuration
- * From platform.model.js payment field
- * Used to display payment instructions to customers at checkout
+ * VAT invoice settings
  */
-export interface PlatformPaymentConfig {
-  cash?: {
-    enabled: boolean;
-  };
-  bkash?: WalletDetails;
-  nagad?: WalletDetails;
-  rocket?: WalletDetails;
-  bank?: BankDetails;
+export interface VatInvoiceSettings {
+  showVatBreakdown: boolean;
+  prefix: string;
+  startNumber: number;
+  currentNumber: number;
+  footerText?: string;
 }
+
+/**
+ * Platform VAT configuration
+ * Bangladesh NBR (National Board of Revenue) compliant
+ *
+ * Standard VAT: 15%
+ * Reduced rates: 5%, 7.5%, 10% (category-specific)
+ * Exempt: 0% (essential goods)
+ */
+export interface PlatformVatConfig {
+  /** Whether the business is VAT registered */
+  isRegistered: boolean;
+
+  /** Business Identification Number (13 digits for Bangladesh) */
+  bin?: string;
+
+  /** Registered business name with NBR */
+  registeredName?: string;
+
+  /** VAT Circle/Zone for filing */
+  vatCircle?: string;
+
+  /** Default VAT rate (percentage) */
+  defaultRate: number;
+
+  /** Whether prices in catalog include VAT */
+  pricesIncludeVat: boolean;
+
+  /** Category-specific VAT rates */
+  categoryRates?: CategoryVatRate[];
+
+  /** Invoice settings */
+  invoice?: VatInvoiceSettings;
+
+  /** Supplementary Duty settings */
+  supplementaryDuty?: {
+    enabled: boolean;
+    defaultRate: number;
+  };
+}
+
+// Full PlatformConfig shape (checkout/logistics/vat/policies) lives in:
+// `docs/.fe/types/platform.types.ts`

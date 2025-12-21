@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReviewCard } from "@/components/platform/product/ReviewCard";
 import { MarkdownPreview } from "@/components/form/lite-editor/MarkdownPreview";
-import type { Review, ProductProperties } from "@/types";
+import { SizeTable } from "@/feature/size-guide";
+import { SIZE_GUIDE } from "@/data/constants";
+import type { Review } from "@/types";
+
+type ProductProperties = Record<string, unknown>;
 
 interface ProductTabsProps {
   description?: string;
@@ -13,6 +17,7 @@ interface ProductTabsProps {
   reviews: Review[];
   averageRating?: number;
   reviewCount?: number;
+  showSizeGuide?: boolean;
 }
 
 export function ProductTabs({
@@ -21,6 +26,7 @@ export function ProductTabs({
   reviews,
   averageRating,
   reviewCount,
+  showSizeGuide = true,
 }: ProductTabsProps) {
   const hasProperties = properties && Object.keys(properties).length > 0;
 
@@ -35,6 +41,11 @@ export function ProductTabs({
             Properties
           </TabsTrigger>
         )}
+        {showSizeGuide && (
+          <TabsTrigger value="size-guide" className={tabTriggerStyles}>
+            Size Guide
+          </TabsTrigger>
+        )}
         <TabsTrigger value="reviews" className={tabTriggerStyles}>
           Reviews ({reviewCount || 0})
         </TabsTrigger>
@@ -47,6 +58,12 @@ export function ProductTabs({
       {hasProperties && (
         <TabsContent value="properties" className="pt-8">
           <PropertiesTab properties={properties} />
+        </TabsContent>
+      )}
+
+      {showSizeGuide && (
+        <TabsContent value="size-guide" className="pt-8">
+          <SizeGuideTab />
         </TabsContent>
       )}
 
@@ -138,6 +155,25 @@ function PropertiesTab({ properties }: { properties?: ProductProperties }) {
             {renderValue(value)}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function SizeGuideTab() {
+  return (
+    <div className="max-w-4xl">
+      <SizeTable tables={[...SIZE_GUIDE.sizeTables]} variant="compact" />
+      <div className="mt-8 p-4 bg-muted/50 rounded-lg">
+        <h4 className="font-medium mb-3">{SIZE_GUIDE.tips.title}</h4>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          {SIZE_GUIDE.tips.items.map((tip, index) => (
+            <li key={index} className="flex items-start gap-2">
+              <span className="text-foreground">•</span>
+              <span>{tip}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

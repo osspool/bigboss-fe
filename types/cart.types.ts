@@ -1,192 +1,192 @@
 /**
  * Cart Types
  *
- * Type definitions for shopping cart functionality.
- * Includes cart items, cart operations, and API payloads.
+ * Type definitions for shopping cart matching the backend cart schema.
+ *
+ * @see {@link file://d:/projects/ecom/bigboss/fe-prod/docs/api/commerce/cart.md Cart API Guide}
  */
 
-import type { ProductImage, ProductDiscount, ProductVariation } from "./product.types";
-
-// ==================== Cart Item Variation ====================
-
-/**
- * Selected variation option in a cart item
- * Stores user's choice from available product variations
- */
-export interface CartItemVariation {
-  /** Variation name (e.g., "Size", "Color") */
-  name: string;
-  /** Selected option details */
-  option: {
-    /** Option value (e.g., "Medium", "Red") */
-    value: string;
-    /** Price modifier for this option */
-    priceModifier?: number;
-  };
-}
-
-// ==================== Cart Product ====================
-
-/**
- * Populated product data in cart
- * Backend populates only essential fields needed for cart display
- * Fields: name, images, variations, discount, basePrice, slug
- */
-export interface CartProduct {
-  /** Product MongoDB ObjectId */
-  _id: string;
-  /** Product name */
-  name: string;
-  /** Product URL slug */
-  slug: string;
-  /** Base price before discounts and variations */
-  basePrice: number;
-  /** Product images */
-  images: ProductImage[];
-  /** Available variations */
-  variations: ProductVariation[];
-  /** Active discount (if any) */
-  discount?: ProductDiscount;
-  /** Virtual: Current price after discount */
-  currentPrice?: number;
-}
+import type { Product, ProductVariant } from './product.types';
 
 // ==================== Cart Item ====================
 
 /**
- * Individual item in the shopping cart
+ * Cart Item (Backend Response Format)
+ * Represents a single item in the shopping cart as returned by API
+ *
+ * @example Simple Product
+ * {
+ *   _id: "cart_item_id",
+ *   product: { name: "Wireless Mouse", basePrice: 300, ... },
+ *   quantity: 2
+ * }
+ *
+ * @example Variant Product
+ * {
+ *   _id: "cart_item_id",
+ *   product: { name: "T-Shirt", basePrice: 500, ... },
+ *   variantSku: "TSHIRT-M-RED",
+ *   quantity: 1
+ * }
  */
 export interface CartItem {
-  /** Cart item unique identifier */
+  /** Cart item ID (for update/remove operations via PATCH/DELETE /cart/items/:itemId) */
   _id: string;
-  /** Populated product data */
-  product: CartProduct;
-  /** Selected variation options */
-  variations?: CartItemVariation[];
-  /** Quantity of this item in cart */
+
+  /** Product reference (fully populated Product object from backend) */
+  product: Product;
+
+  /**
+   * Variant SKU (optional)
+   * - null/undefined for simple products
+   * - Required for variant products (e.g., "TSHIRT-M-RED")
+   * - Must match a valid variant.sku from product.variants[]
+   */
+  variantSku?: string | null;
+
+  /** Quantity of this item (minimum: 1) */
   quantity: number;
 }
 
 // ==================== Cart ====================
 
 /**
- * User's shopping cart
+ * Shopping Cart
+ * Represents a user's shopping cart
  */
 export interface Cart {
-  /** Cart unique identifier */
+  /** Cart ID */
   _id: string;
-  /** User ID who owns this cart */
+  /** User/Customer ID */
   user: string;
-  /** Items in the cart */
+  /** Cart items */
   items: CartItem[];
-  /** Cart creation timestamp (ISO string) */
+  /** Creation timestamp */
   createdAt: string;
-  /** Cart last update timestamp (ISO string) */
+  /** Last update timestamp */
   updatedAt: string;
 }
 
-// ==================== Cart API Payloads ====================
+// ==================== Frontend Helper Types ====================
 
 /**
- * Add item to cart request payload
+ * Populated Cart Item
+ * Cart item with fully populated product for display
  */
-export interface AddToCartPayload {
-  /** Product ID to add */
-  productId: string;
-  /** Quantity to add */
+export interface PopulatedCartItem {
+  /** Fully populated product */
+  product: Product;
+  /** Variant SKU */
+  variantSku?: string | null;
+  /** Quantity */
   quantity: number;
-  /** Selected variations (if product has variations) */
-  variations?: Array<{
-    /** Variation name */
-    name: string;
-    /** Selected option */
-    option: {
-      /** Option value */
-      value: string;
-    };
-  }>;
+  // Derived fields (computed on FE)
+  /** Resolved variant (if variantSku is provided) */
+  variant?: ProductVariant;
+  /** Final price (basePrice + variant.priceModifier) */
+  finalPrice: number;
+  /** Line total (finalPrice * quantity) */
+  lineTotal: number;
 }
 
 /**
- * Update cart item quantity payload
+ * Cart Summary
+ * Complete cart with computed totals
+ */
+export interface CartSummary {
+  /** Populated cart items with derived fields */
+  items: PopulatedCartItem[];
+  /** Total item count (sum of all quantities) */
+  itemCount: number;
+  /** Subtotal (sum of all line totals) */
+  subtotal: number;
+}
+
+// ==================== Request Payloads ====================
+
+/**
+ * Add Item Payload
+ * Data required to add an item to cart via POST /api/v1/cart/items
+ *
+ * @example Simple Product
+ * ```typescript
+ * {
+ *   productId: "507f1f77bcf86cd799439011",
+ *   quantity: 2
+ * }
+ * ```
+ *
+ * @example Variant Product (T-Shirt Size M, Color Red)
+ * ```typescript
+ * {
+ *   productId: "507f1f77bcf86cd799439011",
+ *   variantSku: "TSHIRT-M-RED",  // Must match product.variants[].sku
+ *   quantity: 1
+ * }
+ * ```
+ *
+ * @see {@link file://d:/projects/ecom/bigboss/fe-prod/docs/api/commerce/cart.md#request-shapes Cart API Request Shapes}
+ */
+export interface AddCartItemPayload {
+  /** Product ID (required) */
+  productId: string;
+
+  /**
+   * Variant SKU (required for variant products, omit for simple products)
+   * - For simple products: omit this field
+   * - For variant products: must match a valid variant.sku from product.variants[]
+   * - Example: "TSHIRT-M-RED" for Size=M, Color=Red
+   */
+  variantSku?: string | null;
+
+  /** Quantity to add (minimum: 1, required) */
+  quantity: number;
+}
+
+/** Alias for AddCartItemPayload (for consistency with hooks) */
+export type AddToCartPayload = AddCartItemPayload;
+
+/**
+ * Update Item Payload
+ * Data required to update cart item quantity
  */
 export interface UpdateCartItemPayload {
-  /** Cart item ID to update */
+  /** Cart item ID */
   itemId: string;
-  /** New quantity */
+  /** New quantity (0 to remove) */
   quantity: number;
 }
 
 /**
- * Remove item from cart payload
+ * Remove Item Payload
+ * Data required to remove an item from cart
  */
-export interface RemoveFromCartPayload {
-  /** Cart item ID to remove */
+export interface RemoveCartItemPayload {
+  /** Cart item ID */
   itemId: string;
 }
 
-/**
- * Clear entire cart payload
- */
-export interface ClearCartPayload {
-  /** User ID whose cart to clear */
-  userId: string;
-}
-
-// ==================== Cart API Responses ====================
+// ==================== API Response Types ====================
 
 /**
- * Cart API response
+ * Cart API Response
  */
 export interface CartResponse {
   success: boolean;
   data: Cart;
 }
 
-/**
- * Cart operation success response
- */
-export interface CartOperationResponse {
-  success: boolean;
-  message: string;
-  data: Cart;
-}
-
-// ==================== Cart Computed Types ====================
+// ==================== Legacy Types (Deprecated - For Backwards Compatibility) ====================
 
 /**
- * Cart item with computed total price
- * Used for display purposes
+ * @deprecated Use the new variant system instead
+ * Legacy type for old variation system - kept for backwards compatibility
+ * This will be removed once ProductDetailClient.tsx is migrated to the new variant system
  */
-export interface CartItemWithTotal extends CartItem {
-  /** Total price for this item (price × quantity) */
-  totalPrice: number;
-  /** Unit price (base + variation modifiers + discount) */
-  unitPrice: number;
-}
-
-/**
- * Cart summary for checkout
- */
-export interface CartSummary {
-  /** Subtotal (sum of all items before discounts) */
-  subtotal: number;
-  /** Total discount amount */
-  totalDiscount: number;
-  /** Total after discounts, before shipping */
-  total: number;
-  /** Number of items in cart */
-  itemCount: number;
-  /** Number of unique products */
-  productCount: number;
-}
-
-/**
- * Cart with computed summary
- */
-export interface CartWithSummary extends Cart {
-  /** Cart summary calculations */
-  summary: CartSummary;
-  /** Items with computed totals */
-  itemsWithTotals: CartItemWithTotal[];
+export interface CartItemVariation {
+  name: string;
+  option: {
+    value: string;
+    priceModifier: number;
+  };
 }

@@ -1,51 +1,43 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Wallet,
   Smartphone,
   Building2,
+  CreditCard,
   Copy,
   CheckCircle2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatPrice } from "@/lib/constants";
-import {
-  ManualPaymentMethod,
-  PlatformPaymentConfig,
-  WalletDetails,
-  BankDetails,
-} from "@/types";
+import type { PaymentMethodConfig } from "@/types/common.types";
 import { cn } from "@/lib/utils";
 
-interface PaymentMethodOption {
-  id: ManualPaymentMethod;
-  label: string;
-  description: string;
-  icon: typeof Wallet;
-  requiresTransactionDetails: boolean;
-}
-
-const PAYMENT_METHODS: PaymentMethodOption[] = [
-  { id: "cash", label: "Cash on Delivery", description: "Pay when you receive", icon: Wallet, requiresTransactionDetails: false },
-  { id: "bkash", label: "bKash", description: "Mobile payment", icon: Smartphone, requiresTransactionDetails: true },
-  { id: "nagad", label: "Nagad", description: "Mobile payment", icon: Smartphone, requiresTransactionDetails: true },
-  { id: "rocket", label: "Rocket", description: "Mobile payment", icon: Smartphone, requiresTransactionDetails: true },
-  { id: "bank", label: "Bank Transfer", description: "Direct transfer", icon: Building2, requiresTransactionDetails: true },
-];
+/**
+ * Payment method type for order creation
+ * Use 'provider' for MFS (bkash, nagad, rocket), 'type' for others
+ */
+export type OrderPaymentType = 'cash' | 'bkash' | 'nagad' | 'rocket' | 'upay' | 'bank_transfer' | 'card';
 
 interface PaymentMethodsProps {
-  config: PlatformPaymentConfig;
-  selected: ManualPaymentMethod;
-  onChange: (method: ManualPaymentMethod) => void;
+  /** Payment methods array from platform config */
+  paymentMethods: PaymentMethodConfig[];
+  /** Selected payment type (provider for MFS, type for others) */
+  selected: OrderPaymentType;
+  /** Callback when payment method changes */
+  onChange: (method: OrderPaymentType) => void;
+  /** Transaction ID / TrxID */
   transactionId: string;
   onTransactionIdChange: (value: string) => void;
+  /** Sender phone for MFS payments */
   senderPhone: string;
   onSenderPhoneChange: (value: string) => void;
+  /** Order total amount */
   total: number;
 }
 
 export function PaymentMethods({
-  config,
+  paymentMethods,
   selected,
   onChange,
   transactionId,
@@ -54,12 +46,37 @@ export function PaymentMethods({
   onSenderPhoneChange,
   total,
 }: PaymentMethodsProps) {
-  const availableMethods = PAYMENT_METHODS.filter((method) => {
-    if (method.id === "cash") return config.cash?.enabled;
-    return !!config[method.id];
-  });
+  // Filter active methods and group by type
+  const activePayments = useMemo(() =>
+    paymentMethods.filter(pm => pm.isActive !== false),
+    [paymentMethods]
+  );
 
-  const currentMethod = PAYMENT_METHODS.find((m) => m.id === selected);
+  const groupedPayments = useMemo(() => ({
+    cash: activePayments.filter(pm => pm.type === 'cash'),
+    mfs: activePayments.filter(pm => pm.type === 'mfs'),
+    bank: activePayments.filter(pm => pm.type === 'bank_transfer'),
+    card: activePayments.filter(pm => pm.type === 'card'),
+  }), [activePayments]);
+
+  // Get currently selected method config
+  const selectedConfig = useMemo(() => {
+    if (selected === 'cash') {
+      return groupedPayments.cash[0];
+    }
+    if (['bkash', 'nagad', 'rocket', 'upay'].includes(selected)) {
+      return groupedPayments.mfs.find(pm => pm.provider === selected);
+    }
+    if (selected === 'bank_transfer') {
+      return groupedPayments.bank[0];
+    }
+    if (selected === 'card') {
+      return groupedPayments.card[0];
+    }
+    return undefined;
+  }, [selected, groupedPayments]);
+
+  const isMfsPayment = ['bkash', 'nagad', 'rocket', 'upay'].includes(selected);
 
   return (
     <div className="space-y-4">
@@ -68,52 +85,70 @@ export function PaymentMethods({
         Payment Method
       </h3>
 
-      {/* Method Selection */}
-      <div className="grid gap-3">
-        {availableMethods.map((method) => {
-          const Icon = method.icon;
-          return (
-            <label
-              key={method.id}
-              className={cn(
-                "flex items-center gap-4 p-4 border cursor-pointer transition-all",
-                selected === method.id
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-muted-foreground"
-              )}
-            >
-              <input
-                type="radio"
-                name="payment"
-                checked={selected === method.id}
-                onChange={() => onChange(method.id)}
-                className="sr-only"
-              />
-              <div
-                className={cn(
-                  "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                  selected === method.id ? "border-primary" : "border-muted-foreground"
-                )}
-              >
-                {selected === method.id && (
-                  <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                )}
-              </div>
-              <Icon className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">{method.label}</p>
-                <p className="text-sm text-muted-foreground">{method.description}</p>
-              </div>
-            </label>
-          );
-        })}
-      </div>
+      {/* Cash on Delivery */}
+      {groupedPayments.cash.length > 0 && (
+        <PaymentOption
+          isSelected={selected === 'cash'}
+          onClick={() => onChange('cash')}
+          icon={Wallet}
+          label="Cash on Delivery"
+          description="Pay when you receive"
+        />
+      )}
 
-      {/* Payment Details */}
-      {selected === "bkash" && config.bkash && (
-        <WalletPaymentDetails
-          method="bkash"
-          config={config.bkash}
+      {/* MFS Options (bKash, Nagad, Rocket) */}
+      {groupedPayments.mfs.length > 0 && (
+        <div className="space-y-2">
+          {groupedPayments.mfs.map((method) => (
+            <PaymentOption
+              key={method._id || method.provider}
+              isSelected={selected === method.provider}
+              onClick={() => onChange(method.provider as OrderPaymentType)}
+              icon={Smartphone}
+              label={method.name}
+              description={`Mobile payment via ${method.provider}`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Bank Transfer */}
+      {groupedPayments.bank.length > 0 && (
+        <div className="space-y-2">
+          {groupedPayments.bank.map((method, idx) => (
+            <PaymentOption
+              key={method._id || idx}
+              isSelected={selected === 'bank_transfer'}
+              onClick={() => onChange('bank_transfer')}
+              icon={Building2}
+              label={method.name}
+              description={method.bankName || "Direct bank transfer"}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Card Payment */}
+      {groupedPayments.card.length > 0 && (
+        <div className="space-y-2">
+          {groupedPayments.card.map((method, idx) => (
+            <PaymentOption
+              key={method._id || idx}
+              isSelected={selected === 'card'}
+              onClick={() => onChange('card')}
+              icon={CreditCard}
+              label={method.name}
+              description={method.cardTypes?.join(', ') || "Credit/Debit card"}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Payment Details for MFS */}
+      {isMfsPayment && selectedConfig && (
+        <MfsPaymentDetails
+          method={selected as 'bkash' | 'nagad' | 'rocket' | 'upay'}
+          config={selectedConfig}
           total={total}
           transactionId={transactionId}
           onTransactionIdChange={onTransactionIdChange}
@@ -121,31 +156,11 @@ export function PaymentMethods({
           onSenderPhoneChange={onSenderPhoneChange}
         />
       )}
-      {selected === "nagad" && config.nagad && (
-        <WalletPaymentDetails
-          method="nagad"
-          config={config.nagad}
-          total={total}
-          transactionId={transactionId}
-          onTransactionIdChange={onTransactionIdChange}
-          senderPhone={senderPhone}
-          onSenderPhoneChange={onSenderPhoneChange}
-        />
-      )}
-      {selected === "rocket" && config.rocket && (
-        <WalletPaymentDetails
-          method="rocket"
-          config={config.rocket}
-          total={total}
-          transactionId={transactionId}
-          onTransactionIdChange={onTransactionIdChange}
-          senderPhone={senderPhone}
-          onSenderPhoneChange={onSenderPhoneChange}
-        />
-      )}
-      {selected === "bank" && config.bank && (
+
+      {/* Payment Details for Bank Transfer */}
+      {selected === 'bank_transfer' && selectedConfig && (
         <BankPaymentDetails
-          config={config.bank}
+          config={selectedConfig}
           total={total}
           transactionId={transactionId}
           onTransactionIdChange={onTransactionIdChange}
@@ -155,9 +170,51 @@ export function PaymentMethods({
   );
 }
 
-interface WalletPaymentDetailsProps {
-  method: "bkash" | "nagad" | "rocket";
-  config: WalletDetails;
+interface PaymentOptionProps {
+  isSelected: boolean;
+  onClick: () => void;
+  icon: typeof Wallet;
+  label: string;
+  description: string;
+}
+
+function PaymentOption({ isSelected, onClick, icon: Icon, label, description }: PaymentOptionProps) {
+  return (
+    <label
+      className={cn(
+        "flex items-center gap-4 p-4 border cursor-pointer transition-all",
+        isSelected
+          ? "border-primary bg-primary/5"
+          : "border-border hover:border-muted-foreground"
+      )}
+    >
+      <input
+        type="radio"
+        name="payment"
+        checked={isSelected}
+        onChange={onClick}
+        className="sr-only"
+      />
+      <div
+        className={cn(
+          "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
+          isSelected ? "border-primary" : "border-muted-foreground"
+        )}
+      >
+        {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+      </div>
+      <Icon className="h-5 w-5 text-muted-foreground" />
+      <div>
+        <p className="font-medium">{label}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+    </label>
+  );
+}
+
+interface MfsPaymentDetailsProps {
+  method: 'bkash' | 'nagad' | 'rocket' | 'upay';
+  config: PaymentMethodConfig;
   total: number;
   transactionId: string;
   onTransactionIdChange: (value: string) => void;
@@ -165,7 +222,7 @@ interface WalletPaymentDetailsProps {
   onSenderPhoneChange: (value: string) => void;
 }
 
-function WalletPaymentDetails({
+function MfsPaymentDetails({
   method,
   config,
   total,
@@ -173,7 +230,7 @@ function WalletPaymentDetails({
   onTransactionIdChange,
   senderPhone,
   onSenderPhoneChange,
-}: WalletPaymentDetailsProps) {
+}: MfsPaymentDetailsProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const copyToClipboard = (text: string, field: string) => {
@@ -182,15 +239,13 @@ function WalletPaymentDetails({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const colorClass = method === "bkash" ? "pink" : method === "nagad" ? "orange" : "purple";
+  const methodLabel = method.charAt(0).toUpperCase() + method.slice(1);
 
   return (
     <div className="mt-4 p-5 bg-muted border border-border">
       <div className="flex items-center gap-3 mb-4">
         <Smartphone className="h-5 w-5" />
-        <h3 className="font-semibold">
-          {method.charAt(0).toUpperCase() + method.slice(1)} Payment Details
-        </h3>
+        <h3 className="font-semibold">{methodLabel} Payment Details</h3>
       </div>
 
       <div className="space-y-3 text-sm">
@@ -240,7 +295,7 @@ function WalletPaymentDetails({
 }
 
 interface BankPaymentDetailsProps {
-  config: BankDetails;
+  config: PaymentMethodConfig;
   total: number;
   transactionId: string;
   onTransactionIdChange: (value: string) => void;

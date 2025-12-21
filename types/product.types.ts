@@ -1,356 +1,196 @@
 /**
  * Product Types
- *
- * Type definitions for product-related data structures.
- * Includes product models, variations, properties, and API responses.
+ * 
+ * Source of truth: modules/commerce/product/product.model.js
  */
-
-import type { Image, Discount, Stats, ListResponse, ApiResponse } from "./common.types";
-
-// ==================== Product Image Types ====================
 
 /**
- * Product-specific image (extends base Image type)
+ * Image Schema
  */
-export type ProductImage = Image;
-
-// ==================== Product Variation Types ====================
-
-/**
- * Single option within a product variation
- * @example { value: "Medium", sku: "TSHIRT-M", priceModifier: 5, costPrice: 200, quantity: 20 }
- */
-export interface VariationOption {
-  /** Option value (e.g., "Small", "Red", "Cotton") */
-  value: string;
-  /** SKU for this variant (e.g., "TSHIRT-RED-M") */
-  sku?: string;
-  /** Scannable barcode for POS */
-  barcode?: string;
-  /** Price adjustment for this option (+/- from base price) */
-  priceModifier: number;
-  /**
-   * Cost price for this variant (admin-only field)
-   * Used for profit margin calculations. Only visible to admin/store-manager roles.
-   */
-  costPrice?: number;
-  /**
-   * Total stock for this variant (read-only, synced from StockEntry)
-   *
-   * Like product.quantity, this is auto-synced for display purposes.
-   * For per-branch stock, use posApi.getStock() with the variantSku.
-   */
-  quantity: number;
-  /** Optional images specific to this variation option */
-  images?: ProductImage[];
+export interface ProductImage {
+  url: string;
+  variants?: {
+    thumbnail?: string;
+    medium?: string;
+  };
+  order?: number;
+  isFeatured?: boolean;
+  alt?: string;
 }
 
 /**
- * Variation option payload for create/update.
- * Backend provides defaults for priceModifier and quantity when omitted.
+ * Dimensions Schema
  */
-export interface VariationOptionPayload {
-  value: string;
-  sku?: string;
-  barcode?: string;
-  priceModifier?: number;
-  costPrice?: number;
-  images?: ProductImage[];
-  quantity?: number;
+export interface Dimensions {
+  length?: number;
+  width?: number;
+  height?: number;
 }
 
 /**
- * Product variation definition (e.g., Size, Color, Material)
+ * Shipping Schema
  */
-export interface ProductVariation {
-  /** Variation name (e.g., "Size", "Color") */
+export interface ProductShipping {
+  weightGrams?: number;
+  dimensionsCm?: Dimensions;
+}
+
+/**
+ * Variation Attribute (Defines options)
+ * e.g. { name: "Size", values: ["S", "M", "L"] }
+ */
+export interface VariationAttribute {
   name: string;
-  /** Available options for this variation */
-  options: VariationOption[];
+  values: string[];
 }
 
 /**
- * Product variation payload for create/update.
+ * Variant (Sellable SKU)
  */
-export interface ProductVariationPayload {
-  name: string;
-  options: VariationOptionPayload[];
+export interface ProductVariant {
+  sku: string;
+  barcode?: string;
+  attributes: Record<string, string>; // e.g. { size: "S", color: "Red" }
+  priceModifier: number; // Defaults to 0
+  
+  /** 
+   * System calculated field (Read-only for frontend) 
+   * COGS for this specific variant
+   */
+  costPrice: number; 
+  
+  images?: ProductImage[];
+  shipping?: ProductShipping;
+  isActive?: boolean;
 }
 
-// ==================== Product Properties ====================
-
 /**
- * Flexible product properties structure
- * Allows for dynamic product attributes beyond core fields
+ * Discount Schema
  */
-export interface ProductProperties {
-  /** Additional product details */
-  details?: string;
-  /** Materials used in the product */
-  materials?: string;
-  /** Product features list */
-  features?: string[];
-  /** Care instructions */
-  care?: string[];
-  /** Allow additional dynamic properties */
-  [key: string]: unknown;
+export interface ProductDiscount {
+  type: 'percentage' | 'fixed';
+  value: number;
+  startDate?: string; // ISO date
+  endDate?: string;   // ISO date
+  description?: string;
 }
 
-// ==================== Product Discount ====================
-
 /**
- * Product-specific discount (extends base Discount type)
+ * Product Stats (System Generated)
  */
-export type ProductDiscount = Discount;
-
-// ==================== Product Stats ====================
-
-/**
- * Product-specific statistics (extends base Stats type)
- */
-export type ProductStats = Stats;
-
-// ==================== Product Style ====================
+export interface ProductStats {
+  totalSales: number;
+  totalQuantitySold: number;
+  viewCount: number;
+}
 
 /**
- * Product style enumeration
- */
-export type ProductStyle =
-  | "casual"
-  | "street"
-  | "urban"
-  | "desi"
-  | "formal"
-  | "sport"
-  | "ethnic"
-  | "party";
-
-// ==================== Main Product Type ====================
-
-/**
- * Complete product model
- * Represents a product with all its associated data
+ * Main Product Interface (Read Model)
  */
 export interface Product {
-  // ===== Core Identifiers =====
-  /** MongoDB ObjectId */
   _id: string;
-  /** Virtual/alias ID field */
-  id?: string;
-  /** URL-friendly slug (system-generated) */
-  slug: string;
-
-  // ===== Basic Information =====
-  /** Product name/title */
   name: string;
-  /** Brief product summary (max 200 chars) */
+  slug: string; // Globally unique, auto-generated from name
+  
   shortDescription?: string;
-  /** Full product description (supports markdown) */
   description?: string;
-
-  // ===== Pricing & Inventory =====
-  /** Base price before discounts */
+  
   basePrice: number;
-  /**
-   * Cost price (admin-only field)
-   * Used for profit margin calculations. Only visible to admin/store-manager roles.
+  
+  /** 
+   * System field: Cost of Goods Sold
+   * Not editable by customer. Admin only.
    */
-  costPrice?: number;
+  costPrice: number;
+  
   /**
-   * Total stock quantity (read-only, synced from StockEntry)
-   *
-   * Stock is primarily managed via StockEntry model (per-branch tracking).
-   * This field is auto-synced for display purposes and backward compatibility.
-   * Use posApi.getStock() to get detailed per-branch stock levels.
+   * System field: Total stock quantity across all branches.
+   * Read-only cache. Source of truth is Inventory Service.
    */
   quantity: number;
-  /** Whether the product is active/visible */
-  isActive?: boolean;
-
-  // ===== SKU & Barcode (for simple products) =====
-  /** Product SKU (auto-generated or manual) */
+  
+  productType: 'simple' | 'variant';
+  
+  // Simple product fields
   sku?: string;
-  /** Scannable barcode for POS */
   barcode?: string;
-
-  // ===== Media =====
-  /** Product images array */
+  
   images: ProductImage[];
-  /** Virtual: First featured image or first image */
-  featuredImage?: ProductImage;
 
-  // ===== Categorization =====
-  /** Primary category slug */
+  /**
+   * Category slug (references Category.slug, not ObjectId).
+   * Enables direct string queries without $lookup.
+   * @see Category model for metadata (name, image, description)
+   */
   category: string;
-  /** Parent category slug (optional) */
+
+  /**
+   * Parent category slug (optional, for hierarchical filtering)
+   */
   parentCategory?: string | null;
-  /** Product tags for search/filtering */
+  
+  style?: ('casual' | 'street' | 'urban' | 'desi' | 'formal' | 'sport' | 'ethnic' | 'party')[];
+  
+  // Variant product fields
+  variationAttributes?: VariationAttribute[];
+  variants?: ProductVariant[];
+  
+  shipping?: ProductShipping;
+  properties?: Record<string, any>;
   tags?: string[];
-  /** Product style classifications */
-  style?: ProductStyle[];
-
-  // ===== Variations & Properties =====
-  /** Product variations (Size, Color, etc.) */
-  variations: ProductVariation[];
-  /** Additional flexible properties */
-  properties?: ProductProperties;
-
-  // ===== Pricing & Promotions =====
-  /** Active discount configuration */
-  discount?: ProductDiscount;
-  /** Virtual: Current price after discount */
-  currentPrice?: number;
-  /** Virtual: Whether discount is currently active */
-  isDiscountActive?: boolean;
-  /** Virtual: Profit per unit (currentPrice - costPrice), null if costPrice not set */
-  profitMargin?: number | null;
-  /** Virtual: Profit percentage ((profitMargin / currentPrice) * 100) */
-  profitMarginPercent?: number | null;
-
-  // ===== Statistics & Reviews (Read-only) =====
-  /** Product statistics (sales, views, etc.) */
+  
   stats?: ProductStats;
-  /** Average rating (0-5) */
   averageRating?: number;
-  /** Total number of reviews */
   numReviews?: number;
-  /** Virtual: Total sales amount */
-  totalSales?: number;
-
-  // ===== Timestamps =====
-  /** Creation timestamp (ISO string) */
-  createdAt?: string;
-  /** Last update timestamp (ISO string) */
-  updatedAt?: string;
-}
-
-// ==================== API Response Types ====================
-
-/**
- * Product list response (with pagination)
- */
-export type ProductListResponse = ListResponse<Product>;
-
-/**
- * Single product detail response
- */
-export interface ProductDetailResponse {
-  success: boolean;
-  data: Product;
+  
+  discount?: ProductDiscount;
+  isActive: boolean;
+  
+  deletedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Virtuals
+  isDiscountActive?: boolean;
+  currentPrice?: number;
+  featuredImage?: ProductImage | null;
+  profitMargin?: number | null;
+  profitMarginPercent?: number | null;
+  isDeleted?: boolean;
 }
 
 /**
- * Alternative using generic ApiResponse
- */
-export type ProductResponse = ApiResponse<Product>;
-
-// ==================== Form/Input Types ====================
-
-/**
- * Product payload for create/update
- * All fields optional - backend handles validation via schema rules
- * System-managed fields (slug, stats, ratings, quantity) are ignored by backend
- *
- * Note: Stock is managed via StockEntry. Use posApi.setStock() to update stock.
- * The quantity field here is ignored - product.quantity is auto-synced from StockEntry.
+ * Payload for Creating/Updating a Product
  */
 export interface ProductPayload {
-  name?: string;
-  shortDescription?: string;
-  description?: string;
-  basePrice?: number;
-  /** Cost price (admin-only). Only admins/store-managers can set this. */
-  costPrice?: number;
-  /** Initial stock only. After creation, use posApi.setStock() to update. */
-  quantity?: number;
-  sku?: string;
-  barcode?: string;
-  images?: ProductImage[];
-  category?: string;
-  parentCategory?: string | null;
-  tags?: string[];
-  style?: ProductStyle[];
-  variations?: ProductVariationPayload[];
-  properties?: ProductProperties;
-  discount?: ProductDiscount;
-  isActive?: boolean;
-}
-
-/**
- * Product create input (alias for ProductPayload)
- * Use this type for create forms
- */
-export type ProductCreateInput = ProductPayload;
-
-/**
- * Product update input (alias for ProductPayload)
- * Use this type for update forms
- */
-export type ProductUpdateInput = ProductPayload;
-
-/**
- * Query parameters for product filtering
- */
-export interface ProductQueryParams {
-  // Pagination
-  page?: number;
-  limit?: number;
-  after?: string;
-
-  // Filters (backend supported)
-  category?: string;
-  style?: string | string[];
-  tags?: string | string[];
-  basePrice?: number;
-  averageRating?: number;
-
-  // Range filters (use bracket syntax)
-  'basePrice[gte]'?: number;
-  'basePrice[lte]'?: number;
-  'averageRating[gte]'?: number;
-
-  // Text search
-  search?: string;
-
-  // Field selection
-  select?: string;
-
-  // Sort
-  sort?: string | Record<string, 1 | -1 | 'asc' | 'desc'>;
-
-  // Allow extra filters
-  [key: string]: unknown;
-}
-
-// ==================== Filter & Display Types ====================
-
-/**
- * Minimal product data for cards/lists
- * Optimized for rendering product grids
- */
-export interface ProductCardData {
-  _id: string;
-  slug: string;
   name: string;
   shortDescription?: string;
+  description?: string;
   basePrice: number;
-  currentPrice?: number;
-  featuredImage?: ProductImage;
-  averageRating?: number;
-  numReviews?: number;
-  isDiscountActive?: boolean;
-  discount?: ProductDiscount;
+  
+  // Admin only - requires proper permission
+  costPrice?: number;
+  
+  productType?: 'simple' | 'variant';
+  
+  // Simple product identifiers
+  sku?: string;
+  barcode?: string;
+  
+  images?: ProductImage[];
+  category: string;
+  parentCategory?: string;
+  
+  style?: string[];
+  
+  // Variant setup
+  variationAttributes?: VariationAttribute[];
+  variants?: ProductVariant[];
+  
+  shipping?: ProductShipping;
+  properties?: Record<string, any>;
   tags?: string[];
-  style?: ProductStyle[];
-}
-
-/**
- * Product with selected variation
- * Used in cart and order contexts
- */
-export interface ProductWithVariation extends Product {
-  selectedVariation?: {
-    name: string;
-    option: VariationOption;
-  }[];
+  
+  discount?: ProductDiscount;
+  isActive?: boolean;
 }

@@ -2,6 +2,7 @@
 
 import { FormSheet } from "@/components/custom/ui/sheet-wrapper";
 import { OrderForm } from "./order.form";
+import { useFormSubmitState } from "@/hooks/use-form-submit-state";
 
 /**
  * Order Sheet Component
@@ -22,6 +23,8 @@ export function OrderSheet({
   onOpenChange,
   order = null,
 }) {
+  const { isSubmitting, handleSubmitStateChange } = useFormSubmitState();
+
   const handleSuccess = () => {
     // Sheet stays open to show updated data after mutations
     // Query cache invalidation handled by hooks
@@ -53,6 +56,8 @@ export function OrderSheet({
       formId="order-sheet-form"
       submitLabel="Save Changes"
       cancelLabel="Close"
+      submitDisabled={isSubmitting}
+      submitLoading={isSubmitting}
       onCancel={handleCancel}
     >
       <OrderForm
@@ -60,6 +65,7 @@ export function OrderSheet({
         order={order}
         onSuccess={handleSuccess}
         onCancel={handleCancel}
+        onSubmitStateChange={handleSubmitStateChange}
         formId="order-sheet-form"
         hideActions
       />

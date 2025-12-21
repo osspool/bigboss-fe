@@ -11,7 +11,7 @@ import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapp
 import { useProductActions, useProducts } from "@/hooks/query/useProducts";
 import { revalidateProductsList } from "@/lib/revalidation";
 
-export function ProductsClient({ token, userRole }) {
+export function ProductsClient({ token, userRoles = [] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -73,7 +73,7 @@ export function ProductsClient({ token, userRole }) {
   );
 
   // Only allow delete for admin/superadmin roles
-  const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+  const isAdmin = userRoles.includes('admin') || userRoles.includes('superadmin');
 
   const columns = useMemo(
     () => productColumns(handleEdit, isAdmin ? handleDelete : null),
@@ -97,7 +97,7 @@ export function ProductsClient({ token, userRole }) {
         ]}
       />
       <div className="py-4">
-        <ProductSearch />
+        <ProductSearch token={token} />
       </div>
 
       <ErrorBoundaryWrapper>

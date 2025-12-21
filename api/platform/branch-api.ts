@@ -5,7 +5,7 @@ import type {
   Branch,
   CreateBranchPayload,
   UpdateBranchPayload,
-} from '@/types/inventory.types';
+} from '@/types/branch.types';
 
 type FetchOptions = Omit<RequestOptions, 'token' | 'organizationId'>;
 
@@ -21,9 +21,10 @@ type FetchOptions = Omit<RequestOptions, 'token' | 'organizationId'>;
  *
  * Custom endpoints:
  * - getByCode({ token, code }) - GET /branches/code/:code
- * - getDefault({ token }) - GET /branches/default
- * - getActive({ token }) - GET /branches/active
+ * - getDefault({ token }) - GET /branches/default (auto-creates if none)
  * - setDefault({ token, id }) - POST /branches/:id/set-default
+ *
+ * For active branches: getAll({ token, params: { isActive: true } })
  */
 class BranchApi extends BaseApi<Branch, CreateBranchPayload, UpdateBranchPayload> {
   constructor(config = {}) {
@@ -78,26 +79,7 @@ class BranchApi extends BaseApi<Branch, CreateBranchPayload, UpdateBranchPayload
     });
   }
 
-  /**
-   * Get all active branches (simple list, no pagination)
-   * GET /branches/active
-   *
-   * @example
-   * branchApi.getActive({ token })
-   */
-  async getActive({
-    token,
-    options = {},
-  }: {
-    token: string;
-    options?: FetchOptions;
-  }): Promise<ApiResponse<Branch[]>> {
-    return handleApiRequest('GET', `${this.baseUrl}/active`, {
-      token,
-      cache: this.config.cache,
-      ...options,
-    });
-  }
+  // For active branches, use: getAll({ token, params: { isActive: true } })
 
   /**
    * Set a branch as the default

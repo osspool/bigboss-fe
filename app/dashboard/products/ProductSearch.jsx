@@ -1,35 +1,16 @@
 "use client";
 
+import { useMemo } from "react";
 import * as Search from "@/components/shared/search";
 import { useProductSearch } from "@/hooks/filter/use-product-search";
 import SelectInput from "@/components/form/form-utils/select-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CATEGORIES } from "@/data/constants";
+import { useCategoryTree, getParentCategoryOptions, getAllCategoryOptions } from "@/hooks/query/useCategories";
 
 const SEARCH_TYPE_OPTIONS = [
   { value: "name", label: "Search" },
   { value: "slug", label: "Slug" },
-];
-
-// Build parent category options
-const PARENT_CATEGORY_OPTIONS = [
-  { value: "", label: "All Categories" },
-  ...Object.entries(CATEGORIES).map(([key, cat]) => ({
-    value: cat.slug,
-    label: cat.label,
-  })),
-];
-
-// Build subcategory options
-const CATEGORY_OPTIONS = [
-  { value: "", label: "All Subcategories" },
-  ...Object.values(CATEGORIES).flatMap((cat) =>
-    cat.subcategories.map((sub) => ({
-      value: sub.slug,
-      label: `${cat.label} → ${sub.label}`,
-    }))
-  ),
 ];
 
 const STATUS_OPTIONS = [
@@ -38,8 +19,30 @@ const STATUS_OPTIONS = [
   { value: "false", label: "Inactive" },
 ];
 
-export function ProductSearch() {
+export function ProductSearch({ token }) {
   const searchHook = useProductSearch();
+
+  // Fetch category tree for dynamic options
+  const { data: treeResponse, isLoading: isCategoriesLoading } = useCategoryTree(token);
+  const categoryTree = treeResponse?.data || [];
+
+  // Build parent category options from tree
+  const parentCategoryOptions = useMemo(() => {
+    const options = getParentCategoryOptions(categoryTree);
+    return [
+      { value: "", label: "All Categories" },
+      ...options,
+    ];
+  }, [categoryTree]);
+
+  // Build subcategory options from tree
+  const categoryOptions = useMemo(() => {
+    const options = getAllCategoryOptions(categoryTree);
+    return [
+      { value: "", label: "All Subcategories" },
+      ...options,
+    ];
+  }, [categoryTree]);
 
   return (
     <Search.Root hook={searchHook}>
@@ -53,20 +56,22 @@ export function ProductSearch() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <SelectInput
               label="Parent Category"
-              items={PARENT_CATEGORY_OPTIONS}
+              items={parentCategoryOptions}
               value={searchHook.parentCategory}
               onValueChange={searchHook.setParentCategory}
               placeholder="All Categories"
+              disabled={isCategoriesLoading}
             />
-            
+
             <SelectInput
               label="Category"
-              items={CATEGORY_OPTIONS}
+              items={categoryOptions}
               value={searchHook.category}
               onValueChange={searchHook.setCategory}
               placeholder="All Subcategories"
+              disabled={isCategoriesLoading}
             />
-            
+
             <SelectInput
               label="Status"
               items={STATUS_OPTIONS}

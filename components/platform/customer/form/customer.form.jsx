@@ -8,12 +8,14 @@ import { FormGenerator } from "@/components/form/form-system";
 import { FormErrorSummary } from "@/components/form/form-utils/FormErrorSummary";
 import { createCustomerFormSchema } from "./customer-form-schema";
 import { useCustomerActions } from "@/hooks/query/useCustomers";
+import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 export function CustomerForm({
   token,
   customer = null,
   onSuccess,
   onCancel,
+  onSubmitStateChange,
   formId = "customer-sheet-form",
 }) {
   const isEdit = !!customer;
@@ -41,6 +43,8 @@ export function CustomerForm({
     useCustomerActions();
   const isSubmitting = isCreating || isUpdating;
   const formErrors = form.formState.errors;
+
+  useNotifySubmitState(isSubmitting, onSubmitStateChange);
 
   // Create form schema
   const formSchema = useMemo(

@@ -36,9 +36,12 @@ import { FormGenerator, FormSection } from "@/components/form/form-system";
 
 import { useAdminCrudActions, useAdminOrderActions } from "@/hooks/query/useOrders";
 import { useVerifyPayment, useRejectPayment } from "@/hooks/query/usePaymentVerification";
+import { useBranchOptional } from "@/contexts/BranchContext";
 import { formatPrice } from "@/lib/constants";
-import { 
-  orderUpdateSchema, 
+import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
+import { formatVariantAttributes } from "@/lib/commerce-utils";
+import {
+  orderUpdateSchema,
   normalizeOrderForForm,
 } from "@/schemas/order.schema";
 import {
@@ -67,6 +70,7 @@ export function OrderForm({
   order,
   onSuccess,
   onCancel,
+  onSubmitStateChange,
   formId = "order-form",
   hideActions = false,
 }) {
@@ -77,6 +81,9 @@ export function OrderForm({
   // Payment verification hooks
   const { verifyPayment, isVerifying } = useVerifyPayment(token);
   const { rejectPayment, isRejecting } = useRejectPayment(token);
+
+  // Branch context for fulfillment (uses selected branch for inventory decrement)
+  const branchContext = useBranchOptional();
 
   // Orders must exist - no create mode
   if (!order?._id) {
@@ -114,6 +121,8 @@ export function OrderForm({
   } = useAdminOrderActions(token);
 
   const isSubmitting = isUpdating || isUpdatingStatus || isCancelling || isFulfilling || isVerifying || isRejecting;
+
+  useNotifySubmitState(isSubmitting, onSubmitStateChange);
   const formErrors = form.formState.errors;
 
   // ==================== Payment Verification Handlers ====================
@@ -246,20 +255,25 @@ export function OrderForm({
   const handleFulfill = useCallback(async () => {
     const trackingNumber = form.getValues("shipping.trackingNumber");
     const carrier = form.getValues("shipping.provider");
-    
-    if (!window.confirm("Ship this order?")) return;
+
+    // Get selected branch for inventory decrement
+    const branchId = branchContext?.selectedBranch?._id;
+    const branchName = branchContext?.selectedBranch?.name || 'default branch';
+
+    if (!window.confirm(`Ship this order from ${branchName}?`)) return;
 
     try {
-      await fulfillOrder({ 
-        orderId: order._id, 
+      await fulfillOrder({
+        orderId: order._id,
         trackingNumber,
         carrier,
+        branchId, // Pass selected branch for inventory decrement
       });
       onSuccess?.();
     } catch (error) {
       console.error(error);
     }
-  }, [order._id, fulfillOrder, form, onSuccess]);
+  }, [order._id, fulfillOrder, form, onSuccess, branchContext?.selectedBranch]);
 
   // ==================== Status Helpers ====================
 
@@ -456,9 +470,14 @@ export function OrderForm({
                 <div key={idx} className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded">
                   <div className="flex-1">
                     <span className="font-medium">{item.productName}</span>
-                    {item.variations?.length > 0 && (
+                    {item.variantSku && (
+                      <span className="text-muted-foreground ml-2 text-xs">
+                        SKU: {item.variantSku}
+                      </span>
+                    )}
+                    {item.variantAttributes && (
                       <span className="text-muted-foreground ml-2">
-                        ({item.variations.map(v => v.option?.value).join(', ')})
+                        ({formatVariantAttributes(item.variantAttributes)})
                       </span>
                     )}
                   </div>

@@ -19,7 +19,7 @@ export function useOrderSearch() {
     basePath: "/dashboard/orders",
     searchFields: {
       orderId: "_id",
-      customerPhone: "deliveryAddress.phone",
+      customerPhone: "deliveryAddress.recipientPhone",
     },
     filterFields: {
       status: { paramName: "status", type: "string", defaultValue: "" },

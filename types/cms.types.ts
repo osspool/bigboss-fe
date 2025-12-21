@@ -331,6 +331,53 @@ export interface SizeGuidePageContent {
   };
 }
 
+/**
+ * Shipping & Delivery Page Content
+ */
+export interface ShippingPageContent {
+  title: string;
+  subtitle: string;
+  deliveryMethods: Array<{
+    icon: string;
+    name: string;
+    duration: string;
+    price: string;
+    description: string;
+  }>;
+  deliveryAreas: {
+    title: string;
+    areas: Array<{
+      name: string;
+      duration: string;
+      cost: string;
+    }>;
+  };
+  orderTracking: {
+    title: string;
+    description: string;
+    steps: Array<{
+      title: string;
+      description: string;
+    }>;
+  };
+  policies: Array<{
+    title: string;
+    content: string;
+    list?: string[];
+  }>;
+  faq: Array<{
+    question: string;
+    answer: string;
+  }>;
+  contactSection: {
+    title: string;
+    description: string;
+    email: string;
+    phone: string;
+    hours: string;
+  };
+}
+
 // ==================== Slug to Content Type Map ====================
 
 export type CMSContentBySlug = {
@@ -343,6 +390,7 @@ export type CMSContentBySlug = {
   "about-us": AboutPageContent;
   contact: ContactPageContent;
   "size-guide": SizeGuidePageContent;
+  "shipping-delivery": ShippingPageContent;
 };
 
 export type CMSSlug = keyof CMSContentBySlug;

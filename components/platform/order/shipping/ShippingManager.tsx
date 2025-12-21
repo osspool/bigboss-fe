@@ -30,7 +30,8 @@ import {
   useLogisticsActions,
   useTrackShipment,
 } from "@/hooks/query/useLogistics";
-import type { Order, Shipping, ShippingStatus } from "@/types/order.types";
+import type { Order, OrderShipping } from "@/types/order.types";
+import type { ShippingStatus } from "@/types/common.types";
 
 // ==================== Status Helpers ====================
 
@@ -177,6 +178,7 @@ export function ShippingManager({
           </p>
           {canCreateShipment && (
             <Button
+              type="button"
               onClick={() => setShowCreateDialog(true)}
               disabled={disabled || isLoading}
               size="sm"
@@ -382,7 +384,7 @@ export function ShippingManager({
 // ==================== Shipping Timeline ====================
 
 interface ShippingTimelineProps {
-  history: NonNullable<Shipping["history"]>;
+  history: NonNullable<OrderShipping["history"]>;
 }
 
 function ShippingTimeline({ history }: ShippingTimelineProps) {

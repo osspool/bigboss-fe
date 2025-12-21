@@ -35,7 +35,7 @@ const iconMap = {
   Truck,
 };
 
-export function CMSLibraryClient({ token }) {
+export function CMSLibraryClient({ token, userRoles = [] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPage, setSelectedPage] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);

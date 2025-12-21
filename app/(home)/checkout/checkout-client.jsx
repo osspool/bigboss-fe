@@ -74,14 +74,30 @@ export default function CheckoutClient({ token, userId }) {
 
   // ==================== Derived State ====================
 
-  const paymentConfig = useMemo(() => {
-    if (!config?.payment) {
-      return {
-        cash: { enabled: true },
-      };
+  /**
+   * Filter payment methods for checkout
+   * @see docs/api/commerce/checkout.md
+   */
+  const paymentMethods = useMemo(() => {
+    if (!config?.paymentMethods || config.paymentMethods.length === 0) {
+      // Default to cash only if no payment methods configured
+      return [{ type: 'cash', name: 'Cash on Delivery', isActive: true }];
     }
-    return config.payment;
-  }, [config?.payment]);
+
+    // Filter active methods enabled for checkout
+    // usage field controls where method is shown: 'pos' | 'checkout' | 'api'
+    const checkoutMethods = config.paymentMethods.filter(pm =>
+      pm.isActive !== false &&
+      (!pm.usage || pm.usage.length === 0 || pm.usage.includes('checkout'))
+    );
+
+    // Ensure at least cash is available
+    if (checkoutMethods.length === 0) {
+      return [{ type: 'cash', name: 'Cash on Delivery', isActive: true }];
+    }
+
+    return checkoutMethods;
+  }, [config?.paymentMethods]);
 
   // Calculate shipping cost (apply free shipping threshold)
   const shippingCost = useMemo(() => {
@@ -99,8 +115,13 @@ export default function CheckoutClient({ token, userId }) {
   }, [subtotal, shippingCost, discount]);
 
   const requiresTransactionDetails = useMemo(() => {
-    return selectedPaymentMethod !== "cash" && paymentConfig[selectedPaymentMethod];
-  }, [selectedPaymentMethod, paymentConfig]);
+    if (selectedPaymentMethod === "cash") return false;
+    // Check if selected method exists in payment methods
+    const method = paymentMethods.find(pm =>
+      pm.type === 'mfs' ? pm.provider === selectedPaymentMethod : pm.type === selectedPaymentMethod
+    );
+    return !!method;
+  }, [selectedPaymentMethod, paymentMethods]);
 
   // Derive zoneId from address or look it up from areaId
   // (handles older addresses that may not have zoneId saved)
@@ -206,11 +227,11 @@ export default function CheckoutClient({ token, userId }) {
       };
     }
 
-    // Manual payment (bKash, Nagad, Rocket, Bank)
+    // Manual payment (bKash, Nagad, Rocket, Bank Transfer)
     const paymentData = {
       type: selectedPaymentMethod,
       reference: transactionId || undefined,
-      senderPhone: selectedPaymentMethod !== "bank" ? senderPhone : undefined,
+      senderPhone: selectedPaymentMethod !== "bank_transfer" ? senderPhone : undefined,
     };
 
     return { ...basePayload, paymentData };
@@ -364,7 +385,7 @@ export default function CheckoutClient({ token, userId }) {
             {/* Payment Methods */}
             <div className="bg-card border border-border p-6">
               <PaymentMethods
-                config={paymentConfig}
+                paymentMethods={paymentMethods}
                 selected={selectedPaymentMethod}
                 onChange={setSelectedPaymentMethod}
                 transactionId={transactionId}
@@ -405,6 +426,7 @@ export default function CheckoutClient({ token, userId }) {
               discount={discount}
               total={total}
               isShippingLoading={isChargeFetching && !!selectedAddress?.areaId}
+              vatConfig={config?.vat}
             />
 
             <CouponSection

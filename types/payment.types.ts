@@ -23,6 +23,10 @@ export type { PaymentDetails, GatewayInfo } from "./common.types";
 export interface CurrentPayment {
   status: PaymentStatus;
   transactionId?: string;
+  /**
+   * Amount stored in smallest currency unit (paisa for BDT), matching @classytic/revenue.
+   * Use `amount / 100` for display in BDT.
+   */
   amount?: number;
   method?: PaymentMethod;
   reference?: string;

@@ -1,188 +1,116 @@
-// @/api/platform/transaction-api.ts
+import { BaseApi } from '../api-factory';
 import {
-  BaseApi,
-  type ApiResponse,
-  type PaginatedResponse,
-  type RequestOptions,
-} from "../api-factory";
-import { handleApiRequest } from "../api-handler";
-import type {
   Transaction,
-  TransactionPayload,
-  TransactionQueryParams,
-  ProfitLossReport,
-  CategoryReport,
+  CreateTransactionPayload,
+  FinancialReport,
   CashFlowReport,
-} from "@/types/transaction.types";
-
-type FetchOptions = Omit<RequestOptions, "token" | "organizationId">;
+  CategoryReport,
+  StatementResponse,
+} from '@/types/transaction.types';
 
 /**
- * Transaction API - CRUD + Financial Reports
- *
- * Usage:
- * - transactionApi.getAll({ token, params: { status: 'pending' }})
- * - transactionApi.getById({ token, id: '...' })
- * - transactionApi.create({ token, data: {...} })
- * - transactionApi.update({ token, id: '...', data: {...} })
- * - transactionApi.getProfitLossReport({ token, params: { startDate, endDate } })
- * - transactionApi.getCategoriesReport({ token, params: { type: 'income' } })
- * - transactionApi.getCashFlowReport({ token, params: { months: 6 } })
+ * Statement Query Params
  */
-class TransactionApi extends BaseApi<
-  Transaction,
-  TransactionPayload,
-  TransactionPayload
-> {
-  constructor(config = {}) {
-    super("transactions", config);
-  }
+interface StatementParams {
+  startDate?: string;
+  endDate?: string;
+  branchId?: string;
+  source?: 'web' | 'pos' | 'api';
+  status?: string;
+  format?: 'csv' | 'json';
+  [key: string]: unknown;
+}
+
+/**
+ * Report Query Params
+ */
+interface ReportParams {
+  startDate?: string;
+  endDate?: string;
+  [key: string]: unknown;
+}
+
+interface CashFlowParams {
+  months?: number; // 1-12, default: 6
+  [key: string]: unknown;
+}
+
+interface CategoryParams extends ReportParams {
+  type?: 'income' | 'expense';
+  limit?: number; // default: 10
+}
+
+/**
+ * Transaction API Client
+ *
+ * CRUD (via BaseApi):
+ * - getAll(params) - List transactions
+ * - getById(id) - Get transaction
+ *
+ * Reports:
+ * - getProfitLoss(params) - P&L statement
+ * - getCashFlow(params) - Monthly trend
+ * - getCategoryReport(params) - Category breakdown
+ *
+ * Export:
+ * - getStatement(params) - CSV/JSON export for accountants
+ */
+class TransactionApi extends BaseApi<Transaction, CreateTransactionPayload, Partial<CreateTransactionPayload>> {
 
   /**
-   * Get all transactions with filtering
-   * @example
-   * transactionApi.getAll({
-   *   token: 'xxx',
-   *   params: {
-   *     status: 'verified',
-   *     type: 'income',
-   *     category: 'order_purchase',
-   *     transactionDate: '2025-12-01',
-   *   }
-   * })
+   * Get Profit & Loss Report
+   * Returns income, expenses, and net profit for a date range
    */
-  async getAll({
-    token = null,
-    organizationId = null,
-    params = {},
-    options = {},
-  }: {
-    token?: string | null;
-    organizationId?: string | null;
-    params?: TransactionQueryParams;
-    options?: FetchOptions;
-  } = {}): Promise<PaginatedResponse<Transaction>> {
-    return super.getAll({ token, organizationId, params, options });
-  }
-
-  /**
-   * Get Profit & Loss report
-   * GET /transactions/reports/profit-loss
-   *
-   * @example
-   * transactionApi.getProfitLossReport({
-   *   token: 'xxx',
-   *   params: {
-   *     startDate: '2025-12-01T00:00:00Z',
-   *     endDate: '2025-12-31T23:59:59Z'
-   *   }
-   * })
-   */
-  async getProfitLossReport({
-    token,
-    params = {},
-    options = {},
-  }: {
-    token: string;
-    params?: {
-      startDate?: string; // ISO 8601 date-time
-      endDate?: string; // ISO 8601 date-time
-    };
-    options?: FetchOptions;
-  }): Promise<ApiResponse<ProfitLossReport>> {
-    const queryString = new URLSearchParams(
-      params as Record<string, string>
-    ).toString();
-    const url = queryString
-      ? `${this.baseUrl}/reports/profit-loss?${queryString}`
-      : `${this.baseUrl}/reports/profit-loss`;
-
-    return handleApiRequest("GET", url, {
-      token,
-      cache: this.config.cache,
+  async getProfitLoss(params: ReportParams = {}, options = {}) {
+    return this.request<FinancialReport>('GET', `${this.baseUrl}/reports/profit-loss`, {
+      params,
       ...options,
     });
   }
 
   /**
-   * Get category breakdown report
-   * GET /transactions/reports/categories
-   *
-   * @example
-   * transactionApi.getCategoriesReport({
-   *   token: 'xxx',
-   *   params: {
-   *     type: 'income',
-   *     startDate: '2025-12-01T00:00:00Z',
-   *     endDate: '2025-12-31T23:59:59Z',
-   *     limit: 10
-   *   }
-   * })
+   * Get Cash Flow Report
+   * Returns monthly income, expenses, and net profit trend
    */
-  async getCategoriesReport({
-    token,
-    params = {},
-    options = {},
-  }: {
-    token: string;
-    params?: {
-      startDate?: string;
-      endDate?: string;
-      type?: "income" | "expense";
-      limit?: number;
-    };
-    options?: FetchOptions;
-  }): Promise<ApiResponse<CategoryReport>> {
-    const queryString = new URLSearchParams(
-      params as Record<string, string>
-    ).toString();
-    const url = queryString
-      ? `${this.baseUrl}/reports/categories?${queryString}`
-      : `${this.baseUrl}/reports/categories`;
-
-    return handleApiRequest("GET", url, {
-      token,
-      cache: this.config.cache,
+  async getCashFlow(params: CashFlowParams = {}, options = {}) {
+    return this.request<CashFlowReport>('GET', `${this.baseUrl}/reports/cash-flow`, {
+      params,
       ...options,
     });
   }
 
   /**
-   * Get cash flow trend report
-   * GET /transactions/reports/cash-flow
-   *
-   * @example
-   * transactionApi.getCashFlowReport({
-   *   token: 'xxx',
-   *   params: { months: 6 }
-   * })
+   * Get Category Breakdown
+   * Returns top spending/income categories for a date range
    */
-  async getCashFlowReport({
-    token,
-    params = {},
-    options = {},
-  }: {
-    token: string;
-    params?: {
-      months?: number; // Default 6, max 12
-    };
-    options?: FetchOptions;
-  }): Promise<ApiResponse<CashFlowReport>> {
-    const queryString = new URLSearchParams(
-      params as Record<string, string>
-    ).toString();
-    const url = queryString
-      ? `${this.baseUrl}/reports/cash-flow?${queryString}`
-      : `${this.baseUrl}/reports/cash-flow`;
-
-    return handleApiRequest("GET", url, {
-      token,
-      cache: this.config.cache,
+  async getCategoryReport(params: CategoryParams = {}, options = {}) {
+    return this.request<CategoryReport>('GET', `${this.baseUrl}/reports/categories`, {
+      params,
       ...options,
+    });
+  }
+
+  /**
+   * Get Statement Export
+   * Accountant-friendly export with branch + VAT invoice references
+   *
+   * @param params.format - 'csv' (default) or 'json'
+   * @returns CSV blob (format=csv) or StatementResponse (format=json)
+   */
+  async getStatement(params: StatementParams = {}, options = {}) {
+    if (params.format === 'json') {
+      return this.request<StatementResponse>('GET', `${this.baseUrl}/statement`, {
+        params,
+        ...options,
+      });
+    }
+    // For CSV, caller should handle blob response
+    return this.request<Blob>('GET', `${this.baseUrl}/statement`, {
+      params: { ...params, format: 'csv' },
+      options: { responseType: 'blob', ...options },
     });
   }
 }
 
-// Create and export a singleton instance
-export const transactionApi = new TransactionApi();
-export { TransactionApi };
+export const transactionApi = new TransactionApi('transactions');
+export default transactionApi;

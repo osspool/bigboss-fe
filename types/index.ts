@@ -28,77 +28,71 @@ export type {
   Discount,
   // Stats
   Stats,
-  // Payment Config (from platform settings)
-  ManualPaymentMethod,
-  WalletDetails,
-  BankDetails,
-  PlatformPaymentConfig,
+  // Payment Types
+  PaymentMethodType,
+  MfsProvider,
+  CardType,
+  PaymentMethodConfig,
+  // Legacy Payment Config (backwards compatibility)
+  // ManualPaymentMethod,
+  // WalletDetails,
+  // BankDetails,
+  // CashPaymentConfig,
+  // PlatformPaymentConfig,
 } from "./common.types";
 
 // ==================== Product Types ====================
 export type {
   // Images
   ProductImage,
-  // Variations
-  VariationOption,
-  ProductVariation,
+  // Variations (New System)
+  VariationAttribute,
+  ProductVariant,
   // Properties
-  ProductProperties,
   // Discount & Stats
   ProductDiscount,
   ProductStats,
   // Style
-  ProductStyle,
   // Main Product
   Product,
   // API Responses
-  ProductListResponse,
-  ProductDetailResponse,
-  ProductResponse,
+  // ProductListResponse, // COMMENTED: doesn't exist
+  // ProductDetailResponse, // COMMENTED: doesn't exist
+  // ProductResponse, // COMMENTED: doesn't exist
   // Form/Input Types
-  ProductCreateInput,
-  ProductUpdateInput,
+  // ProductCreateInput, // COMMENTED: doesn't exist
+  // ProductUpdateInput, // COMMENTED: doesn't exist
   // Display Types
-  ProductCardData,
-  ProductWithVariation,
+  // ProductCardData, // COMMENTED: doesn't exist
 } from "./product.types";
 
 // ==================== Cart Types ====================
 export type {
   // Variation
-  CartItemVariation,
-  // Product in Cart
-  CartProduct,
-  // Cart Item
   CartItem,
-  // Cart
   Cart,
-  // API Payloads
+  CartSummary,
+  AddCartItemPayload,
   AddToCartPayload,
   UpdateCartItemPayload,
-  RemoveFromCartPayload,
-  ClearCartPayload,
-  // API Responses
+  RemoveCartItemPayload,
   CartResponse,
-  CartOperationResponse,
-  // Computed Types
-  CartItemWithTotal,
-  CartSummary,
-  CartWithSummary,
+  // Legacy (deprecated)
+  CartItemVariation, // @deprecated - for backwards compatibility only
 } from "./cart.types";
 
 // ==================== Order Types ====================
 export type {
   // Delivery
-  DeliveryAddress,
-  DeliveryOption,
+  // DeliveryAddress, // COMMENTED: doesn't exist
+  // DeliveryOption, // COMMENTED: doesn't exist
   // Status
   OrderStatus,
   PaymentStatus,
   // Order Item
   OrderItem,
   // Payment
-  CurrentPayment,
+  // CurrentPayment, // COMMENTED: doesn't exist
   // Order
   Order,
   // API Payloads
@@ -117,7 +111,7 @@ export type {
   // Summary
   // OrderSummary, // COMMENTED: doesn't exist
   // Query
-  OrderQueryParams,
+  // OrderQueryParams,
 } from "./order.types";
 
 // ==================== Payment Types ====================
@@ -214,6 +208,94 @@ export type {
   FilterURLSync,
 } from "./filter.types";
 
+// ==================== Inventory Types ====================
+export type {
+  // Movement Types
+  StockMovementType,
+  TransferStatus,
+  StockRequestStatus,
+  TransferActionType,
+  StockRequestActionType,
+  // Stock Entry
+  StockEntry,
+  // Stock Movement (Audit)
+  StockMovement,
+  // Purchase
+  PurchaseItem,
+  CreatePurchasePayload,
+  RecordPurchasePayload,
+  // Transfer (Challan)
+  TransferItem,
+  TransportDetails,
+  InventoryTransfer,
+  Transfer,
+  CreateTransferPayload,
+  TransferActionPayload,
+  UpdateTransferPayload,
+  DispatchTransferPayload,
+  ReceiveTransferPayload,
+  // Stock Request
+  StockRequestItem,
+  StockRequest,
+  CreateStockRequestPayload,
+  StockRequestActionPayload,
+  // Adjustments
+  AdjustmentItem,
+  CreateAdjustmentPayload,
+  BulkAdjustmentPayload,
+  AdjustStockPayload,
+  AdjustStockResult,
+  // Low Stock
+  LowStockItem,
+  // Transfer Stats
+  TransferStats,
+  // Movement Query Params
+  MovementQueryParams,
+} from "./inventory.types";
+
+// ==================== POS Types ====================
+export type {
+  // Branch Stock
+  VariantStock,
+  BranchStock,
+  // POS Product
+  PosProduct,
+  // Products Response
+  PosProductsSummary,
+  PosProductsBranch,
+  PosProductsResponse,
+  // Products Params
+  PosProductsParams,
+  // Lookup
+  PosLookupData,
+  PosLookupResponse,
+  PosLookupResult,
+  // Order
+  PosOrderItem,
+  PosPayment,
+  PosCustomer,
+  PosOrderPayload,
+  // Receipt
+  PosReceiptItem,
+  PosReceiptVat,
+  PosReceiptData,
+  PosReceiptResponse,
+  PosReceipt,
+} from "./pos.types";
+
+// ==================== Finance Types ====================
+export type {
+  // Statement
+  FinanceStatement,
+  FinanceStatementParams,
+  // Summary
+  FinanceTotals,
+  FinanceByMethod,
+  FinanceByDay,
+  FinanceSummary,
+  FinanceSummaryParams,
+} from "./finance.types";
+
 // ==================== CMS Types ====================
 // NOTE: Many CMS types don't exist. Only exporting what actually exists.
 export type {
@@ -269,3 +351,35 @@ export type {
   // CMSPageListResponse, // COMMENTED: doesn't exist
   // CMSPageResponse, // COMMENTED: doesn't exist
 } from "./cms.types";
+
+// ==================== Logistics Types ====================
+export type {
+  // Delivery
+  DeliveryMethod,
+  DeliveryOption,
+  DeliveryFeeSource,
+  PickupBranchInfo,
+  CheckoutSettings,
+  // Provider
+  LogisticsProvider,
+  ProviderCharges,
+  ProviderConfig,
+  LogisticsConfig,
+  // Shipment
+  ShipmentStatus,
+  ShipmentParcel,
+  ShipmentPickup,
+  ShipmentDelivery,
+  ShipmentCashCollection,
+  ShipmentTimelineEvent,
+  Shipment,
+  CreateShipmentPayload,
+  UpdateShipmentStatusPayload,
+  CancelShipmentPayload,
+  CalculateChargeParams,
+  // Tracking
+  TrackingData,
+  TrackingResult,
+  // Pickup
+  PickupStore,
+} from "./logistics.types";

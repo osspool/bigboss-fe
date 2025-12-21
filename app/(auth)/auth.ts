@@ -6,6 +6,29 @@ import { handleApiRequest } from "@/api/api-handler";
 import { authConfig } from "./auth.config";
 import type { AuthResponse, UserRoleType } from "@/api/user-data";
 
+type JwtBranchClaim = {
+  branchId: string;
+  branchCode?: string;
+  branchName?: string;
+  branchRole?: "head_office" | "sub_branch";
+  roles?: string[];
+};
+
+function decodeJwtPayload(accessToken?: string | null): Record<string, unknown> | null {
+  if (!accessToken) return null;
+  const parts = accessToken.split(".");
+  if (parts.length < 2) return null;
+  try {
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = Buffer.from(base64, "base64").toString("utf-8");
+    const decoded = JSON.parse(jsonPayload);
+    return decoded && typeof decoded === "object" ? decoded : null;
+  } catch {
+    return null;
+  }
+}
+
 // Extend NextAuth types (Auth.js v5)
 declare module "next-auth" {
   interface Session extends DefaultSession {
@@ -19,6 +42,12 @@ declare module "next-auth" {
     refreshToken?: string;
     roles?: UserRoleType[];
     organizationId?: string;
+    organizations?: string[];
+    branch?: JwtBranchClaim;
+    branchIds?: string[];
+    isAdmin?: boolean;
+    isWarehouseStaff?: boolean;
+    isActive?: boolean;
   }
 
   interface User {
@@ -29,6 +58,12 @@ declare module "next-auth" {
     roles?: UserRoleType[];
     phone?: string;
     organizationId?: string;
+    organizations?: string[];
+    branch?: JwtBranchClaim;
+    branchIds?: string[];
+    isAdmin?: boolean;
+    isWarehouseStaff?: boolean;
+    isActive?: boolean;
     accessToken?: string;
     refreshToken?: string;
   }
@@ -45,6 +80,12 @@ declare module "next-auth/jwt" {
     accessToken?: string;
     refreshToken?: string;
     organizationId?: string;
+    organizations?: string[];
+    branch?: JwtBranchClaim;
+    branchIds?: string[];
+    isAdmin?: boolean;
+    isWarehouseStaff?: boolean;
+    isActive?: boolean;
   }
 }
 
@@ -126,6 +167,16 @@ export const {
           token.refreshToken = data.refresh_token;
           if (data.user.image) token.image = data.user.image;
           token.organizationId = data?.user?.organization ?? undefined;
+
+          const decoded = decodeJwtPayload(token.accessToken);
+          if (decoded) {
+            token.organizations = Array.isArray(decoded.organizations) ? decoded.organizations : undefined;
+            token.branch = (decoded.branch as JwtBranchClaim) ?? undefined;
+            token.branchIds = Array.isArray(decoded.branchIds) ? decoded.branchIds : undefined;
+            token.isAdmin = typeof decoded.isAdmin === "boolean" ? decoded.isAdmin : undefined;
+            token.isWarehouseStaff = typeof decoded.isWarehouseStaff === "boolean" ? decoded.isWarehouseStaff : undefined;
+            token.isActive = typeof decoded.isActive === "boolean" ? decoded.isActive : undefined;
+          }
         } catch (error) {
           console.error("OAuth backend authentication error:", error);
           return token;
@@ -142,6 +193,16 @@ export const {
         token.refreshToken = user.refreshToken;
         if (user.image) token.image = user.image;
         token.organizationId = user.organizationId;
+
+        const decoded = decodeJwtPayload(token.accessToken);
+        if (decoded) {
+          token.organizations = Array.isArray(decoded.organizations) ? decoded.organizations : undefined;
+          token.branch = (decoded.branch as JwtBranchClaim) ?? undefined;
+          token.branchIds = Array.isArray(decoded.branchIds) ? decoded.branchIds : undefined;
+          token.isAdmin = typeof decoded.isAdmin === "boolean" ? decoded.isAdmin : undefined;
+          token.isWarehouseStaff = typeof decoded.isWarehouseStaff === "boolean" ? decoded.isWarehouseStaff : undefined;
+          token.isActive = typeof decoded.isActive === "boolean" ? decoded.isActive : undefined;
+        }
       }
 
       // Handle session updates (e.g., after creating organization)
@@ -158,19 +219,22 @@ export const {
             const newRefreshToken = refreshData.refreshToken;
 
             // Decode JWT to extract user data (server-side compatible)
-            const base64Url = newAccessToken.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = Buffer.from(base64, 'base64').toString('utf-8');
-            const decodedUser = JSON.parse(jsonPayload);
+            const decodedUser = decodeJwtPayload(newAccessToken) ?? {};
             console.log("decodedUser", JSON.stringify(decodedUser, null, 2));
 
-            token.sub = decodedUser.id;
-            token.email = decodedUser.email;
-            token.name = decodedUser.name;
-            token.roles = decodedUser.roles;
-            token.phone = decodedUser.phone;
-            if (decodedUser.image) token.image = decodedUser.image;
-            token.organizationId = decodedUser.organization;
+            if (typeof decodedUser.id === "string") token.sub = decodedUser.id;
+            if (typeof decodedUser.email === "string") token.email = decodedUser.email;
+            if (typeof decodedUser.name === "string") token.name = decodedUser.name;
+            if (Array.isArray(decodedUser.roles)) token.roles = decodedUser.roles as UserRoleType[];
+            if (typeof decodedUser.phone === "string") token.phone = decodedUser.phone;
+            if (typeof decodedUser.image === "string") token.image = decodedUser.image;
+            if (typeof decodedUser.organization === "string") token.organizationId = decodedUser.organization;
+            token.organizations = Array.isArray(decodedUser.organizations) ? decodedUser.organizations : token.organizations;
+            token.branch = (decodedUser.branch as JwtBranchClaim) ?? token.branch;
+            token.branchIds = Array.isArray(decodedUser.branchIds) ? decodedUser.branchIds : token.branchIds;
+            token.isAdmin = typeof decodedUser.isAdmin === "boolean" ? decodedUser.isAdmin : token.isAdmin;
+            token.isWarehouseStaff = typeof decodedUser.isWarehouseStaff === "boolean" ? decodedUser.isWarehouseStaff : token.isWarehouseStaff;
+            token.isActive = typeof decodedUser.isActive === "boolean" ? decodedUser.isActive : token.isActive;
             token.accessToken = newAccessToken;
             token.refreshToken = newRefreshToken;
 
@@ -225,6 +289,12 @@ export const {
         session.refreshToken = token.refreshToken;
         session.roles = token.roles || ['user'];
         session.organizationId = token.organizationId;
+        session.organizations = token.organizations;
+        session.branch = token.branch;
+        session.branchIds = token.branchIds;
+        session.isAdmin = token.isAdmin;
+        session.isWarehouseStaff = token.isWarehouseStaff;
+        session.isActive = token.isActive;
       }
 
       return session;

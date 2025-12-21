@@ -8,12 +8,14 @@ import { FormGenerator } from "@/components/form/form-system";
 import { FormErrorSummary } from "@/components/form/form-utils/FormErrorSummary";
 import { createCouponFormSchema } from "./coupon-form-schema";
 import { useCouponActions } from "@/hooks/query/useCoupons";
+import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 export function CouponForm({
   token,
   coupon = null,
   onSuccess,
   onCancel,
+  onSubmitStateChange,
   formId = "coupon-sheet-form",
 }) {
   const isEdit = !!coupon;
@@ -43,6 +45,8 @@ export function CouponForm({
     useCouponActions();
   const isSubmitting = isCreating || isUpdating;
   const formErrors = form.formState.errors;
+
+  useNotifySubmitState(isSubmitting, onSubmitStateChange);
 
   // Create form schema
   const formSchema = useMemo(
