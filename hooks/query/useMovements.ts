@@ -3,11 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { inventoryApi } from "@/api/platform/inventory-api";
 import { extractDocs } from "@/lib/utils/extract-docs";
 import type { StockMovement } from "@/types/inventory.types";
+import { MOVEMENT_KEYS } from "./inventory-keys";
 
-export const MOVEMENT_KEYS = {
-  all: ["inventory", "movements"] as const,
-  list: (params?: Record<string, unknown>) => [...MOVEMENT_KEYS.all, "list", params] as const,
-};
+// Re-export for backward compatibility
+export { MOVEMENT_KEYS };
 
 export function useMovements(
   token: string,

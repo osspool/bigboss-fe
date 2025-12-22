@@ -32,41 +32,57 @@ export function FinanceExportButton({
         params: { ...params, format },
       });
 
-      if (response.success && response.data) {
-        // Convert data to CSV or trigger download
-        if (format === "csv") {
-          // For CSV, backend should return CSV string or data to convert
+      console.log("[Finance Export] Response:", response);
+
+      // Helper to trigger download
+      const downloadFile = (blob: Blob, filename: string) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      };
+
+      const filename = `finance-statements-${new Date().toISOString().split("T")[0]}.${format}`;
+
+      // Handle CSV response (api-handler returns { data: Blob, response } for CSV)
+      if (format === "csv") {
+        // Check if response is blob wrapper from api-handler
+        if (response && "data" in response && response.data instanceof Blob) {
+          downloadFile(response.data, filename);
+          toast.success("Export successful");
+          return;
+        }
+
+        // Fallback: if JSON response with success wrapper
+        if (response.success && response.data) {
           const csvContent =
             typeof response.data === "string"
               ? response.data
-              : convertToCSV(response.data);
-
+              : convertToCSV(response.data as unknown[]);
           const blob = new Blob([csvContent], { type: "text/csv" });
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `finance-statements-${new Date().toISOString().split("T")[0]}.${format}`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-        } else {
-          // For JSON
+          downloadFile(blob, filename);
+          toast.success("Export successful");
+          return;
+        }
+      }
+
+      // Handle JSON response
+      if (format === "json") {
+        if (response.success && response.data) {
           const blob = new Blob([JSON.stringify(response.data, null, 2)], {
             type: "application/json",
           });
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `finance-statements-${new Date().toISOString().split("T")[0]}.${format}`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
+          downloadFile(blob, filename);
+          toast.success("Export successful");
+          return;
         }
-
-        toast.success("Export successful");
       }
+
+      toast.error("No data to export");
     } catch (error) {
       console.error("Export error:", error);
       toast.error("Failed to export statements");
@@ -89,24 +105,26 @@ export function FinanceExportButton({
 }
 
 // Helper to convert data to CSV
-function convertToCSV(data: any[]): string {
+function convertToCSV(data: unknown[]): string {
   if (!data || data.length === 0) return "";
 
-  const headers = Object.keys(data[0]);
+  const firstRow = data[0] as Record<string, unknown>;
+  const headers = Object.keys(firstRow);
   const csvRows = [
     headers.join(","),
-    ...data.map((row) =>
-      headers
+    ...data.map((row) => {
+      const rowData = row as Record<string, unknown>;
+      return headers
         .map((header) => {
-          const value = row[header];
+          const value = rowData[header];
           // Escape quotes and wrap in quotes if contains comma
           const stringValue = String(value ?? "");
           return stringValue.includes(",") || stringValue.includes('"')
             ? `"${stringValue.replace(/"/g, '""')}"`
             : stringValue;
         })
-        .join(",")
-    ),
+        .join(",");
+    }),
   ];
 
   return csvRows.join("\n");

@@ -344,10 +344,13 @@ function RegisterFormContent({ defaultEmail = "", onValidityChange }) {
 
 
 
-export function RegisterForm() {
+export function RegisterForm({ defaultEmail = "", onValidityChange }) {
     return (
         <Suspense fallback={<div>Loading...</div>}>
-            <RegisterFormContent />
+            <RegisterFormContent
+                defaultEmail={defaultEmail}
+                onValidityChange={onValidityChange}
+            />
         </Suspense>
     );
 }

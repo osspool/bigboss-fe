@@ -13,6 +13,10 @@ import {
   Truck,
   XCircle,
   CheckCircle,
+  Store,
+  Globe,
+  Monitor,
+  Gift,
 } from "lucide-react";
 
 import { ActionDropdown } from "@/components/custom/ui/dropdown-wrapper";
@@ -20,19 +24,45 @@ import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/constants";
 import { ORDER_STATUS_COLORS, ORDER_STATUS_LABELS } from "@/constants/enums/monetization.enum";
 
+// ==================== Constants ====================
+
+const SOURCE_CONFIG = {
+  pos: { label: "POS", icon: Store, color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+  web: { label: "Web", icon: Globe, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  api: { label: "API", icon: Monitor, color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400" },
+};
+
+const PAYMENT_STATUS_COLORS = {
+  pending: "warning",
+  verified: "success",
+  failed: "destructive",
+  refunded: "secondary",
+  partially_refunded: "secondary",
+  cancelled: "destructive",
+};
+
 // ==================== Cell Components ====================
 
 const OrderIdCell = React.memo(({ item }) => {
   const orderId = item._id || "";
   const shortId = orderId.length > 8 ? `...${orderId.slice(-8)}` : orderId;
-  
+  const source = item.source || "web";
+  const sourceConfig = SOURCE_CONFIG[source] || SOURCE_CONFIG.web;
+  const SourceIcon = sourceConfig.icon;
+
   return (
-    <div className="flex flex-col gap-1 text-sm">
+    <div className="flex flex-col gap-1.5 text-sm">
       <div className="flex items-center gap-2 font-medium text-foreground">
         <Hash className="h-4 w-4 text-muted-foreground" />
         <span className="truncate font-mono text-xs" title={orderId}>{shortId}</span>
       </div>
-      <StatusBadge status={item.status} />
+      <div className="flex items-center gap-1.5">
+        <StatusBadge status={item.status} />
+        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${sourceConfig.color}`}>
+          <SourceIcon className="h-3 w-3" />
+          {sourceConfig.label}
+        </span>
+      </div>
     </div>
   );
 });
@@ -41,7 +71,7 @@ OrderIdCell.displayName = "OrderIdCell";
 const StatusBadge = React.memo(({ status }) => {
   const color = ORDER_STATUS_COLORS[status] || "default";
   const label = ORDER_STATUS_LABELS[status] || status;
-  
+
   return (
     <Badge variant={color} className="w-fit text-xs capitalize">
       {label}
@@ -50,19 +80,41 @@ const StatusBadge = React.memo(({ status }) => {
 });
 StatusBadge.displayName = "StatusBadge";
 
+/**
+ * CustomerCell - Shows delivery recipient info
+ * Priority: recipientName → customerName (for orders on behalf of someone)
+ * Phone: recipientPhone → customerPhone
+ */
 const CustomerCell = React.memo(({ item }) => {
   const address = item.deliveryAddress || {};
-  const recipientName = address.recipientName || "—";
-  const phone = address.phone || "";
-  
+
+  // Priority: Delivery recipient → Customer (buyer)
+  // recipientName is who receives the order, customerName is who placed it
+  const displayName = address.recipientName || item.customerName || "—";
+  const displayPhone = address.recipientPhone || item.customerPhone || "";
+
+  // Show gift indicator if it's a gift order or recipient differs from customer
+  const isGiftOrProxy = item.isGift || (address.recipientName && item.customerName && address.recipientName !== item.customerName);
+
   return (
     <div className="flex flex-col gap-1 text-sm">
       <div className="flex items-center gap-2">
-        <User className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{recipientName}</span>
+        {isGiftOrProxy ? (
+          <Gift className="h-4 w-4 text-pink-500" />
+        ) : (
+          <User className="h-4 w-4 text-muted-foreground" />
+        )}
+        <span className="font-medium truncate max-w-[140px]" title={displayName}>
+          {displayName}
+        </span>
       </div>
-      {phone && (
-        <span className="text-xs text-muted-foreground">{phone}</span>
+      {displayPhone && (
+        <span className="text-xs text-muted-foreground">{displayPhone}</span>
+      )}
+      {isGiftOrProxy && item.customerName && address.recipientName !== item.customerName && (
+        <span className="text-[10px] text-muted-foreground">
+          by {item.customerName}
+        </span>
       )}
     </div>
   );
@@ -91,6 +143,10 @@ const ItemsCell = React.memo(({ item }) => {
 });
 ItemsCell.displayName = "ItemsCell";
 
+/**
+ * PaymentCell - Shows payment amount, method, and status
+ * Amount is in paisa (smallest unit), converted to BDT for display
+ */
 const PaymentCell = React.memo(({ item }) => {
   const payment = item.currentPayment || {};
   // currentPayment.amount is in paisa (smallest unit), convert to BDT
@@ -98,15 +154,7 @@ const PaymentCell = React.memo(({ item }) => {
   const amount = payment.amount ? payment.amount / 100 : (item.totalAmount || 0);
   const status = payment.status || "pending";
   const method = payment.method || "cash";
-
-  const statusColors = {
-    pending: "warning",
-    verified: "success",
-    failed: "destructive",
-    refunded: "secondary",
-    partially_refunded: "secondary",
-    cancelled: "destructive",
-  };
+  const reference = payment.reference;
 
   return (
     <div className="flex flex-col gap-1 text-sm">
@@ -114,12 +162,17 @@ const PaymentCell = React.memo(({ item }) => {
         <CreditCard className="h-4 w-4 text-muted-foreground" />
         <span className="font-semibold">{formatPrice(amount)}</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 flex-wrap">
         <span className="text-xs text-muted-foreground capitalize">{method}</span>
-        <Badge variant={statusColors[status] || "default"} className="text-xs">
+        <Badge variant={PAYMENT_STATUS_COLORS[status] || "default"} className="text-xs">
           {status}
         </Badge>
       </div>
+      {reference && (
+        <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[100px]" title={reference}>
+          Ref: {reference}
+        </span>
+      )}
     </div>
   );
 });
@@ -142,18 +195,33 @@ const TotalCell = React.memo(({ item }) => {
 });
 TotalCell.displayName = "TotalCell";
 
+/**
+ * DeliveryCell - Shows delivery method and location
+ * Uses areaName → city for location display
+ */
 const DeliveryCell = React.memo(({ item }) => {
   const delivery = item.delivery || {};
   const address = item.deliveryAddress || {};
   const method = delivery.method || "—";
-  const city = address.city || "";
-  
+  // Priority: areaName (specific) → city (general)
+  const location = address.areaName || address.city || "";
+  const price = delivery.price || 0;
+
   return (
     <div className="flex items-center gap-2 text-sm">
       <Truck className="h-4 w-4 text-muted-foreground" />
       <div className="flex flex-col">
-        <span className="font-medium capitalize">{method}</span>
-        {city && <span className="text-xs text-muted-foreground">{city}</span>}
+        <div className="flex items-center gap-1.5">
+          <span className="font-medium capitalize">{method}</span>
+          {price > 0 && (
+            <span className="text-xs text-muted-foreground">({formatPrice(price)})</span>
+          )}
+        </div>
+        {location && (
+          <span className="text-xs text-muted-foreground truncate max-w-[120px]" title={location}>
+            {location}
+          </span>
+        )}
       </div>
     </div>
   );

@@ -3,12 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { inventoryApi } from "@/api/platform/inventory-api";
 import { extractDocs } from "@/lib/utils/extract-docs";
 import type { LowStockItem } from "@/types/inventory.types";
+import { LOW_STOCK_KEYS } from "./inventory-keys";
 
-export const LOW_STOCK_KEYS = {
-  all: ["inventory", "low-stock"] as const,
-  list: (params?: { branchId?: string; threshold?: number }) =>
-    [...LOW_STOCK_KEYS.all, "list", params] as const,
-};
+// Re-export for backward compatibility
+export { LOW_STOCK_KEYS };
 
 /**
  * Hook to fetch low stock items for a branch

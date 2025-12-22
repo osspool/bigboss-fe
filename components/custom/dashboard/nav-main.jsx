@@ -22,7 +22,6 @@ import {
   SidebarMenuSubButton,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export function NavMain({ items = [] }) {
@@ -51,12 +50,7 @@ export function NavMain({ items = [] }) {
                   <SidebarMenuItem className="rounded-md">
                     <SidebarMenuButton
                       asChild
-                      className={cn(
-                        "h-9 px-3 text-[13px] font-medium text-sidebar-foreground/90",
-                        "hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
-                        "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
-                        "transition-colors"
-                      )}
+                      className="h-9 px-3 text-[13px] font-medium text-sidebar-foreground/90 transition-colors"
                       tooltip={state === "collapsed" ? item.title : undefined}
                       isActive={isActiveExact(item.url)}
                     >
@@ -85,11 +79,7 @@ export function NavMain({ items = [] }) {
                               <SidebarMenuSubItem key={sub.title}>
                                 <SidebarMenuSubButton
                                   asChild
-                                  className={cn(
-                                    "h-8 px-2.5 text-[13px] text-sidebar-foreground/80",
-                                    "hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
-                                    "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
-                                  )}
+                                  className="h-8 px-2.5 text-[13px] text-sidebar-foreground/80 transition-colors"
                                   isActive={isActiveExact(sub.url)}
                                 >
                                   <Link href={sub.url} aria-current={isActiveExact(sub.url) ? "page" : undefined}>

@@ -26,6 +26,9 @@ export default async function FinancePage() {
     redirect("/dashboard");
   }
 
+  // Extract token from session (same pattern as branches page)
+  const token = session?.accessToken ?? "";
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
@@ -38,7 +41,7 @@ export default async function FinancePage() {
       </div>
 
       <Suspense fallback={<div>Loading...</div>}>
-        <FinanceClient />
+        <FinanceClient token={token} />
       </Suspense>
     </div>
   );

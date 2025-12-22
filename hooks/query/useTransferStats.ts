@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { inventoryApi } from "@/api/platform/inventory-api";
 import type { TransferStats } from "@/types/inventory.types";
+import { TRANSFER_KEYS } from "./inventory-keys";
 
+// Re-export with backward-compatible name
 export const TRANSFER_STATS_KEYS = {
-  all: ["inventory", "transfers", "stats"] as const,
-  byBranch: (branchId?: string) => [...TRANSFER_STATS_KEYS.all, branchId] as const,
+  all: TRANSFER_KEYS.stats,
+  byBranch: TRANSFER_KEYS.statsByBranch,
 };
 
 /**

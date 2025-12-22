@@ -4,13 +4,10 @@ import { toast } from "sonner";
 import { inventoryApi } from "@/api/platform/inventory-api";
 import { extractDocs } from "@/lib/utils/extract-docs";
 import type { CreateStockRequestPayload, StockRequest } from "@/types/inventory.types";
+import { REQUEST_KEYS, TRANSFER_KEYS } from "./inventory-keys";
 
-export const REQUEST_KEYS = {
-  all: ["inventory", "requests"] as const,
-  list: (params?: Record<string, unknown>) => [...REQUEST_KEYS.all, "list", params] as const,
-  pending: () => [...REQUEST_KEYS.all, "pending"] as const,
-  detail: (id: string) => [...REQUEST_KEYS.all, "detail", id] as const,
-};
+// Re-export for backward compatibility
+export { REQUEST_KEYS };
 
 export function useStockRequests(
   token: string,
@@ -86,12 +83,13 @@ export function useStockRequestActions(token: string) {
     onError: (err: Error) => toast.error(err.message || "Failed to reject request"),
   });
 
+  // Fulfill creates a transfer (challan) - invalidate both requests and transfers
   const fulfill = useMutation({
     mutationFn: ({ id, remarks }: { id: string; remarks?: string }) =>
       inventoryApi.fulfillRequest({ token, id, data: { remarks, documentType: "delivery_challan" } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: REQUEST_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: ["inventory", "transfers"] });
+      queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });
       toast.success("Request fulfilled (transfer created)");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to fulfill request"),

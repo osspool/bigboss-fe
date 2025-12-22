@@ -9,12 +9,15 @@ import type {
   ReceiveTransferPayload,
   Transfer,
 } from "@/types/inventory.types";
+import {
+  TRANSFER_KEYS,
+  INVENTORY_KEYS,
+  MOVEMENT_KEYS,
+  LOW_STOCK_KEYS,
+} from "./inventory-keys";
 
-export const TRANSFER_KEYS = {
-  all: ["inventory", "transfers"] as const,
-  list: (params?: Record<string, unknown>) => [...TRANSFER_KEYS.all, "list", params] as const,
-  detail: (id: string) => [...TRANSFER_KEYS.all, "detail", id] as const,
-};
+// Re-export for backward compatibility
+export { TRANSFER_KEYS };
 
 export function useTransfers(
   token: string,
@@ -51,10 +54,28 @@ export function useTransferDetail(token: string, id: string, options: { enabled?
 export function useTransferActions(token: string) {
   const queryClient = useQueryClient();
 
+  /**
+   * Invalidate transfer-only queries (no stock impact)
+   */
+  const invalidateTransferQueries = () => {
+    queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });
+  };
+
+  /**
+   * Invalidate all queries affected by stock changes.
+   * Called on dispatch (decrements sender) and receive (increments receiver).
+   */
+  const invalidateStockQueries = () => {
+    queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });
+    queryClient.invalidateQueries({ queryKey: INVENTORY_KEYS.all });
+    queryClient.invalidateQueries({ queryKey: MOVEMENT_KEYS.all });
+    queryClient.invalidateQueries({ queryKey: LOW_STOCK_KEYS.all });
+  };
+
   const create = useMutation({
     mutationFn: (data: CreateTransferPayload) => inventoryApi.createTransfer({ token, data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });
+      invalidateTransferQueries();
       toast.success("Transfer created");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to create transfer"),
@@ -63,17 +84,18 @@ export function useTransferActions(token: string) {
   const approve = useMutation({
     mutationFn: (id: string) => inventoryApi.approveTransfer({ token, id }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });
+      invalidateTransferQueries();
       toast.success("Transfer approved");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to approve transfer"),
   });
 
+  // Dispatch decrements sender stock
   const dispatch = useMutation({
     mutationFn: ({ id, data }: { id: string; data?: DispatchTransferPayload }) =>
       inventoryApi.dispatchTransfer({ token, id, data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });
+      invalidateStockQueries();
       toast.success("Transfer dispatched");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to dispatch transfer"),
@@ -82,17 +104,18 @@ export function useTransferActions(token: string) {
   const inTransit = useMutation({
     mutationFn: (id: string) => inventoryApi.markInTransit({ token, id }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });
+      invalidateTransferQueries();
       toast.success("Marked in-transit");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to mark in-transit"),
   });
 
+  // Receive increments receiver stock
   const receive = useMutation({
     mutationFn: ({ id, data }: { id: string; data?: ReceiveTransferPayload }) =>
       inventoryApi.receiveTransfer({ token, id, data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });
+      invalidateStockQueries();
       toast.success("Transfer received");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to receive transfer"),
@@ -102,7 +125,7 @@ export function useTransferActions(token: string) {
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       inventoryApi.cancelTransfer({ token, id, data: { reason } }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });
+      invalidateTransferQueries();
       toast.success("Transfer cancelled");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to cancel transfer"),

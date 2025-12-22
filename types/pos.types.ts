@@ -16,6 +16,9 @@ export interface VariantStock {
   sku: string;
   attributes: Record<string, string>;
   quantity: number;
+  priceModifier?: number;
+  costPrice?: number;
+  barcode?: string;
 }
 
 export interface BranchStock {
@@ -27,9 +30,10 @@ export interface BranchStock {
 
 // ============= POS Product =============
 
-export interface PosProduct extends Product {
+export type PosProduct = Omit<Product, 'costPrice'> & {
+  costPrice?: number;
   branchStock?: BranchStock;
-}
+};
 
 // ============= Products Response =============
 
@@ -53,6 +57,8 @@ export interface PosProductsResponse {
   docs: PosProduct[];
   hasMore: boolean;
   next: string | null;
+  method?: string;
+  limit?: number;
 }
 
 // ============= Products Params =============

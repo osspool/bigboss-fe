@@ -1,19 +1,17 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { useMemo, useState, useCallback, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { Loader2, PackageSearch, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useBranch } from "@/contexts/BranchContext";
 import { useStockRequestActions } from "@/hooks/query/useStockRequests";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FormGenerator } from "@/components/form/form-system";
 import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
-import { ScanAddControls } from "@/feature/inventory/ui/ScanAddControls";
-import { LineItemsTable } from "@/feature/inventory/ui/LineItemsTable";
 import { useScannedLineItems } from "@/feature/inventory/ui/useScannedLineItems";
+import { InventoryScanSection } from "@/feature/inventory/forms/inventory-scan-section";
+import { createRequestFormSchema } from "@/feature/inventory/forms/inventory-form-schemas";
 import type { StockRequestPriority } from "@/types/inventory.types";
 
 interface RequestCreateDialogProps {
@@ -21,13 +19,25 @@ interface RequestCreateDialogProps {
   disabled?: boolean;
 }
 
+type RequestFormValues = {
+  requestingBranchLabel: string;
+  priority: StockRequestPriority;
+  reason: string;
+};
+
 export function RequestCreateDialog({ token, disabled }: RequestCreateDialogProps) {
   const { selectedBranch } = useBranch();
   const { create, isCreating } = useStockRequestActions(token);
 
   const [open, setOpen] = useState(false);
-  const [priority, setPriority] = useState<StockRequestPriority>("normal");
-  const [reason, setReason] = useState("");
+  const requestingBranchLabel = selectedBranch ? `${selectedBranch.name} (${selectedBranch.code})` : "";
+  const form = useForm<RequestFormValues>({
+    defaultValues: {
+      requestingBranchLabel,
+      priority: "normal",
+      reason: "",
+    },
+  });
   const scan = useScannedLineItems({
     token,
     branchId: selectedBranch?._id,
@@ -47,12 +57,19 @@ export function RequestCreateDialog({ token, disabled }: RequestCreateDialogProp
   });
 
   const reset = useCallback(() => {
-    setPriority("normal");
-    setReason("");
+    form.reset({
+      requestingBranchLabel,
+      priority: "normal",
+      reason: "",
+    });
     scan.reset();
-  }, [scan]);
+  }, [form, scan, requestingBranchLabel]);
 
-  const handleSubmit = useCallback(async () => {
+  useEffect(() => {
+    form.setValue("requestingBranchLabel", requestingBranchLabel);
+  }, [form, requestingBranchLabel]);
+
+  const handleSubmit = useCallback(async (data: RequestFormValues) => {
     if (!selectedBranch?._id) {
       toast.error("Select a branch");
       return;
@@ -67,9 +84,9 @@ export function RequestCreateDialog({ token, disabled }: RequestCreateDialogProp
     }
 
     await create({
-      branchId: selectedBranch._id,
-      priority,
-      notes: reason.trim() || undefined,
+      requestingBranchId: selectedBranch._id,
+      priority: data.priority,
+      reason: data.reason.trim() || undefined,
       items: scan.items.map((i) => ({
         productId: i.productId,
         variantSku: i.variantSku,
@@ -79,7 +96,7 @@ export function RequestCreateDialog({ token, disabled }: RequestCreateDialogProp
 
     setOpen(false);
     reset();
-  }, [selectedBranch, scan.items, priority, reason, create, reset]);
+  }, [selectedBranch, scan.items, create, reset]);
 
   const priorityOptions = useMemo(
     () => [
@@ -96,7 +113,12 @@ export function RequestCreateDialog({ token, disabled }: RequestCreateDialogProp
       <Button variant="outline" type="button" className="flex-1" onClick={() => setOpen(false)} disabled={isCreating}>
         Cancel
       </Button>
-      <Button type="button" className="flex-1" onClick={handleSubmit} disabled={isCreating || disabled}>
+      <Button
+        type="button"
+        className="flex-1"
+        onClick={form.handleSubmit(handleSubmit)}
+        disabled={isCreating || disabled}
+      >
         {isCreating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
         Create Request
       </Button>
@@ -121,48 +143,29 @@ export function RequestCreateDialog({ token, disabled }: RequestCreateDialogProp
         size="lg"
         footer={footer}
       >
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Requesting Branch</Label>
-              <Input value={selectedBranch ? `${selectedBranch.name} (${selectedBranch.code})` : ""} disabled />
-            </div>
-            <div className="space-y-2">
-              <Label>Priority</Label>
-              <Select value={priority} onValueChange={(v) => setPriority(v as StockRequestPriority)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {priorityOptions.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <ScanAddControls
-            code={scan.code}
-            onCodeChange={scan.setCode}
-            quantity={scan.quantity}
-            onQuantityChange={scan.setQuantity}
-            onAdd={scan.add}
-            isAdding={scan.isLookingUp}
+        <div className="space-y-5">
+          <FormGenerator
+            schema={createRequestFormSchema({ priorityOptions })}
+            control={form.control}
+            disabled={isCreating || disabled}
           />
 
-          <LineItemsTable
+          <InventoryScanSection
+            title="Scan & add items"
+            icon={<PackageSearch className="h-4 w-4 text-muted-foreground" />}
+            description="Scan barcode or SKU to request items."
+            scan={{
+              code: scan.code,
+              setCode: scan.setCode,
+              quantity: scan.quantity,
+              setQuantity: scan.setQuantity,
+              add: scan.add,
+              isLookingUp: scan.isLookingUp,
+            }}
             items={scan.items}
             onQuantityChange={scan.updateQuantityAt}
             onRemove={scan.removeAt}
           />
-
-          <div className="space-y-2">
-            <Label>Reason (optional)</Label>
-            <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} />
-          </div>
         </div>
       </SheetWrapper>
     </>

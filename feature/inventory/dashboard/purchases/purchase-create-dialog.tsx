@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { Loader2, PackageSearch, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useBranch } from "@/contexts/BranchContext";
 import { usePurchaseActions } from "@/hooks/query/usePurchases";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { FormGenerator } from "@/components/form/form-system";
 import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
-import { ScanAddControls } from "@/feature/inventory/ui/ScanAddControls";
-import { LineItemsTable } from "@/feature/inventory/ui/LineItemsTable";
 import { useScannedLineItems } from "@/feature/inventory/ui/useScannedLineItems";
+import { InventoryScanSection } from "@/feature/inventory/forms/inventory-scan-section";
+import { createPurchaseFormSchema } from "@/feature/inventory/forms/inventory-form-schemas";
 
 interface PurchaseCreateDialogProps {
   token: string;
@@ -30,14 +30,24 @@ type PurchaseLineItem = {
   subtitle?: string;
 };
 
+type PurchaseFormValues = {
+  supplierName: string;
+  purchaseOrderNumber: string;
+  notes: string;
+};
+
 export function PurchaseCreateDialog({ token, disabled }: PurchaseCreateDialogProps) {
   const { selectedBranch } = useBranch();
   const { record, isRecording } = usePurchaseActions(token);
 
   const [open, setOpen] = useState(false);
-  const [supplierName, setSupplierName] = useState("");
-  const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
-  const [notes, setNotes] = useState("");
+  const form = useForm<PurchaseFormValues>({
+    defaultValues: {
+      supplierName: "",
+      purchaseOrderNumber: "",
+      notes: "",
+    },
+  });
 
   const scan = useScannedLineItems<PurchaseLineItem>({
     token,
@@ -59,13 +69,15 @@ export function PurchaseCreateDialog({ token, disabled }: PurchaseCreateDialogPr
   });
 
   const reset = useCallback(() => {
-    setSupplierName("");
-    setPurchaseOrderNumber("");
-    setNotes("");
+    form.reset({
+      supplierName: "",
+      purchaseOrderNumber: "",
+      notes: "",
+    });
     scan.reset();
-  }, [scan]);
+  }, [form, scan]);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(async (data: PurchaseFormValues) => {
     if (!selectedBranch?._id) {
       toast.error("Select a branch");
       return;
@@ -81,9 +93,9 @@ export function PurchaseCreateDialog({ token, disabled }: PurchaseCreateDialogPr
 
     await record({
       branchId: selectedBranch._id,
-      supplierName: supplierName.trim() || undefined,
-      purchaseOrderNumber: purchaseOrderNumber.trim() || undefined,
-      notes: notes.trim() || undefined,
+      supplierName: data.supplierName.trim() || undefined,
+      purchaseOrderNumber: data.purchaseOrderNumber.trim() || undefined,
+      notes: data.notes.trim() || undefined,
       items: scan.items.map((i) => ({
         productId: i.productId,
         variantSku: i.variantSku,
@@ -94,14 +106,19 @@ export function PurchaseCreateDialog({ token, disabled }: PurchaseCreateDialogPr
 
     setOpen(false);
     reset();
-  }, [selectedBranch, scan.items, supplierName, purchaseOrderNumber, notes, record, reset]);
+  }, [selectedBranch, scan.items, record, reset]);
 
   const footer = (
     <div className="flex gap-2 w-full">
       <Button variant="outline" type="button" className="flex-1" onClick={() => setOpen(false)} disabled={isRecording}>
         Cancel
       </Button>
-      <Button type="button" className="flex-1" onClick={handleSubmit} disabled={isRecording || disabled}>
+      <Button
+        type="button"
+        className="flex-1"
+        onClick={form.handleSubmit(handleSubmit)}
+        disabled={isRecording || disabled}
+      >
         {isRecording ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
         Save Purchase
       </Button>
@@ -126,28 +143,25 @@ export function PurchaseCreateDialog({ token, disabled }: PurchaseCreateDialogPr
         size="lg"
         footer={footer}
       >
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Supplier (optional)</Label>
-              <Input value={supplierName} onChange={(e) => setSupplierName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>PO Number (optional)</Label>
-              <Input value={purchaseOrderNumber} onChange={(e) => setPurchaseOrderNumber(e.target.value)} />
-            </div>
-          </div>
-
-          <ScanAddControls
-            code={scan.code}
-            onCodeChange={scan.setCode}
-            quantity={scan.quantity}
-            onQuantityChange={scan.setQuantity}
-            onAdd={scan.add}
-            isAdding={scan.isLookingUp}
+        <div className="space-y-5">
+          <FormGenerator
+            schema={createPurchaseFormSchema()}
+            control={form.control}
+            disabled={isRecording || disabled}
           />
 
-          <LineItemsTable
+          <InventoryScanSection
+            title="Scan & add items"
+            icon={<PackageSearch className="h-4 w-4 text-muted-foreground" />}
+            description="Scan barcode or SKU to add purchase items."
+            scan={{
+              code: scan.code,
+              setCode: scan.setCode,
+              quantity: scan.quantity,
+              setQuantity: scan.setQuantity,
+              add: scan.add,
+              isLookingUp: scan.isLookingUp,
+            }}
             items={scan.items}
             onQuantityChange={scan.updateQuantityAt}
             onRemove={scan.removeAt}
@@ -170,11 +184,6 @@ export function PurchaseCreateDialog({ token, disabled }: PurchaseCreateDialogPr
               />
             )}
           />
-
-          <div className="space-y-2">
-            <Label>Notes (optional)</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
-          </div>
         </div>
       </SheetWrapper>
     </>

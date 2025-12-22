@@ -24,6 +24,7 @@ export function Marquee({ className, data }: MarqueeProps) {
   ];
 
   const phrases = data?.items?.flatMap((item) => [item, "★"]) || defaultPhrases;
+  const repeatCount = 4;
 
   return (
     <div
@@ -32,14 +33,22 @@ export function Marquee({ className, data }: MarqueeProps) {
         className
       )}
     >
-      <div className="animate-marquee flex whitespace-nowrap">
-        {[...phrases, ...phrases].map((phrase, i) => (
-          <span
-            key={i}
-            className="mx-4 text-sm font-medium uppercase tracking-wider"
+      <div className="animate-marquee flex w-max whitespace-nowrap">
+        {Array.from({ length: repeatCount }).map((_, copy) => (
+          <div
+            key={copy}
+            className="flex shrink-0 items-center gap-x-8"
+            aria-hidden={copy > 0}
           >
-            {phrase}
-          </span>
+            {phrases.map((phrase, i) => (
+              <span
+                key={`${copy}-${i}`}
+                className="text-sm font-medium uppercase tracking-wider"
+              >
+                {phrase}
+              </span>
+            ))}
+          </div>
         ))}
       </div>
     </div>

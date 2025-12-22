@@ -185,12 +185,12 @@ export function OrdersClient({ token, initialLimit = 15 }) {
           data={orders}
           isLoading={isLoading || isProcessing}
           pagination={{
-            totalDocs: pagination?.total || orders.length,
+            total: pagination?.total || 0,
             limit: pagination?.limit || limit,
-            currentPage: pagination?.page || currentPage,
-            totalPages: pagination?.pages || 1,
-            hasNextPage: pagination?.hasNext || false,
-            hasPrevPage: pagination?.hasPrev || false,
+            page: pagination?.page || currentPage,
+            pages: pagination?.pages || 1,
+            hasNext: pagination?.hasNext || false,
+            hasPrev: pagination?.hasPrev || false,
             onPageChange: handlePageChange,
           }}
           className="h-[74dvh] rounded-lg"

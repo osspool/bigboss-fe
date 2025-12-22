@@ -8,6 +8,7 @@ import {
   TrendingDown,
   Check,
   Barcode,
+  Eye,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
@@ -84,6 +85,17 @@ const CategoryCell = React.memo(({ item }: { item: PosProduct }) => {
   );
 });
 CategoryCell.displayName = "CategoryCell";
+
+// Product type cell
+const TypeCell = React.memo(({ item }: { item: PosProduct }) => {
+  const type = item.productType || (item.variants?.length ? "variant" : "simple");
+  return (
+    <Badge variant="secondary" className="capitalize">
+      {type}
+    </Badge>
+  );
+});
+TypeCell.displayName = "TypeCell";
 
 // Price cell
 const PriceCell = React.memo(({ item }: { item: PosProduct }) => {
@@ -168,14 +180,28 @@ const QuickActionsCell = React.memo(
   ({
     item,
     onSetStock,
+    onView,
     disabledReason,
   }: {
     item: PosProduct;
     onSetStock?: (item: PosProduct) => void;
+    onView?: (item: PosProduct) => void;
     disabledReason?: string;
   }) => {
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex items-center justify-center gap-2">
+      {onView && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => onView(item)}
+          title="View details"
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      )}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -198,9 +224,11 @@ QuickActionsCell.displayName = "QuickActionsCell";
 
 export function inventoryColumns({
   onSetStock,
+  onView,
   disabledReason,
 }: {
   onSetStock?: (item: PosProduct) => void;
+  onView?: (item: PosProduct) => void;
   disabledReason?: string;
 }): ColumnDef<PosProduct>[] {
   return [
@@ -220,6 +248,12 @@ export function inventoryColumns({
     id: "category",
     header: "Category",
     cell: ({ row }) => <CategoryCell item={row.original} />,
+    enableSorting: false,
+  },
+  {
+    id: "type",
+    header: "Type",
+    cell: ({ row }) => <TypeCell item={row.original} />,
     enableSorting: false,
   },
   {
@@ -248,6 +282,7 @@ export function inventoryColumns({
       <QuickActionsCell
         item={row.original}
         onSetStock={onSetStock}
+        onView={onView}
         disabledReason={disabledReason}
       />
     ),

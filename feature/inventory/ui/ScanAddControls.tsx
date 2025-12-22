@@ -1,9 +1,14 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Barcode, Hash, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
 
 export interface ScanAddControlsProps {
   code: string;
@@ -32,19 +37,33 @@ export function ScanAddControls({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
       <div className="md:col-span-2 space-y-2">
         <Label>{codeLabel}</Label>
-        <Input
-          value={code}
-          onChange={(e) => onCodeChange(e.target.value)}
-          placeholder="e.g. BARCODE123 or SKU"
-        />
+        <InputGroup className="bg-background">
+          <InputGroupAddon align="inline-start">
+            <InputGroupText>
+              <Barcode className="h-4 w-4" />
+            </InputGroupText>
+          </InputGroupAddon>
+          <InputGroupInput
+            value={code}
+            onChange={(e) => onCodeChange(e.target.value)}
+            placeholder="e.g. BARCODE123 or SKU"
+          />
+        </InputGroup>
       </div>
       <div className="space-y-2">
         <Label>{quantityLabel}</Label>
-        <Input
-          value={quantity}
-          onChange={(e) => onQuantityChange(e.target.value)}
-          inputMode="numeric"
-        />
+        <InputGroup className="bg-background">
+          <InputGroupAddon align="inline-start">
+            <InputGroupText>
+              <Hash className="h-4 w-4" />
+            </InputGroupText>
+          </InputGroupAddon>
+          <InputGroupInput
+            value={quantity}
+            onChange={(e) => onQuantityChange(e.target.value)}
+            inputMode="numeric"
+          />
+        </InputGroup>
       </div>
       <div className="md:col-span-3">
         <Button

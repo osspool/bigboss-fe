@@ -3,19 +3,10 @@ import { posApi } from '@/api/platform/pos-api';
 import { toast } from 'sonner';
 import type { PosProduct, PosProductsResponse } from '@/types/pos.types';
 import type { AdjustStockPayload, AdjustStockResult, BulkAdjustmentPayload } from '@/types/inventory.types';
+import { INVENTORY_KEYS, MOVEMENT_KEYS, LOW_STOCK_KEYS } from './inventory-keys';
 
-// ============================================
-// QUERY KEYS
-// ============================================
-
-export const INVENTORY_KEYS = {
-  all: ['inventory'] as const,
-  products: (branchId?: string) => [...INVENTORY_KEYS.all, 'products', branchId] as const,
-  productsList: (branchId?: string, params?: Record<string, unknown>) =>
-    [...INVENTORY_KEYS.products(branchId), params] as const,
-  lookup: (code: string, branchId?: string) =>
-    [...INVENTORY_KEYS.all, 'lookup', code, branchId] as const,
-};
+// Re-export for backward compatibility
+export { INVENTORY_KEYS };
 
 // ============================================
 // TYPES
@@ -116,15 +107,24 @@ export function useInventoryLookup(
 export function useStockActions(token: string) {
   const queryClient = useQueryClient();
 
+  /**
+   * Invalidate all queries affected by stock adjustments.
+   * Adjustments create movements and may change low-stock status.
+   */
+  const invalidateStockQueries = (branchId?: string) => {
+    queryClient.invalidateQueries({
+      queryKey: INVENTORY_KEYS.products(branchId),
+    });
+    queryClient.invalidateQueries({ queryKey: MOVEMENT_KEYS.all });
+    queryClient.invalidateQueries({ queryKey: LOW_STOCK_KEYS.all });
+  };
+
   // Single item adjustment
   const adjustMutation = useMutation({
     mutationFn: (data: AdjustStockPayload) =>
       posApi.adjustStock({ token, data }),
     onSuccess: (result, variables) => {
-      // Invalidate inventory queries for the branch
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_KEYS.products(variables.branchId),
-      });
+      invalidateStockQueries(variables.branchId);
       toast.success('Stock adjusted successfully');
     },
     onError: (error: Error) => {
@@ -153,9 +153,7 @@ export function useStockActions(token: string) {
         data: { quantity, branchId, variantSku, notes },
       }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_KEYS.products(variables.branchId),
-      });
+      invalidateStockQueries(variables.branchId);
       toast.success('Stock level updated');
     },
     onError: (error: Error) => {
@@ -168,9 +166,7 @@ export function useStockActions(token: string) {
     mutationFn: (data: BulkAdjustmentPayload) =>
       posApi.bulkAdjust({ token, data }),
     onSuccess: (result, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: INVENTORY_KEYS.products(variables.branchId),
-      });
+      invalidateStockQueries(variables.branchId);
       const processed = (result as { data?: AdjustStockResult })?.data?.processed || 0;
       toast.success(`${processed} items updated`);
     },

@@ -48,8 +48,10 @@ const RolesCell = React.memo(({ item }) => {
     superadmin: 'bg-red-50 text-red-700 border-red-200',
     admin: 'bg-orange-50 text-orange-700 border-orange-200',
     user: 'bg-gray-50 text-gray-700 border-gray-200',
+    'finance-admin': 'bg-emerald-50 text-emerald-700 border-emerald-200',
     'finance-manager': 'bg-green-50 text-green-700 border-green-200',
     'store-manager': 'bg-blue-50 text-blue-700 border-blue-200',
+    'warehouse-admin': 'bg-indigo-50 text-indigo-700 border-indigo-200',
     'warehouse-staff': 'bg-purple-50 text-purple-700 border-purple-200',
   };
 

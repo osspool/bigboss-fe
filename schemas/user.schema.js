@@ -7,8 +7,10 @@ export const USER_ROLE_VALUES = [
   'user',
   'admin',
   'superadmin',
+  'finance-admin',
   'finance-manager',
   'store-manager',
+  'warehouse-admin',
   'warehouse-staff'
 ];
 

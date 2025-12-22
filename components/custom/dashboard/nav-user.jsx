@@ -49,7 +49,7 @@ export function NavUser({ user }) {
                                     src={user.avatar}
                                     alt={user.name}
                                 />
-                                <AvatarFallback className="rounded-lg">
+                                <AvatarFallback className="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                                     {getUserInitials(user?.name)}
                                 </AvatarFallback>
                             </Avatar>
@@ -81,7 +81,7 @@ export function NavUser({ user }) {
                                         src={user.avatar}
                                         alt={user.name}
                                     />
-                                    <AvatarFallback className="rounded-lg">
+                                    <AvatarFallback className="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                                         {getUserInitials(user?.name)}
                                     </AvatarFallback>
                                 </Avatar>

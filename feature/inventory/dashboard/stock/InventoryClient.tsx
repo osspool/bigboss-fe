@@ -5,6 +5,7 @@ import { DataTable } from "@/components/custom/ui/data-table";
 import { inventoryColumns } from "./inventory-columns";
 import { InventorySearch } from "./InventorySearch";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
+import { InventoryDetailSheet } from "./inventory-detail-sheet";
 import { Package, AlertTriangle, TrendingDown, Boxes } from "lucide-react";
 import HeaderSection from "@/components/custom/dashboard/header-section";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
@@ -74,6 +75,8 @@ export function InventoryClient({
   // Stock adjustment dialog state
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<PosProduct | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailProduct, setDetailProduct] = useState<PosProduct | null>(null);
 
   const branchId = selectedBranch?._id;
 
@@ -193,6 +196,11 @@ export function InventoryClient({
     setAdjustDialogOpen(true);
   }, [roles, branchRoles, selectedBranch]);
 
+  const handleViewDetails = useCallback((product: PosProduct) => {
+    setDetailProduct(product);
+    setDetailOpen(true);
+  }, []);
+
   const handleAdjustmentSubmit = useCallback(async (data: AdjustmentSubmit) => {
     if (!selectedProduct || !branchId) return;
 
@@ -209,6 +217,13 @@ export function InventoryClient({
     setSelectedProduct(null);
   }, [selectedProduct, branchId, adjust]);
 
+  const handleDetailChange = useCallback((open: boolean) => {
+    setDetailOpen(open);
+    if (!open) {
+      setDetailProduct(null);
+    }
+  }, []);
+
   const handleDialogOpenChange = useCallback((open: boolean) => {
     setAdjustDialogOpen(open);
     if (!open) setSelectedProduct(null);
@@ -217,12 +232,13 @@ export function InventoryClient({
   const columns = useMemo(
     () => inventoryColumns({
       onSetStock: handleAdjustStock,
+      onView: handleViewDetails,
       disabledReason: (() => {
         const cap = getStockAdjustmentCapability(roles, branchRoles, selectedBranch ?? null, 0);
         return cap.mode === "none" ? cap.reason : undefined;
       })(),
     }),
-    [handleAdjustStock, roles, branchRoles, selectedBranch]
+    [handleAdjustStock, handleViewDetails, roles, branchRoles, selectedBranch]
   );
 
   const handleRefresh = useCallback(() => {
@@ -382,6 +398,12 @@ export function InventoryClient({
             ? { mode: "set_decrease_only", max: cap.max, reason: cap.reason }
             : { mode: "set_any" };
         })()}
+      />
+
+      <InventoryDetailSheet
+        open={detailOpen}
+        onOpenChange={handleDetailChange}
+        product={detailProduct}
       />
     </div>
   );

@@ -11,8 +11,10 @@ export const USER_ROLE_OPTIONS = [
   { value: "user", label: "User" },
   { value: "admin", label: "Admin" },
   { value: "superadmin", label: "Super Admin" },
+  { value: "finance-admin", label: "Finance Admin" },
   { value: "finance-manager", label: "Finance Manager" },
   { value: "store-manager", label: "Store Manager" },
+  { value: "warehouse-admin", label: "Warehouse Admin" },
   { value: "warehouse-staff", label: "Warehouse Staff" },
 ];
 

@@ -32,9 +32,17 @@ export function TransfersClient({ token }: TransfersClientProps) {
   const [cancelReason, setCancelReason] = useState("");
   const [printDialog, setPrintDialog] = useState<TransferDialogState>({ open: false, transfer: null });
 
+  const transferParams = useMemo(() => {
+    if (!branchId) return undefined;
+    if (selectedBranch?.role === "head_office") {
+      return { senderBranch: branchId };
+    }
+    return { receiverBranch: branchId };
+  }, [branchId, selectedBranch?.role]);
+
   const { transfers, isLoading, isFetching, refetch } = useTransfers(
     token,
-    branchId ? { branchId } : undefined,
+    transferParams,
     { enabled: !!branchId }
   );
 

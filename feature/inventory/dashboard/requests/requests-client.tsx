@@ -30,9 +30,17 @@ export function RequestsClient({ token }: RequestsClientProps) {
   const [cancelDialog, setCancelDialog] = useState<RequestDialogState>({ open: false, request: null });
   const [cancelReason, setCancelReason] = useState("");
 
+  const requestParams = useMemo(() => {
+    if (!branchId) return undefined;
+    if (isHeadOffice) {
+      return { fulfillingBranch: branchId };
+    }
+    return { requestingBranch: branchId };
+  }, [branchId, isHeadOffice]);
+
   const { requests, isLoading, isFetching, refetch } = useStockRequests(
     token,
-    branchId ? { branchId } : undefined,
+    requestParams,
     { enabled: !!branchId }
   );
 

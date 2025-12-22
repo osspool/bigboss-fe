@@ -818,49 +818,122 @@ export function OrderForm({
     {
       value: "info",
       label: "Info",
-      content: (
-        <div className="space-y-6">
-          {/* Customer Info (Read-only) */}
-          <FormSection
-            title="Customer Information"
-            description="Customer snapshot captured at checkout (read-only)"
-            variant="muted"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="space-y-1">
-                <span className="text-muted-foreground">Customer Name</span>
-                <p className="font-medium">{order.customerName || '-'}</p>
-              </div>
-              <div className="space-y-1">
-                <span className="text-muted-foreground">Customer Phone</span>
-                <p className="font-medium">{order.customerPhone || '-'}</p>
-              </div>
-              <div className="space-y-1">
-                <span className="text-muted-foreground">Customer Email</span>
-                <p className="font-medium">{order.customerEmail || '-'}</p>
-              </div>
-              <div className="space-y-1">
-                <span className="text-muted-foreground">Customer ID</span>
-                <p className="font-mono text-xs">{order.customer || 'Guest'}</p>
-              </div>
-              {order.userId && (
+      content: (() => {
+        // Determine if recipient differs from customer (gift/proxy order)
+        const recipientName = order.deliveryAddress?.recipientName;
+        const recipientPhone = order.deliveryAddress?.recipientPhone;
+        const hasDistinctRecipient = recipientName && recipientName !== order.customerName;
+
+        // Source display config
+        const sourceLabels = { pos: 'Point of Sale', web: 'Website', api: 'API Integration' };
+        const sourceColors = {
+          pos: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+          web: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+          api: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+        };
+
+        return (
+          <div className="space-y-6">
+            {/* Order Source & Channel Info */}
+            <FormSection
+              title="Order Source"
+              description="Where and how this order was placed"
+              variant="muted"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="space-y-1">
-                  <span className="text-muted-foreground">User Account</span>
-                  <p className="font-mono text-xs">{order.userId}</p>
+                  <span className="text-muted-foreground">Channel</span>
+                  <div>
+                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${sourceColors[order.source] || sourceColors.web}`}>
+                      {sourceLabels[order.source] || order.source || 'Unknown'}
+                    </span>
+                  </div>
                 </div>
-              )}
-              {order.isGift && (
-                <div className="space-y-1 md:col-span-2">
-                  <Badge variant="secondary" className="text-sm">
-                    🎁 Gift Order
-                  </Badge>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This order is being sent as a gift to: {order.deliveryAddress?.recipientName || 'recipient'}
-                  </p>
+                {order.branch && (
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground">Fulfillment Branch</span>
+                    <p className="font-mono text-xs">{order.branch}</p>
+                  </div>
+                )}
+                {order.source === 'pos' && order.cashier && (
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground">Processed By (Cashier)</span>
+                    <p className="font-mono text-xs">{order.cashier}</p>
+                  </div>
+                )}
+                {order.source === 'pos' && order.terminalId && (
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground">Terminal ID</span>
+                    <p className="font-mono text-xs">{order.terminalId}</p>
+                  </div>
+                )}
+                {order.idempotencyKey && (
+                  <div className="space-y-1 md:col-span-2">
+                    <span className="text-muted-foreground">Idempotency Key</span>
+                    <p className="font-mono text-xs truncate" title={order.idempotencyKey}>
+                      {order.idempotencyKey}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </FormSection>
+
+            {/* Customer Info (Read-only) - The buyer */}
+            <FormSection
+              title="Customer (Buyer)"
+              description="Who placed the order"
+              variant="muted"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-1">
+                  <span className="text-muted-foreground">Name</span>
+                  <p className="font-medium">{order.customerName || '-'}</p>
                 </div>
-              )}
-            </div>
-          </FormSection>
+                <div className="space-y-1">
+                  <span className="text-muted-foreground">Phone</span>
+                  <p className="font-medium">{order.customerPhone || '-'}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-muted-foreground">Email</span>
+                  <p className="font-medium">{order.customerEmail || '-'}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-muted-foreground">Customer ID</span>
+                  <p className="font-mono text-xs">{order.customer || 'Guest'}</p>
+                </div>
+                {order.userId && (
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground">User Account</span>
+                    <p className="font-mono text-xs">{order.userId}</p>
+                  </div>
+                )}
+              </div>
+            </FormSection>
+
+            {/* Delivery Recipient - Only show if different from customer */}
+            {(order.isGift || hasDistinctRecipient) && (
+              <FormSection
+                title="Delivery Recipient"
+                description={order.isGift ? "Gift recipient details" : "Order placed on behalf of someone else"}
+                variant="muted"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-1 md:col-span-2">
+                    <Badge variant="secondary" className="text-sm mb-2">
+                      {order.isGift ? '🎁 Gift Order' : '👤 Proxy Order'}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground">Recipient Name</span>
+                    <p className="font-medium">{recipientName || '-'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground">Recipient Phone</span>
+                    <p className="font-medium">{recipientPhone || '-'}</p>
+                  </div>
+                </div>
+              </FormSection>
+            )}
 
           {/* Coupon Info (Read-only) */}
           {order.couponApplied && (
@@ -918,7 +991,8 @@ export function OrderForm({
             </div>
           </FormSection>
         </div>
-      ),
+        );
+      })(),
     },
   ];
 

@@ -233,6 +233,7 @@ export interface StockRequestItem {
   variantSku?: string;
   quantity: number;
   approvedQuantity?: number;
+  notes?: string;
 }
 
 export interface StockRequest {
@@ -240,11 +241,14 @@ export interface StockRequest {
   requestNumber: string;
 
   requestingBranch: string | { _id: string; name: string; code?: string };
+  fulfillingBranch?: string | { _id: string; name: string; code?: string };
 
   items: StockRequestItem[];
   status: StockRequestStatus;
   priority?: StockRequestPriority;
 
+  reason?: string;
+  expectedDate?: string;
   notes?: string;
   reviewNotes?: string;
   rejectionReason?: string;
@@ -257,13 +261,16 @@ export interface StockRequest {
 }
 
 export interface CreateStockRequestPayload {
-  branchId?: string; // Requesting branch
+  requestingBranchId?: string; // Requesting branch
   items: {
     productId: string;
     variantSku?: string;
     quantity: number;
+    notes?: string;
   }[];
   priority?: StockRequestPriority;
+  reason?: string;
+  expectedDate?: string;
   notes?: string;
 }
 
