@@ -12,7 +12,7 @@ import { FormGenerator } from "@/components/form/form-system";
 import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
 import { useScannedLineItems } from "@/feature/inventory/ui/useScannedLineItems";
 import { InventoryScanSection } from "@/feature/inventory/forms/inventory-scan-section";
-import { createPurchaseFormSchema } from "@/feature/inventory/forms/inventory-form-schemas";
+import { createPurchaseFormSchema, type PurchaseFormValues } from "@/feature/inventory/forms/inventory-form-schemas";
 
 interface PurchaseCreateDialogProps {
   token: string;
@@ -28,12 +28,6 @@ type PurchaseLineItem = {
   quantity: number;
   costPrice?: string;
   subtitle?: string;
-};
-
-type PurchaseFormValues = {
-  supplierName: string;
-  purchaseOrderNumber: string;
-  notes: string;
 };
 
 export function PurchaseCreateDialog({ token, disabled }: PurchaseCreateDialogProps) {
@@ -144,7 +138,7 @@ export function PurchaseCreateDialog({ token, disabled }: PurchaseCreateDialogPr
         footer={footer}
       >
         <div className="space-y-5">
-          <FormGenerator
+          <FormGenerator<PurchaseFormValues>
             schema={createPurchaseFormSchema()}
             control={form.control}
             disabled={isRecording || disabled}

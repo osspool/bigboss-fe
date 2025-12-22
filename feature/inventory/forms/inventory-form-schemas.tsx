@@ -1,20 +1,39 @@
 "use client";
 
 import { ArrowRightLeft, Factory, FileText, Flag, Store, Truck, Warehouse } from "lucide-react";
-import { field, section, type FormSchema } from "@/components/form/form-system";
+import { field, section, type FormSchema, type BaseField } from "@/components/form/form-system";
 import type { FieldOption } from "@/components/form/form-system";
+import type { StockRequestPriority } from "@/types/inventory.types";
+
+export type TransferFormValues = {
+  senderLabel: string;
+  receiverBranchId: string;
+  remarks: string;
+};
+
+export type PurchaseFormValues = {
+  supplierName: string;
+  purchaseOrderNumber: string;
+  notes: string;
+};
+
+export type RequestFormValues = {
+  requestingBranchLabel: string;
+  priority: StockRequestPriority;
+  reason: string;
+};
 
 export function createTransferFormSchema({
   receiverOptions,
 }: {
   receiverOptions: FieldOption[];
-}): FormSchema {
+}): FormSchema<TransferFormValues> {
   return {
     sections: [
-      section(
+      section<TransferFormValues>(
         "route",
         "Route",
-        [
+        ([
           field.text("senderLabel", "From (Sender)", {
             disabled: true,
             readOnly: true,
@@ -24,22 +43,22 @@ export function createTransferFormSchema({
             placeholder: "Select branch",
             Icon: Store,
           }),
-        ],
+        ] as BaseField<TransferFormValues>[]),
         {
           cols: 2,
           variant: "card",
           icon: <ArrowRightLeft className="h-4 w-4" />,
         }
       ),
-      section(
+      section<TransferFormValues>(
         "remarks",
         "Remarks",
-        [
+        ([
           field.textarea("remarks", "Remarks (optional)", {
             rows: 2,
             placeholder: "Add handling notes, dispatch preference, or internal remarks",
           }),
-        ],
+        ] as BaseField<TransferFormValues>[]),
         {
           cols: 1,
           variant: "card",
@@ -50,13 +69,13 @@ export function createTransferFormSchema({
   };
 }
 
-export function createPurchaseFormSchema(): FormSchema {
+export function createPurchaseFormSchema(): FormSchema<PurchaseFormValues> {
   return {
     sections: [
-      section(
+      section<PurchaseFormValues>(
         "details",
         "Purchase details",
-        [
+        ([
           field.text("supplierName", "Supplier (optional)", {
             placeholder: "Supplier name",
             IconLeft: <Factory className="h-4 w-4" />,
@@ -65,22 +84,22 @@ export function createPurchaseFormSchema(): FormSchema {
             placeholder: "PO-2025-001",
             IconLeft: <FileText className="h-4 w-4" />,
           }),
-        ],
+        ] as BaseField<PurchaseFormValues>[]),
         {
           cols: 2,
           variant: "card",
           icon: <Factory className="h-4 w-4" />,
         }
       ),
-      section(
+      section<PurchaseFormValues>(
         "notes",
         "Notes",
-        [
+        ([
           field.textarea("notes", "Notes (optional)", {
             rows: 2,
             placeholder: "Supplier invoice details or internal notes",
           }),
-        ],
+        ] as BaseField<PurchaseFormValues>[]),
         {
           cols: 1,
           variant: "card",
@@ -95,13 +114,13 @@ export function createRequestFormSchema({
   priorityOptions,
 }: {
   priorityOptions: FieldOption[];
-}): FormSchema {
+}): FormSchema<RequestFormValues> {
   return {
     sections: [
-      section(
+      section<RequestFormValues>(
         "details",
         "Request details",
-        [
+        ([
           field.text("requestingBranchLabel", "Requesting Branch", {
             disabled: true,
             readOnly: true,
@@ -111,22 +130,22 @@ export function createRequestFormSchema({
             placeholder: "Select priority",
             Icon: Flag,
           }),
-        ],
+        ] as BaseField<RequestFormValues>[]),
         {
           cols: 2,
           variant: "card",
           icon: <Store className="h-4 w-4" />,
         }
       ),
-      section(
+      section<RequestFormValues>(
         "reason",
         "Reason",
-        [
+        ([
           field.textarea("reason", "Reason (optional)", {
             rows: 2,
             placeholder: "Why do you need this stock?",
           }),
-        ],
+        ] as BaseField<RequestFormValues>[]),
         {
           cols: 1,
           variant: "card",

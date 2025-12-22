@@ -118,11 +118,12 @@ export function MovementDetailSheet({
     : hasQuantity && movement.quantity > 0
       ? "text-success"
       : "";
-  const hasBalance = typeof movement?.balanceAfter === "number";
+  const balanceAfter = movement?.balanceAfter;
+  const hasBalance = typeof balanceAfter === "number";
   const previousQty = hasBalance && hasQuantity
-    ? movement.balanceAfter - movement.quantity
+    ? balanceAfter - movement.quantity
     : null;
-  const newQty = hasBalance ? movement.balanceAfter : null;
+  const newQty = hasBalance ? balanceAfter : null;
 
   return (
     <SheetWrapper

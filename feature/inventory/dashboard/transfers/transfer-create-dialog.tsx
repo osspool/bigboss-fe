@@ -11,19 +11,13 @@ import { FormGenerator } from "@/components/form/form-system";
 import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
 import { useScannedLineItems } from "@/feature/inventory/ui/useScannedLineItems";
 import { InventoryScanSection } from "@/feature/inventory/forms/inventory-scan-section";
-import { createTransferFormSchema } from "@/feature/inventory/forms/inventory-form-schemas";
+import { createTransferFormSchema, type TransferFormValues } from "@/feature/inventory/forms/inventory-form-schemas";
 import type { Branch } from "@/types/branch.types";
 
 interface TransferCreateDialogProps {
   token: string;
   disabled?: boolean;
 }
-
-type TransferFormValues = {
-  senderLabel: string;
-  receiverBranchId: string;
-  remarks: string;
-};
 
 export function TransferCreateDialog({ token, disabled }: TransferCreateDialogProps) {
   const { selectedBranch, branches } = useBranch();
@@ -146,7 +140,7 @@ export function TransferCreateDialog({ token, disabled }: TransferCreateDialogPr
         footer={footer}
       >
         <div className="space-y-5">
-          <FormGenerator
+          <FormGenerator<TransferFormValues>
             schema={createTransferFormSchema({
               receiverOptions: receiverOptions.map((b) => ({
                 value: b._id,

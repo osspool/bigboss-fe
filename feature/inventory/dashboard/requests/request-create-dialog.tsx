@@ -11,19 +11,12 @@ import { FormGenerator } from "@/components/form/form-system";
 import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
 import { useScannedLineItems } from "@/feature/inventory/ui/useScannedLineItems";
 import { InventoryScanSection } from "@/feature/inventory/forms/inventory-scan-section";
-import { createRequestFormSchema } from "@/feature/inventory/forms/inventory-form-schemas";
-import type { StockRequestPriority } from "@/types/inventory.types";
+import { createRequestFormSchema, type RequestFormValues } from "@/feature/inventory/forms/inventory-form-schemas";
 
 interface RequestCreateDialogProps {
   token: string;
   disabled?: boolean;
 }
-
-type RequestFormValues = {
-  requestingBranchLabel: string;
-  priority: StockRequestPriority;
-  reason: string;
-};
 
 export function RequestCreateDialog({ token, disabled }: RequestCreateDialogProps) {
   const { selectedBranch } = useBranch();
@@ -144,7 +137,7 @@ export function RequestCreateDialog({ token, disabled }: RequestCreateDialogProp
         footer={footer}
       >
         <div className="space-y-5">
-          <FormGenerator
+          <FormGenerator<RequestFormValues>
             schema={createRequestFormSchema({ priorityOptions })}
             control={form.control}
             disabled={isCreating || disabled}
