@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { inventoryApi } from "@/api/platform/inventory-api";
+import { requestApi } from "@/api/inventory";
 import { extractDocs } from "@/lib/utils/extract-docs";
 import type { CreateStockRequestPayload, StockRequest } from "@/types/inventory.types";
 import { REQUEST_KEYS, TRANSFER_KEYS } from "./inventory-keys";
@@ -16,7 +16,7 @@ export function useStockRequests(
 ) {
   const query = useQuery({
     queryKey: REQUEST_KEYS.list(params),
-    queryFn: () => inventoryApi.listRequests({ token, params }),
+    queryFn: () => requestApi.list({ token, params }),
     enabled: !!token && options.enabled !== false,
     staleTime: 15 * 1000,
   });
@@ -35,7 +35,7 @@ export function useStockRequests(
 export function usePendingStockRequests(token: string, options: { enabled?: boolean } = {}) {
   const query = useQuery({
     queryKey: REQUEST_KEYS.pending(),
-    queryFn: () => inventoryApi.listPendingRequests({ token }),
+    queryFn: () => requestApi.listPending({ token }),
     enabled: !!token && options.enabled !== false,
     staleTime: 15 * 1000,
   });
@@ -55,7 +55,7 @@ export function useStockRequestActions(token: string) {
   const queryClient = useQueryClient();
 
   const create = useMutation({
-    mutationFn: (data: CreateStockRequestPayload) => inventoryApi.createRequest({ token, data }),
+    mutationFn: (data: CreateStockRequestPayload) => requestApi.create({ token, data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: REQUEST_KEYS.all });
       toast.success("Stock request created");
@@ -65,7 +65,7 @@ export function useStockRequestActions(token: string) {
 
   const approve = useMutation({
     mutationFn: ({ id, reviewNotes }: { id: string; reviewNotes?: string }) =>
-      inventoryApi.approveRequest({ token, id, data: { reviewNotes } }),
+      requestApi.approve({ token, id, reviewNotes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: REQUEST_KEYS.all });
       toast.success("Request approved");
@@ -75,7 +75,7 @@ export function useStockRequestActions(token: string) {
 
   const reject = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      inventoryApi.rejectRequest({ token, id, data: { reason } }),
+      requestApi.reject({ token, id, reason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: REQUEST_KEYS.all });
       toast.success("Request rejected");
@@ -86,7 +86,7 @@ export function useStockRequestActions(token: string) {
   // Fulfill creates a transfer (challan) - invalidate both requests and transfers
   const fulfill = useMutation({
     mutationFn: ({ id, remarks }: { id: string; remarks?: string }) =>
-      inventoryApi.fulfillRequest({ token, id, data: { remarks, documentType: "delivery_challan" } }),
+      requestApi.fulfill({ token, id, remarks, documentType: "delivery_challan" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: REQUEST_KEYS.all });
       queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });
@@ -97,7 +97,7 @@ export function useStockRequestActions(token: string) {
 
   const cancel = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
-      inventoryApi.cancelRequest({ token, id, data: { reason } }),
+      requestApi.cancel({ token, id, reason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: REQUEST_KEYS.all });
       toast.success("Request cancelled");

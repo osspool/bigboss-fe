@@ -5,10 +5,11 @@ import { DataTable } from "@/components/custom/ui/data-table";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TransactionSearch } from "./TransactionSearch";
 import { transactionsColumns } from "./transactions-columns";
-import { Plus, Wallet } from "lucide-react";
+import { Wallet } from "lucide-react";
 import HeaderSection from "@/components/custom/dashboard/header-section";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useTransactionActions, useTransactions } from "@/hooks/query/useTransactions";
+import { useTransactions, useTransactionActions } from "@/hooks/query/useTransactions";
+import { UserRole } from "@/api/user-data";
 
 
 export function TransactionsClient({ token, userRoles = [] }) {
@@ -18,10 +19,8 @@ export function TransactionsClient({ token, userRoles = [] }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
 
-  // Check if user can delete (admin or superadmin)
-  const canDelete = useMemo(() => {
-    return userRoles.includes('admin') || userRoles.includes('superadmin');
-  }, [userRoles]);
+  // Check if user has superadmin role
+  const isSuperAdmin = userRoles?.includes(UserRole.SUPER_ADMIN);
 
   // Reset selected when sheet closes
   const handleOpenChange = useCallback((isOpen) => {
@@ -47,19 +46,29 @@ export function TransactionsClient({ token, userRoles = [] }) {
     pagination,
     isLoading,
   } = useTransactions(token, apiParams, { public: false });
-  const { remove: deleteTransaction, isDeleting } = useTransactionActions();
+
+  const { remove: deleteTransaction } = useTransactionActions();
+
+  const handleDelete = useCallback(
+    async (item) => {
+      const confirmed = window.confirm(
+        `Delete transaction ${item?._id?.slice(-8) ?? ""}? This action cannot be undone.`
+      );
+      if (!confirmed) return;
+
+      try {
+        await deleteTransaction({ token, id: item._id });
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [deleteTransaction, token]
+  );
 
   const handleEdit = useCallback((item) => {
     setSelected(item);
     setOpen(true);
   }, []);
-  const handleDelete = useCallback(
-    async (item) => {
-      if (confirm("Delete transaction?"))
-        await deleteTransaction({ token, id: item._id });
-    },
-    [deleteTransaction, token]
-  );
   const handlePageChange = useCallback(
     (page) => {
       const params = new URLSearchParams(searchParams);
@@ -72,8 +81,8 @@ export function TransactionsClient({ token, userRoles = [] }) {
   );
 
   const columns = useMemo(
-    () => transactionsColumns(handleEdit, canDelete ? handleDelete : null),
-    [handleEdit, handleDelete, canDelete]
+    () => transactionsColumns(handleEdit, isSuperAdmin ? handleDelete : null),
+    [handleEdit, handleDelete, isSuperAdmin]
   );
 
   return (
@@ -82,15 +91,7 @@ export function TransactionsClient({ token, userRoles = [] }) {
         icon={Wallet}
         title="Transactions"
         variant="compact"
-        description="Manage your transactions"
-        actions={[
-          {
-            icon: Plus,
-            text: "Add Transaction",
-            size: "sm",
-            onClick: () => setOpen(true),
-          },
-        ]}
+        description="Review transaction history (system-managed)"
       />
       <div className="py-4">
         <TransactionSearch />

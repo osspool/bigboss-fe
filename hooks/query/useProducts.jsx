@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productApi } from "@/api/platform/product-api";
 import { createCrudHooks } from "@/hooks/factories";
+import { toast } from "sonner";
 
 // Create standard CRUD hooks
 const { KEYS, useList, useDetail, useActions, useNavigation } = createCrudHooks({
@@ -57,6 +58,33 @@ export function useProductRecommendations(productId, options = {}) {
   });
 
   return { recommendations: data?.data ?? [], isLoading, error };
+}
+
+/**
+ * Sync product stock quantity
+ * Recomputes product.quantity by summing all StockEntry quantities across branches
+ * @requires admin, warehouse-admin, warehouse-staff, or store-manager role
+ * @param {Object} options - Mutation options
+ */
+export function useSyncProductStock(options = {}) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ token, id }) => productApi.syncStock(id, { token }),
+    onSuccess: (data, variables) => {
+      // Invalidate all product list queries (regardless of params)
+      queryClient.invalidateQueries({ queryKey: ["products", "list"] });
+
+      // Invalidate specific product detail
+      queryClient.invalidateQueries({ queryKey: PRODUCT_KEYS.detail(variables.id) });
+
+      toast.success(`Stock synced successfully. Total quantity: ${data?.data?.totalQuantity || 0}`);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || "Failed to sync stock");
+    },
+    ...options,
+  });
 }
 
 // Export standard hooks

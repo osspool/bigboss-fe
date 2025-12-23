@@ -3,24 +3,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { platformApi } from "@/api/platform/platform-api";
 import { toast } from "sonner";
+import type {
+  PlatformConfig,
+  UpdatePlatformConfigPayload,
+  CheckoutSettings,
+  PaymentMethodConfig,
+} from "@/types/platform.types";
+
+// ============================================
+// PLATFORM CONFIG HOOK
+// ============================================
 
 /**
  * Hook to fetch platform configuration
- *
- * @param {string|null} token - Access token (optional for public access)
- * @param {string|null} select - Optional field selection (e.g., "paymentMethods", "checkout,vat")
- * @returns {Object} Query result with config data
- *
- * @example
- * // Full config
- * const { config } = usePlatformConfig(token);
- *
- * // Selected fields
- * const { config } = usePlatformConfig(token, "paymentMethods");
- * const { config } = usePlatformConfig(null, "checkout"); // public
  */
-export function usePlatformConfig(token = null, select = null) {
-  const queryResult = useQuery({
+export function usePlatformConfig(token: string | null = null, select: string | null = null) {
+  const queryResult = useQuery<PlatformConfig>({
     queryKey: ["platform-config", select],
     queryFn: async () => {
       const response = await platformApi.getConfig({ token, select });
@@ -42,28 +40,18 @@ export function usePlatformConfig(token = null, select = null) {
   };
 }
 
+// ============================================
+// UPDATE PLATFORM CONFIG HOOK
+// ============================================
+
 /**
  * Hook to update platform configuration
- *
- * @param {string} token - Admin access token (required)
- * @returns {Object} Mutation helpers
- *
- * @example
- * const { updateConfig, isUpdating } = useUpdatePlatformConfig(token);
- *
- * // Update payment methods
- * await updateConfig({
- *   paymentMethods: [
- *     { type: 'cash', name: 'Cash', isActive: true },
- *     { type: 'mfs', provider: 'bkash', name: 'bKash', walletNumber: '01712345678' }
- *   ]
- * });
  */
-export function useUpdatePlatformConfig(token) {
+export function useUpdatePlatformConfig(token: string) {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async (data: UpdatePlatformConfigPayload) => {
       if (!token) {
         throw new Error("Authentication required");
       }
@@ -81,7 +69,7 @@ export function useUpdatePlatformConfig(token) {
 
       toast.success("Configuration updated successfully");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Platform config update error:", error);
       toast.error(error.message || "Failed to update configuration");
     },
@@ -94,15 +82,16 @@ export function useUpdatePlatformConfig(token) {
   };
 }
 
+// ============================================
+// PAYMENT METHODS HOOK
+// ============================================
+
 /**
  * Hook to fetch payment methods only
  * Convenience hook for checkout/POS
- *
- * @param {string|null} token - Optional access token
- * @returns {Object} Query result with payment methods
  */
-export function usePaymentMethods(token = null) {
-  const queryResult = useQuery({
+export function usePaymentMethods(token: string | null = null) {
+  const queryResult = useQuery<PaymentMethodConfig[]>({
     queryKey: ["platform-config", "paymentMethods"],
     queryFn: async () => {
       const response = await platformApi.getPaymentMethods({ token });
@@ -124,20 +113,21 @@ export function usePaymentMethods(token = null) {
   };
 }
 
+// ============================================
+// DELIVERY ZONES HOOK
+// ============================================
+
 /**
  * Hook to fetch delivery zones
  * Convenience hook for checkout
- *
- * @param {string|null} token - Optional access token
- * @returns {Object} Query result with delivery zones
  */
-export function useDeliveryZones(token = null) {
-  const queryResult = useQuery({
+export function useDeliveryZones(token: string | null = null) {
+  const queryResult = useQuery<CheckoutSettings>({
     queryKey: ["platform-config", "checkout"],
     queryFn: async () => {
       const response = await platformApi.getCheckoutSettings({ token });
       if (response.success) {
-        return response.data?.checkout || {};
+        return response.data?.checkout || ({} as CheckoutSettings);
       }
       throw new Error(response.message || "Failed to fetch checkout settings");
     },
@@ -145,13 +135,13 @@ export function useDeliveryZones(token = null) {
     gcTime: 10 * 60 * 1000,
   });
 
-  const checkout = queryResult.data || {};
+  const checkout = queryResult.data;
 
   return {
-    deliveryZones: checkout.deliveryZones || [],
-    freeDeliveryThreshold: checkout.freeDeliveryThreshold || 0,
-    allowStorePickup: checkout.allowStorePickup || false,
-    pickupBranches: checkout.pickupBranches || [],
+    deliveryZones: checkout?.deliveryZones || [],
+    freeDeliveryThreshold: checkout?.freeDeliveryThreshold || 0,
+    allowStorePickup: checkout?.allowStorePickup || false,
+    pickupBranches: checkout?.pickupBranches || [],
     isLoading: queryResult.isLoading,
     isError: queryResult.isError,
     error: queryResult.error,

@@ -20,18 +20,29 @@ import { format } from "date-fns";
 const getPaymentFieldsByMethod = (method) => {
   const fieldConfigs = {
     cash: [],
-    bank: [
-      { name: "paymentDetails.bankName", label: "Bank Name", placeholder: "e.g., Barclays" },
+    bank_transfer: [
+      { name: "paymentDetails.bankName", label: "Bank Name", placeholder: "e.g., ABC Bank" },
       { name: "paymentDetails.accountNumber", label: "Account Number", placeholder: "" },
       { name: "paymentDetails.accountName", label: "Account Name", placeholder: "" },
     ],
-    card: [], // Managed by Stripe gateway
+    bkash: [
+      { name: "paymentDetails.walletNumber", label: "Wallet Number", placeholder: "01XXXXXXXXX" },
+      { name: "paymentDetails.walletType", label: "Wallet Type", placeholder: "personal or merchant" },
+    ],
+    nagad: [
+      { name: "paymentDetails.walletNumber", label: "Wallet Number", placeholder: "01XXXXXXXXX" },
+      { name: "paymentDetails.walletType", label: "Wallet Type", placeholder: "personal or merchant" },
+    ],
+    rocket: [
+      { name: "paymentDetails.walletNumber", label: "Wallet Number", placeholder: "01XXXXXXXXX" },
+      { name: "paymentDetails.walletType", label: "Wallet Type", placeholder: "personal or merchant" },
+    ],
+    card: [], // Managed by gateway
     online: [
-      { name: "paymentDetails.provider", label: "Provider", placeholder: "e.g., PayPal" },
-      { name: "paymentDetails.trxId", label: "Transaction ID", placeholder: "" },
+      { name: "paymentDetails.proofUrl", label: "Proof URL", placeholder: "" },
     ],
     manual: [
-      { name: "paymentDetails.provider", label: "Provider/Method", placeholder: "e.g., Cash, Cheque" },
+      { name: "paymentDetails.proofUrl", label: "Proof URL", placeholder: "" },
     ],
   };
 

@@ -10,6 +10,7 @@ export const UserRole = {
   FINANCE_ADMIN: 'finance-admin',
   FINANCE_MANAGER: 'finance-manager',
   STORE_MANAGER: 'store-manager',
+  WAREHOUSE_ADMIN: 'warehouse-admin',
   WAREHOUSE_STAFF: 'warehouse-staff',
 } as const;
 

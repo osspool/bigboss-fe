@@ -127,6 +127,7 @@ export interface OrderVat {
 
 export interface OrderPayment {
   transactionId?: string;
+  /** Amount in paisa (smallest unit). Divide by 100 for BDT display. */
   amount: number;
   status: PaymentStatus | string;
   method: string;
@@ -158,46 +159,93 @@ export interface OrderShipping {
 }
 
 /**
+ * Parcel metrics for delivery estimation
+ */
+export interface OrderParcel {
+  /** Total weight in grams */
+  weightGrams: number;
+  /** Package dimensions in centimeters */
+  dimensionsCm?: {
+    length: number;
+    width: number;
+    height: number;
+  };
+  /** Number of items without weight data */
+  missingWeightItems: number;
+  /** Number of items without dimension data */
+  missingDimensionItems: number;
+}
+
+/**
+ * Cancellation request details
+ */
+export interface CancellationRequest {
+  requested: boolean;
+  reason?: string;
+  requestedAt?: string;
+  requestedBy?: string;
+}
+
+/**
  * Main Order Interface
+ * @see docs/api/commerce/order.md
  */
 export interface Order {
   _id: string;
-  orderNumber?: string; // If using auto-increment plugin
-  
+  /** Virtual: last 8 chars of _id (uppercase) */
+  orderNumber?: string;
+
   customer?: string;
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
   userId?: string;
-  
+
   items: OrderItem[];
-  
+
   subtotal: number;
   discountAmount: number;
   deliveryCharge: number;
   totalAmount: number;
-  
+
   vat?: OrderVat;
-  
+
   delivery?: OrderDelivery;
   deliveryAddress?: OrderAddress;
-  
+  /** True if ordering on behalf of someone else (gift order) */
+  isGift?: boolean;
+
   status: OrderStatus | string;
   source: 'web' | 'pos' | 'api';
-  
+
   // POS specific
   branch?: string;
   terminalId?: string;
   cashier?: string;
-  
+  /** Idempotency key for safe retries */
+  idempotencyKey?: string;
+
+  // Stock reservation (web checkout)
+  /** Reservation ID for stock hold */
+  stockReservationId?: string;
+  stockReservationExpiresAt?: string;
+
   currentPayment?: OrderPayment;
   shipping?: OrderShipping;
-  
+
+  /** Parcel metrics for delivery estimation */
+  parcel?: OrderParcel;
+
+  /** Customer cancellation request (awaiting admin review) */
+  cancellationRequest?: CancellationRequest;
+  /** Final cancellation reason (after cancelled) */
+  cancellationReason?: string;
+
   notes?: string;
-  
+
   createdAt: string;
   updatedAt: string;
-  
+
   // Virtuals
   canCancel?: boolean;
   isCompleted?: boolean;
@@ -205,6 +253,12 @@ export interface Order {
   paymentMethod?: string;
   netAmount?: number;
   grossAmount?: number;
+
+  // Backward compatibility virtuals (from shipping)
+  trackingNumber?: string;
+  shippedAt?: string;
+  deliveredAt?: string;
+  shippingStatus?: string;
 }
 
 /**

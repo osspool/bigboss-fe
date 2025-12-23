@@ -13,11 +13,16 @@ export enum TransactionType {
 
 export enum TransactionStatus {
   PENDING = 'pending',
+  PAYMENT_INITIATED = 'payment_initiated',
+  PROCESSING = 'processing',
+  REQUIRES_ACTION = 'requires_action',
   VERIFIED = 'verified',
   COMPLETED = 'completed',
   FAILED = 'failed',
   CANCELLED = 'cancelled',
+  EXPIRED = 'expired',
   REFUNDED = 'refunded',
+  PARTIALLY_REFUNDED = 'partially_refunded',
 }
 
 /**
@@ -73,7 +78,7 @@ export enum PaymentMethod {
 
 export interface TransactionPaymentDetails {
   walletNumber?: string;
-  walletType?: string;
+  walletType?: 'personal' | 'merchant';
   bankName?: string;
   accountNumber?: string;
   accountName?: string;
@@ -85,15 +90,19 @@ export interface TransactionPaymentDetails {
  */
 export interface Transaction {
   _id: string;
+  organizationId?: string;
+  customerId?: string | null;
+  handledBy?: string | null;
   amount: number; // In smallest unit (e.g. paisa)
   type: TransactionType | string;
-  method: string;
+  method: PaymentMethod | string;
   status: TransactionStatus | string;
 
   category: string; // e.g. 'order_purchase', 'rent', 'cogs'
 
   source: 'web' | 'pos' | 'api';
 
+  reference?: string;
   referenceModel: string;
   referenceId: string;
 
@@ -101,7 +110,7 @@ export interface Transaction {
   currency?: string; // Default: 'BDT'
 
   gateway?: {
-    type: string;
+    type: PaymentGatewayType | string;
     paymentUrl?: string;
     transactionId?: string;
     sessionId?: string;
@@ -128,7 +137,8 @@ export interface Transaction {
 
   notes?: string;
 
-  transactionDate: string;
+  date?: string;
+  transactionDate?: string;
   createdAt: string;
   updatedAt: string;
 
@@ -141,16 +151,8 @@ export interface Transaction {
  * Payload to create a Manual Transaction (OpEx, CapEx)
  */
 export interface CreateTransactionPayload {
-  category: string;
-  amount: number; // In main unit (e.g. BDT) - Backend converts to smallest
-  method: string;
-  
-  date?: string;
+  // Transactions are system-managed; create is blocked.
   notes?: string;
-  
-  paymentDetails?: TransactionPaymentDetails;
-  
-  reference?: string; // Optional text reference
 }
 
 /**
@@ -220,3 +222,4 @@ export interface CategoryReport {
     count: number;
   }[];
 }
+import type { PaymentMethod, PaymentGatewayType } from "./common.types";

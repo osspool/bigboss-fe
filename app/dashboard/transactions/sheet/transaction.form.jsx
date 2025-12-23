@@ -48,72 +48,19 @@ export function TransactionForm({
 
   // Calculate which fields are editable based on API guide rules
   const editableFields = useMemo(() => {
-    if (!isEdit) {
-      // Creating new transaction - all manual fields allowed
-      return {
-        type: true,
-        category: true,
-        amount: true,
-        method: true,
-        reference: true,
-        paymentDetails: true,
-        notes: true,
-        transactionDate: true,
-        description: true,
-        advanced: true,
-      };
-    }
-
-    if (isLibraryManaged) {
-      // Library-managed transaction (subscription, enrollment, refund, HRM)
-      // Per API guide: Only notes allowed (status managed by webhooks)
-      return {
-        type: false,
-        category: false,
-        amount: false,
-        method: false,
-        reference: false,
-        paymentDetails: false,
-        notes: true,
-        transactionDate: false,
-        description: false,
-        advanced: false,
-        status: false, // Status managed by webhooks only
-      };
-    } else {
-      // Manual transaction (rent, utilities, equipment, etc.)
-      if (transaction.status === TRANSACTION_STATUS.PENDING) {
-        // Pending: status, amount, method, reference, paymentDetails, notes, transactionDate
-        return {
-          type: false, // Type immutable after creation
-          category: false, // Category immutable after creation
-          amount: true,
-          method: true,
-          reference: true,
-          paymentDetails: true,
-          notes: true,
-          transactionDate: true,
-          description: true,
-          advanced: false, // Advanced fields (referenceId, etc.) immutable
-          status: true, // Can update status for manual transactions
-        };
-      } else {
-        // Verified/completed: status, notes, reference, paymentDetails
-        return {
-          type: false,
-          category: false,
-          amount: false,
-          method: false,
-          reference: true,
-          paymentDetails: true,
-          notes: true,
-          transactionDate: false,
-          description: false,
-          advanced: false,
-          status: true, // Can update status for manual transactions
-        };
-      }
-    }
+    return {
+      type: false,
+      category: false,
+      amount: false,
+      method: false,
+      reference: false,
+      paymentDetails: false,
+      notes: true,
+      transactionDate: false,
+      description: false,
+      advanced: false,
+      status: false,
+    };
   }, [isEdit, isLibraryManaged, isVerified, transaction?.status]);
 
   const defaultValues = useMemo(
@@ -129,8 +76,8 @@ export function TransactionForm({
       method: transaction?.method || "cash",
       currency,
       paymentDetails: {
-        provider: transaction?.paymentDetails?.provider || "",
-        trxId: transaction?.paymentDetails?.trxId || "",
+        walletNumber: transaction?.paymentDetails?.walletNumber || "",
+        walletType: transaction?.paymentDetails?.walletType || "",
         bankName: transaction?.paymentDetails?.bankName || "",
         accountNumber: transaction?.paymentDetails?.accountNumber || "",
         accountName: transaction?.paymentDetails?.accountName || "",
@@ -139,7 +86,7 @@ export function TransactionForm({
       reference: transaction?.reference || "",
       notes: transaction?.notes || "",
       description: transaction?.description || "",
-      transactionDate: transaction?.transactionDate || undefined,
+      transactionDate: transaction?.date || transaction?.transactionDate || undefined,
     }),
     [transaction]
   );
@@ -156,9 +103,8 @@ export function TransactionForm({
     form.reset(defaultValues);
   }, [defaultValues, form]);
 
-  const { create: createTransaction, update: updateTransaction, isCreating, isUpdating } =
-    useTransactionActions();
-  const isSubmitting = isCreating || isUpdating;
+  const { update: updateTransaction, isUpdating } = useTransactionActions();
+  const isSubmitting = isUpdating;
   const formErrors = form.formState.errors;
 
   useNotifySubmitState(isSubmitting, onSubmitStateChange);
@@ -179,69 +125,16 @@ export function TransactionForm({
   const handleSubmitForm = useCallback(
     async (data) => {
       try {
-        // Normalize paymentDetails based on method to match backend schema
-        let paymentDetails = undefined;
-        if (data.method && data.method !== "cash" && data.method !== "card") {
-          const src = data.paymentDetails || {};
-
-          if (data.method === "bank") {
-            paymentDetails = {
-              bankName: src.bankName || undefined,
-              accountNumber: src.accountNumber || undefined,
-              accountName: src.accountName || undefined,
-              proofUrl: src.proofUrl || undefined,
-            };
-          } else if (data.method === "online") {
-            paymentDetails = {
-              provider: src.provider || undefined,
-              trxId: src.trxId || undefined,
-              proofUrl: src.proofUrl || undefined,
-            };
-          } else if (data.method === "manual") {
-            paymentDetails = {
-              provider: src.provider || undefined,
-              proofUrl: src.proofUrl || undefined,
-            };
-          }
-        }
-
         if (isEdit) {
           // Update: only send editable fields
           const updateData = {
-            ...(editableFields.status && data.status && { status: data.status }),
-            ...(editableFields.amount && data.amount !== undefined && { amount: Number(data.amount) }),
-            ...(editableFields.method && data.method && { method: data.method }),
-            ...(editableFields.reference && data.reference !== undefined && { reference: data.reference }),
-            ...(editableFields.paymentDetails && paymentDetails !== undefined && { paymentDetails }),
             ...(editableFields.notes && data.notes !== undefined && { notes: data.notes }),
-            ...(editableFields.description && data.description && { description: data.description }),
-            ...(editableFields.transactionDate && data.transactionDate && { transactionDate: data.transactionDate }),
           };
 
           await updateTransaction({ token, id: transaction._id, data: updateData });
           toast.success("Transaction updated successfully");
         } else {
-          // Create: send all required fields
-          const createData = {
-            type: data.type,
-            category: data.category,
-            amount: Number(data.amount) || 0,
-            method: data.method,
-            currency,
-            status: data.status || undefined,
-            reference: data.reference || undefined,
-            paymentDetails,
-            notes: data.notes || undefined,
-            description: data.description || undefined,
-            transactionDate: data.transactionDate || undefined,
-            customerId: data.customerId || undefined,
-            appointmentId: data.appointmentId || undefined,
-            referenceId: data.referenceId || undefined,
-            referenceModel: data.referenceModel || undefined,
-          };
-
-          await createTransaction({ token, data: createData });
-          toast.success("Transaction created successfully");
+          toast.error("Transactions are system-managed and cannot be created manually.");
         }
         onSuccess?.();
       } catch (error) {
@@ -249,7 +142,7 @@ export function TransactionForm({
         toast.error(error.message || `Failed to ${isEdit ? "update" : "create"} transaction`);
       }
     },
-    [isEdit, updateTransaction, createTransaction, token, transaction?._id, onSuccess, editableFields]
+    [isEdit, updateTransaction, token, transaction?._id, onSuccess, editableFields]
   );
 
   const handleFormError = useCallback(() => {

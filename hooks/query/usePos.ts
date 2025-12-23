@@ -158,19 +158,15 @@ export function usePosOrders(token: string) {
   const queryClient = useQueryClient();
 
   // Create order mutation
+  // Note: UI feedback (toasts) should be handled at component level for flexibility
   const createOrderMutation = useMutation({
     mutationFn: (data: PosOrderPayload) =>
       posApi.createOrder({ token, data }),
-    onSuccess: (result, variables) => {
+    onSuccess: (_result, variables) => {
       // Invalidate inventory queries for the branch
       queryClient.invalidateQueries({
         queryKey: POS_KEYS.products(variables.branchId),
       });
-
-      toast.success('Order created successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create order');
     },
   });
 

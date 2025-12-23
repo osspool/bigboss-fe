@@ -89,13 +89,28 @@ export function transferColumns({
     id: "items",
     header: "Items",
     cell: ({ row }) => {
-      const items = row.original.items || [];
-      const qty = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+      const t = row.original;
+      // Use API-provided totals if available, otherwise compute
+      const itemCount = t.totalItems ?? t.items?.length ?? 0;
+      const qty = t.totalQuantity ?? t.items?.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0) ?? 0;
       return (
         <div className="text-sm">
-          <div className="font-medium">{items.length}</div>
+          <div className="font-medium">{itemCount}</div>
           <div className="text-xs text-muted-foreground">Qty {qty}</div>
         </div>
+      );
+    },
+  },
+  {
+    id: "totalValue",
+    header: "Value",
+    cell: ({ row }) => {
+      const value = row.original.totalValue;
+      if (value == null) return <span className="text-muted-foreground">-</span>;
+      return (
+        <span className="font-mono text-sm">
+          ৳{value.toLocaleString()}
+        </span>
       );
     },
   },
@@ -117,11 +132,12 @@ export function transferColumns({
       const isSender = currentBranchId && sender.id === currentBranchId;
       const isReceiver = currentBranchId && receiver.id === currentBranchId;
 
-      const canApprove = isSender && t.status === "draft";
-      const canDispatch = isSender && t.status === "approved";
+      // Use API virtual fields if available, otherwise fallback to local computation
+      const canApprove = t.canApprove ?? (isSender && t.status === "draft");
+      const canDispatch = t.canDispatch ?? (isSender && t.status === "approved");
       const canInTransit = isSender && t.status === "dispatched";
-      const canReceive = isReceiver && (t.status === "in_transit" || t.status === "dispatched");
-      const canCancel = isSender && (t.status === "draft" || t.status === "approved");
+      const canReceive = t.canReceive ?? (isReceiver && (t.status === "in_transit" || t.status === "dispatched"));
+      const canCancel = t.canCancel ?? (isSender && (t.status === "draft" || t.status === "approved"));
 
       return (
         <div className="flex justify-end gap-2">

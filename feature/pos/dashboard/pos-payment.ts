@@ -16,7 +16,7 @@ export function getPaymentKey(method: PaymentMethodConfig, index: number): strin
  *
  * This mapping is required per API spec:
  * - Platform API: Uses generic "mfs" type with provider field
- * - POS/Order API: Uses provider name directly (bkash, nagad, rocket)
+ * - POS/Order API: Uses provider name directly (bkash, nagad)
  */
 export function mapPlatformMethodToPosMethod(
   method: PaymentMethodConfig
@@ -27,13 +27,13 @@ export function mapPlatformMethodToPosMethod(
     case "mfs": {
       // For MFS, use provider name directly per POS API spec
       const provider = (method.provider || "").toLowerCase();
-      if (provider === "bkash" || provider === "nagad" || provider === "rocket") {
+      if (provider === "bkash" || provider === "nagad") {
         return provider as PosPaymentMethod;
       }
       return null;
     }
     case "bank_transfer":
-      return "bank_transfer";
+      return null;
     case "card":
       return "card";
     default:

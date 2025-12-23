@@ -2,12 +2,13 @@
 
 import { useState, useMemo, memo } from "react";
 import Link from "next/link";
-import { Menu, X, Search, User, ChevronDown, ChevronRight, LogOut, Settings, Package } from "lucide-react";
+import { signOut } from "next-auth/react";
+import { Menu, X, Search, User, ChevronDown, ChevronRight, LogOut, Settings, Package, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Container } from "./Container";
 import { HeaderSearch } from "./HeaderSearch";
 import { MobileSearchOverlay } from "./MobileSearchOverlay";
-import { useCategoriesSafe } from "@/contexts/CategoryContext";
+import { useCategoryTree } from "@/hooks/query/useCategories";
 import { Button } from "@/components/ui/button";
 import { CartBadge } from "@/components/platform/cart/CartBadge";
 import {
@@ -194,12 +195,20 @@ export function Header({ user, token }: HeaderProps) {
   const [showBanner, setShowBanner] = useState(true);
   const isLoggedIn = !!user;
 
-  // Get categories from context (prefetched on server)
-  const { categoryTree } = useCategoriesSafe();
+  // Check if user has admin roles
+  const isAdmin = useMemo(() => {
+    if (!user?.roles) return false;
+    const adminRoles = ['superadmin', 'admin', 'finance-admin', 'finance-manager', 'store-manager', 'warehouse-staff'];
+    return user.roles.some(role => adminRoles.includes(role));
+  }, [user?.roles]);
+
+  // Get categories from React Query (cached globally, no context needed)
+  const { data: categoryResponse } = useCategoryTree(undefined);
+  const categoryTree = categoryResponse?.data || [];
 
   // Filter categories for navigation (exclude collections-type categories)
   const navCategories = useMemo(() => {
-    return categoryTree.filter(cat => cat.slug !== "collections");
+    return categoryTree.filter((cat) => cat.slug !== "collections");
   }, [categoryTree]);
 
   const toggleCategory = (slug: string) => {
@@ -347,6 +356,16 @@ export function Header({ user, token }: HeaderProps) {
                   {/* Bottom Actions for Logged In User */}
                   {isLoggedIn && (
                     <div className="border-t border-border p-4 space-y-1">
+                      {isAdmin && (
+                        <Link
+                          href="/dashboard"
+                          onClick={closeSheet}
+                          className="flex items-center gap-3 px-2 py-2 text-sm hover:bg-accent rounded-md transition-colors"
+                        >
+                          <LayoutDashboard className="h-4 w-4" />
+                          Dashboard
+                        </Link>
+                      )}
                       <Link
                         href="/profile/my-orders"
                         onClick={closeSheet}
@@ -363,16 +382,16 @@ export function Header({ user, token }: HeaderProps) {
                         <Settings className="h-4 w-4" />
                         Account Settings
                       </Link>
-                      <form action="/api/auth/signout" method="POST">
-                        <button
-                          type="submit"
-                          onClick={closeSheet}
-                          className="flex items-center gap-3 px-2 py-2 text-sm text-destructive hover:bg-accent rounded-md transition-colors w-full"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          Sign Out
-                        </button>
-                      </form>
+                      <button
+                        onClick={() => {
+                          closeSheet();
+                          signOut({ callbackUrl: '/login' });
+                        }}
+                        className="flex items-center gap-3 px-2 py-2 text-sm text-destructive hover:bg-accent rounded-md transition-colors w-full text-left"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Sign Out
+                      </button>
                     </div>
                   )}
                 </div>
@@ -421,7 +440,7 @@ export function Header({ user, token }: HeaderProps) {
             <div className="flex items-center gap-1 md:gap-2">
               {/* User Account */}
               {isLoggedIn && user ? (
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="relative">
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -437,6 +456,14 @@ export function Header({ user, token }: HeaderProps) {
                       <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
                     <DropdownMenuSeparator />
+                    {isAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard" className="cursor-pointer">
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                       <Link href="/profile/my-orders" className="cursor-pointer">
                         <Package className="mr-2 h-4 w-4" />
@@ -450,16 +477,15 @@ export function Header({ user, token }: HeaderProps) {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <form action="/api/auth/signout" method="POST">
-                        <button
-                          type="submit"
-                          className="flex items-center text-destructive cursor-pointer w-full"
-                        >
-                          <LogOut className="mr-2 h-4 w-4" />
-                          Sign Out
-                        </button>
-                      </form>
+                    <DropdownMenuItem
+                      className="text-destructive cursor-pointer"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        signOut({ callbackUrl: '/login' });
+                      }}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

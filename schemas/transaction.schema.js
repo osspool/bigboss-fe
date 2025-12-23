@@ -1,8 +1,7 @@
 import { z } from "zod";
-import { coerceToIsoDateTimeString, objectIdStringSchema, optionalObjectIdString } from "@/lib/utils/zod-utils";
+import { objectIdStringSchema, optionalObjectIdString } from "@/lib/utils/zod-utils";
 import {
   TRANSACTION_CATEGORY_VALUES,
-  MANUAL_CATEGORY_VALUES,
   TRANSACTION_TYPE_VALUES,
   TRANSACTION_STATUS_VALUES,
   TRANSACTION_TARGET_MODEL_VALUES,
@@ -38,35 +37,11 @@ export const transactionPaymentDetails = z.object({
  * - verifiedAt, verifiedBy (null initially)
  * - commission, gateway, webhook (system-managed)
  */
-export const transactionCreateSchema = z.object({
-  customerId: optionalObjectIdString,
-  handledBy: optionalObjectIdString,
-
-  // Category is required and must be from manual categories
-  category: z.enum(MANUAL_CATEGORY_VALUES, {
-    errorMap: () => ({ message: "Only manual operational categories can be created via frontend" })
-  }),
-
-  amount: z.number().min(0, "Amount must be non-negative"),
-  method: z.enum(PAYMENT_METHOD_VALUES),
-
-  // Optional status (defaults to 'pending' if not provided)
-  status: z.enum(TRANSACTION_STATUS_VALUES).optional(),
-
-  // Customer-provided payment reference (bKash trxId, bank reference, etc.)
-  reference: z.string().optional(),
-
-  // Additional payment details (wallet/bank info)
-  paymentDetails: transactionPaymentDetails,
-
-  notes: z.string().optional(),
-  description: z.string().optional(),
-  date: coerceToIsoDateTimeString.optional(),
-
-  // Polymorphic reference (optional - for linking to specific entities)
-  referenceId: optionalObjectIdString,
-  referenceModel: z.enum(TRANSACTION_TARGET_MODEL_VALUES).optional(),
-});
+export const transactionCreateSchema = z
+  .object({})
+  .refine(() => false, {
+    message: "Transactions are system-managed and cannot be created from the frontend.",
+  });
 
 /**
  * Transaction update schema (for API updates)
@@ -78,14 +53,7 @@ export const transactionCreateSchema = z.object({
  * Frontend will conditionally enable/disable fields based on category and status
  */
 export const transactionUpdateSchema = z.object({
-  status: z.enum(TRANSACTION_STATUS_VALUES).optional(),
-  amount: z.number().min(0, "Amount must be non-negative").optional(),
-  method: z.enum(PAYMENT_METHOD_VALUES).optional(),
-  reference: z.string().optional(),
-  paymentDetails: transactionPaymentDetails,
   notes: z.string().optional(),
-  description: z.string().optional(),
-  date: coerceToIsoDateTimeString.optional(),
 });
 
 /**

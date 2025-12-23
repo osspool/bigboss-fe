@@ -14,7 +14,8 @@ export type StockMovementType =
   | 'transfer_out'
   | 'adjustment'
   | 'initial'
-  | 'return';
+  | 'return'
+  | 'recount';
 
 export type TransferStatus =
   | 'draft'
@@ -92,6 +93,13 @@ export interface StockMovement {
 
 // ============= Purchase =============
 
+// Purchase status enums
+export type PurchaseStatus = 'draft' | 'approved' | 'received' | 'cancelled';
+export type PurchasePaymentStatus = 'unpaid' | 'partial' | 'paid';
+export type PurchasePaymentTerms = 'cash' | 'credit';
+export type PurchaseActionType = 'receive' | 'pay' | 'cancel';
+
+// Purchase item (request shape)
 export interface PurchaseItem {
   productId: string;
   variantSku?: string;
@@ -100,32 +108,113 @@ export interface PurchaseItem {
   expiryDate?: string;
 }
 
-export interface CreatePurchasePayload {
-  branchId?: string; // Defaults to head office
-  supplierId?: string;
-  supplierName?: string; // Alternative to supplierId for quick entry
-  referenceNo?: string;
-  purchaseOrderNumber?: string; // Alias for referenceNo
-  notes?: string;
-  date?: string;
-  items: PurchaseItem[];
-  createTransaction?: boolean; // Default: false
-  paymentMethod?: string;
-  amount?: number;
+// Purchase item (response shape - populated)
+export interface PurchaseItemDoc {
+  product: string | { _id: string; name: string };
+  productName: string;
+  variantSku?: string;
+  quantity: number;
+  costPrice: number;
 }
 
-// Alias for hooks that use different naming
+// Purchase document (API response)
+export interface Purchase {
+  _id: string;
+  invoiceNumber: string;
+  supplier?: string | { _id: string; name: string; code?: string };
+  branch: string | { _id: string; name: string };
+  status: PurchaseStatus;
+  paymentStatus: PurchasePaymentStatus;
+  paymentTerms: PurchasePaymentTerms;
+  creditDays?: number;
+  items: PurchaseItemDoc[];
+  grandTotal: number;
+  paidAmount: number;
+  dueAmount: number;
+  notes?: string;
+  purchaseOrderNumber?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string | { _id: string; name: string };
+  receivedAt?: string;
+  receivedBy?: string | { _id: string; name: string };
+}
+
+// Create purchase payload
+export interface CreatePurchasePayload {
+  supplierId?: string;
+  purchaseOrderNumber?: string;
+  paymentTerms?: PurchasePaymentTerms;
+  creditDays?: number;
+  items: PurchaseItem[];
+  notes?: string;
+  autoApprove?: boolean;
+  autoReceive?: boolean;
+  payment?: {
+    amount: number;
+    method: string;
+    reference?: string;
+  };
+}
+
+// Update purchase payload (draft only)
+export interface UpdatePurchasePayload {
+  supplierId?: string;
+  purchaseOrderNumber?: string;
+  paymentTerms?: PurchasePaymentTerms;
+  creditDays?: number;
+  items?: PurchaseItem[];
+  notes?: string;
+}
+
+// Purchase action payloads
+export interface PurchaseReceivePayload {
+  action: 'receive';
+}
+
+export interface PurchasePayPayload {
+  action: 'pay';
+  amount: number;
+  method: string;
+  reference?: string;
+}
+
+export interface PurchaseCancelPayload {
+  action: 'cancel';
+  reason?: string;
+}
+
+export type PurchaseActionPayload =
+  | PurchaseReceivePayload
+  | PurchasePayPayload
+  | PurchaseCancelPayload;
+
+// Alias for hooks that use different naming (backward compatibility)
 export type RecordPurchasePayload = CreatePurchasePayload;
 
 // ============= Transfer (Challan) =============
 
 export type TransferType = 'head_to_sub' | 'sub_to_sub' | 'sub_to_head';
 
-export interface TransferItem {
+// Transfer item (request shape - for create/update)
+export interface TransferItemPayload {
   productId: string;
   variantSku?: string;
   quantity: number;
+}
+
+// Transfer item (response shape - populated from API)
+export interface TransferItem {
+  _id?: string;
+  product: string | { _id: string; name: string };
+  productName?: string;
+  productSku?: string;
+  variantSku?: string;
+  variantAttributes?: Record<string, string>;
+  quantity: number;
   quantityReceived?: number;
+  costPrice?: number;
+  notes?: string;
 }
 
 export interface TransportDetails {
@@ -139,8 +228,8 @@ export interface TransportDetails {
 
 export interface TransferStatusHistoryEntry {
   status: TransferStatus;
-  at: string;
-  by?: string;
+  timestamp: string;
+  actor?: string | { _id: string; name: string };
   notes?: string | null;
 }
 
@@ -148,18 +237,20 @@ export interface InventoryTransfer {
   _id: string;
   challanNumber: string;
   transferType?: TransferType;
+  documentType?: 'delivery_challan' | 'dispatch_note' | 'delivery_slip';
+  status: TransferStatus;
 
   senderBranch: string | { _id: string; name: string; code?: string };
   receiverBranch: string | { _id: string; name: string; code?: string };
 
   items: TransferItem[];
-  status: TransferStatus;
-  documentType?: string;
-
+  totalItems?: number;
+  totalQuantity?: number;
   totalValue?: number;
 
   transport?: TransportDetails;
   remarks?: string;
+  internalNotes?: string;
 
   statusHistory?: TransferStatusHistoryEntry[];
   dispatchMovements?: string[];
@@ -170,8 +261,19 @@ export interface InventoryTransfer {
 
   createdBy?: string | { _id: string; name: string };
   approvedBy?: string | { _id: string; name: string };
+  approvedAt?: string;
   dispatchedBy?: string | { _id: string; name: string };
+  dispatchedAt?: string;
   receivedBy?: string | { _id: string; name: string };
+  receivedAt?: string;
+
+  // Virtual fields (computed by API)
+  isComplete?: boolean;
+  canEdit?: boolean;
+  canApprove?: boolean;
+  canDispatch?: boolean;
+  canReceive?: boolean;
+  canCancel?: boolean;
 }
 
 // Alias for hooks
@@ -180,12 +282,8 @@ export type Transfer = InventoryTransfer;
 export interface CreateTransferPayload {
   senderBranchId?: string; // Defaults to head office
   receiverBranchId: string;
-  documentType?: string;
-  items: {
-    productId: string;
-    variantSku?: string;
-    quantity: number;
-  }[];
+  documentType?: 'delivery_challan' | 'dispatch_note' | 'delivery_slip';
+  items: TransferItemPayload[];
   remarks?: string;
 }
 
@@ -203,13 +301,9 @@ export interface TransferActionPayload {
 
 // Individual action payloads (for type-safe hooks)
 export interface UpdateTransferPayload {
-  items?: {
-    productId: string;
-    variantSku?: string;
-    quantity: number;
-  }[];
+  items?: TransferItemPayload[];
   remarks?: string;
-  documentType?: string;
+  documentType?: 'delivery_challan' | 'dispatch_note' | 'delivery_slip';
 }
 
 export interface DispatchTransferPayload {
@@ -232,7 +326,10 @@ export interface StockRequestItem {
   productId: string;
   variantSku?: string;
   quantity: number;
+  // Legacy field
   approvedQuantity?: number;
+  // Preferred field (API docs)
+  quantityApproved?: number;
   notes?: string;
 }
 
@@ -279,7 +376,7 @@ export interface StockRequestActionPayload {
   items?: {
     productId: string;
     variantSku?: string;
-    approvedQuantity: number;
+    quantityApproved: number;
   }[]; // For 'approve'
   reason?: string; // For 'reject' or 'cancel'
   remarks?: string; // For 'fulfill'
@@ -297,6 +394,9 @@ export interface AdjustmentItem {
 
 export interface CreateAdjustmentPayload {
   branchId?: string;
+  // Bulk adjustments (preferred)
+  adjustments?: AdjustmentItem[];
+  // Legacy bulk field
   items?: AdjustmentItem[];
   // Single item adjustment (alternative to items[])
   productId?: string;
@@ -305,6 +405,10 @@ export interface CreateAdjustmentPayload {
   mode?: 'add' | 'remove' | 'set';
   reason?: string;
   lostAmount?: number; // Creates expense transaction if provided
+  transactionData?: {
+    paymentMethod?: 'cash' | 'bkash' | 'nagad' | 'rocket' | 'bank_transfer';
+    reference?: string;
+  };
 }
 
 // Bulk adjustment (POS format)
@@ -327,20 +431,28 @@ export interface AdjustStockPayload {
 
 // Adjustment result
 export interface AdjustStockResult {
-  success: boolean;
-  processed: number;
+  processed?: number;
   failed?: number;
-  message?: string;
+  results?: {
+    success?: unknown[];
+    failed?: { productId?: string; error?: string }[];
+  };
+  productId?: string;
+  variantSku?: string | null;
+  newQuantity?: number;
 }
 
 // ============= Low Stock =============
 
 export interface LowStockItem {
-  product: { _id: string; name: string; sku?: string };
-  variantSku?: string;
-  branch: { _id: string; name: string; code: string };
+  _id?: string;
+  product: { _id: string; name: string; slug?: string; sku?: string };
+  variantSku?: string | null;
+  /** Backend may omit this when querying for a single selected branch */
+  branch?: { _id: string; name: string; code?: string };
   quantity: number;
   reorderPoint: number;
+  needsReorder?: boolean;
 }
 
 // ============= Transfer Stats =============

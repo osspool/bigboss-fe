@@ -35,17 +35,26 @@ export const SHIPPING_STATUS_VALUES = ['pending', 'requested', 'picked_up', 'in_
 
 /**
  * Delivery address schema
+ * @see docs/api/commerce/order.md - OrderAddress interface
  */
 const deliveryAddressSchema = z.object({
   label: z.string().optional(),
   addressLine1: z.string().min(1, "Address line 1 is required"),
   addressLine2: z.string().optional(),
   city: z.string().min(1, "City is required"),
-  state: z.string().optional(),
+  division: z.string().optional(), // Division/State (API uses 'division')
   postalCode: z.string().optional(),
   country: z.string().optional(),
   recipientPhone: z.string().min(10, "Phone must be at least 10 digits"),
   recipientName: z.string().optional(),
+  // Area info from @classytic/bd-areas
+  areaId: z.number().optional(),
+  areaName: z.string().optional(),
+  zoneId: z.number().optional(),
+  providerAreaIds: z.object({
+    redx: z.number().optional(),
+    pathao: z.number().optional(),
+  }).optional(),
 });
 
 /**
@@ -189,12 +198,27 @@ const shippingViewSchema = z.object({
 });
 
 /**
+ * Parcel metrics schema (for delivery estimation)
+ */
+const parcelSchema = z.object({
+  weightGrams: z.number(),
+  dimensionsCm: z.object({
+    length: z.number(),
+    width: z.number(),
+    height: z.number(),
+  }).optional(),
+  missingWeightItems: z.number(),
+  missingDimensionItems: z.number(),
+});
+
+/**
  * Order view schema (for displaying order data)
  * Includes all fields returned by backend
+ * @see docs/api/commerce/order.md
  */
 export const orderViewSchema = z.object({
   _id: z.string(),
-  customer: z.string(), // Customer ID reference
+  customer: z.string().optional(), // Customer ID reference
 
   // Customer snapshot (read-only, captured at checkout)
   customerName: z.string(), // Buyer's name at order time
@@ -208,15 +232,27 @@ export const orderViewSchema = z.object({
   // Totals (read-only, calculated)
   subtotal: z.number(),
   discountAmount: z.number(),
+  deliveryCharge: z.number().optional(), // Delivery charge in BDT
   totalAmount: z.number(),
 
   // Delivery
-  delivery: deliverySchema,
-  deliveryAddress: deliveryAddressSchema,
+  delivery: deliverySchema.optional(),
+  deliveryAddress: deliveryAddressSchema.optional(),
   isGift: z.boolean().optional(), // True if ordering on behalf of someone else
 
-  // Status
+  // Status & Source
   status: z.enum(ORDER_STATUS_VALUES),
+  source: z.enum(['web', 'pos', 'api']).optional(), // Order channel
+
+  // POS specific fields
+  branch: z.string().optional(), // Branch ID for fulfillment
+  terminalId: z.string().optional(), // POS terminal identifier
+  cashier: z.string().optional(), // Staff member who processed (User ID)
+  idempotencyKey: z.string().optional(), // Idempotency key for retries
+
+  // Stock reservation (web checkout)
+  stockReservationId: z.string().optional(),
+  stockReservationExpiresAt: z.string().optional(),
 
   // Payment (read-only, system-managed)
   currentPayment: currentPaymentSchema.optional(),
@@ -226,6 +262,9 @@ export const orderViewSchema = z.object({
 
   // Shipping
   shipping: shippingViewSchema.optional(),
+
+  // Parcel metrics (for delivery estimation)
+  parcel: parcelSchema.optional(),
 
   // Cancellation
   cancellationRequest: cancellationRequestSchema.optional(),
@@ -243,6 +282,14 @@ export const orderViewSchema = z.object({
   isCompleted: z.boolean().optional(),
   paymentStatus: z.enum(PAYMENT_STATUS_VALUES).optional(),
   paymentMethod: z.enum(PAYMENT_METHOD_VALUES).optional(),
+  netAmount: z.number().optional(),
+  grossAmount: z.number().optional(),
+
+  // Backward compatibility virtuals (from shipping)
+  trackingNumber: z.string().optional(),
+  shippedAt: z.string().optional(),
+  deliveredAt: z.string().optional(),
+  shippingStatus: z.string().optional(),
 });
 
 // ==================== Default Values ====================
@@ -257,11 +304,14 @@ export const defaultOrderUpdateValues = {
     addressLine1: "",
     addressLine2: "",
     city: "",
-    state: "",
+    division: "", // Division/State (API uses 'division')
     postalCode: "",
     country: "",
     recipientPhone: "",
     recipientName: "",
+    areaId: undefined,
+    areaName: "",
+    zoneId: undefined,
   },
   delivery: {
     method: "",
@@ -292,11 +342,14 @@ export function normalizeOrderForForm(order) {
       addressLine1: order.deliveryAddress?.addressLine1 || "",
       addressLine2: order.deliveryAddress?.addressLine2 || "",
       city: order.deliveryAddress?.city || "",
-      state: order.deliveryAddress?.state || "",
+      division: order.deliveryAddress?.division || "", // API uses 'division'
       postalCode: order.deliveryAddress?.postalCode || "",
       country: order.deliveryAddress?.country || "",
       recipientPhone: order.deliveryAddress?.recipientPhone || "",
       recipientName: order.deliveryAddress?.recipientName || "",
+      areaId: order.deliveryAddress?.areaId,
+      areaName: order.deliveryAddress?.areaName || "",
+      zoneId: order.deliveryAddress?.zoneId,
     },
     delivery: {
       method: order.delivery?.method || "",

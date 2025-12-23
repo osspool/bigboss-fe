@@ -52,13 +52,19 @@ export interface ProductVariant {
   barcode?: string;
   attributes: Record<string, string>; // e.g. { size: "S", color: "Red" }
   priceModifier: number; // Defaults to 0
-  
-  /** 
-   * System calculated field (Read-only for frontend) 
+
+  /**
+   * System calculated field (Read-only for frontend)
    * COGS for this specific variant
    */
-  costPrice: number; 
-  
+  costPrice?: number;
+
+  /**
+   * VAT rate override for this specific variant
+   * null = inherit from product/category/platform
+   */
+  vatRate?: number | null;
+
   images?: ProductImage[];
   shipping?: ProductShipping;
   isActive?: boolean;
@@ -85,32 +91,55 @@ export interface ProductStats {
 }
 
 /**
+ * Stock Projection for Variant Products (Read-Only)
+ * Provides fast storefront availability checks
+ */
+export interface StockProjection {
+  variants: Array<{
+    sku: string;
+    quantity: number;
+  }>;
+  syncedAt: string; // ISO date when stock was last synced
+}
+
+/**
  * Main Product Interface (Read Model)
  */
 export interface Product {
   _id: string;
   name: string;
   slug: string; // Globally unique, auto-generated from name
-  
+
   shortDescription?: string;
   description?: string;
-  
+
   basePrice: number;
-  
-  /** 
+
+  /**
    * System field: Cost of Goods Sold
    * Not editable by customer. Admin only.
+   * Role-restricted field - only visible to authorized roles
    */
-  costPrice: number;
-  
+  costPrice?: number;
+
+  /**
+   * VAT rate override for this product
+   * null = inherit from category/platform default
+   */
+  vatRate?: number | null;
+
   /**
    * System field: Total stock quantity across all branches.
    * Read-only cache. Source of truth is Inventory Service.
    */
   quantity: number;
-  
+
+  /**
+   * Product type: 'simple' for regular products, 'variant' for products with variations
+   * Auto-determined by backend based on presence of variationAttributes
+   */
   productType: 'simple' | 'variant';
-  
+
   // Simple product fields
   sku?: string;
   barcode?: string;
@@ -142,7 +171,13 @@ export interface Product {
   stats?: ProductStats;
   averageRating?: number;
   numReviews?: number;
-  
+
+  /**
+   * Stock projection for variant products (Read-Only)
+   * Contains aggregated stock quantities per variant across all branches
+   */
+  stockProjection?: StockProjection;
+
   discount?: ProductDiscount;
   isActive: boolean;
   
@@ -167,30 +202,33 @@ export interface ProductPayload {
   shortDescription?: string;
   description?: string;
   basePrice: number;
-  
+
   // Admin only - requires proper permission
   costPrice?: number;
-  
+
+  // VAT rate override (null = inherit from category/platform)
+  vatRate?: number | null;
+
   productType?: 'simple' | 'variant';
-  
+
   // Simple product identifiers
   sku?: string;
   barcode?: string;
-  
+
   images?: ProductImage[];
   category: string;
   parentCategory?: string;
-  
+
   style?: string[];
-  
+
   // Variant setup
   variationAttributes?: VariationAttribute[];
   variants?: ProductVariant[];
-  
+
   shipping?: ProductShipping;
   properties?: Record<string, any>;
   tags?: string[];
-  
+
   discount?: ProductDiscount;
   isActive?: boolean;
 }

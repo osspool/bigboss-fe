@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { inventoryApi } from "@/api/platform/inventory-api";
-import { extractDocs } from "@/lib/utils/extract-docs";
-import type { StockMovement } from "@/types/inventory.types";
+import { movementApi } from "@/api/inventory";
+import { extractDocs, extractPagination } from "@/lib/utils/extract-docs";
+import type { StockMovement, MovementQueryParams } from "@/types/inventory.types";
 import { MOVEMENT_KEYS } from "./inventory-keys";
 
 // Re-export for backward compatibility
@@ -10,20 +10,22 @@ export { MOVEMENT_KEYS };
 
 export function useMovements(
   token: string,
-  params?: Record<string, unknown>,
+  params?: MovementQueryParams,
   options: { enabled?: boolean } = {}
 ) {
   const query = useQuery({
-    queryKey: MOVEMENT_KEYS.list(params),
-    queryFn: () => inventoryApi.movements({ token, params }),
+    queryKey: MOVEMENT_KEYS.list(params as Record<string, unknown>),
+    queryFn: () => movementApi.list({ token, params }),
     enabled: !!token && options.enabled !== false,
     staleTime: 15 * 1000,
   });
 
   const docs = useMemo(() => extractDocs<StockMovement>(query.data), [query.data]);
+  const pagination = useMemo(() => extractPagination(query.data), [query.data]);
 
   return {
     movements: docs,
+    pagination,
     raw: query.data,
     isLoading: query.isLoading,
     isFetching: query.isFetching,

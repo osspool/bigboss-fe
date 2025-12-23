@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { Banknote, CreditCard, Landmark, Loader2, ShoppingCart, Smartphone, UserSearch, X } from "lucide-react";
+import { Banknote, CreditCard, Loader2, ShoppingCart, Smartphone, UserSearch, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,10 +48,7 @@ function paymentIcon(posMethod: PosPaymentMethod) {
       return Banknote;
     case "bkash":
     case "nagad":
-    case "rocket":
       return Smartphone;
-    case "bank_transfer":
-      return Landmark;
     case "card":
       return CreditCard;
     default:
@@ -283,13 +280,6 @@ export const CartPanel = memo(function CartPanel({
                 Wallet: <span className="font-medium">{selectedOption.method.walletNumber}</span>
               </p>
             )}
-            {selectedOption?.method?.type === "bank_transfer" && (
-              <p className="text-xs text-muted-foreground">
-                {selectedOption.method.bankName ? `${selectedOption.method.bankName} • ` : ""}
-                {selectedOption.method.accountNumber ? `A/C ${selectedOption.method.accountNumber}` : ""}
-              </p>
-            )}
-
             {selectedPosPaymentMethod === "cash" ? (
               <div className="grid grid-cols-2 gap-2">
                 <div className="col-span-2">
@@ -331,8 +321,6 @@ export const CartPanel = memo(function CartPanel({
                 placeholder={
                   selectedPosPaymentMethod === "card"
                     ? "Card reference (Slip/Auth No.)"
-                    : selectedPosPaymentMethod === "bank_transfer"
-                    ? "Bank reference (Txn ID)"
                     : "MFS reference (Txn ID)"
                 }
                 value={paymentReference}

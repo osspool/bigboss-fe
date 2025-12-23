@@ -138,16 +138,7 @@ function VariationFieldInner({
 
   return (
     <div className="space-y-4">
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          <strong>New Variant System:</strong> Define variation attributes (Size,
-          Color, etc.). Backend automatically generates all variant combinations
-          with unique SKUs.
-          {isEdit &&
-            " Changing values will add new variants or mark removed ones as inactive."}
-        </AlertDescription>
-      </Alert>
+      
 
       <div className="flex items-center justify-between">
         <div>
@@ -377,6 +368,14 @@ function ExistingVariants({
     return null;
   }
 
+  // Build stock lookup from stockProjection
+  const stockLookup = new Map<string, number>();
+  if (product.stockProjection?.variants) {
+    for (const v of product.stockProjection.variants) {
+      stockLookup.set(v.sku, v.quantity);
+    }
+  }
+
   return (
     <Card className="p-4">
       <div className="space-y-4">
@@ -392,10 +391,11 @@ function ExistingVariants({
 
         <div className="space-y-2">
           <div className="grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            <div className="col-span-4">Variant (SKU)</div>
-            <div className="col-span-4">Attributes</div>
-            <div className="col-span-3">Price Modifier (৳)</div>
-            <div className="col-span-1">Status</div>
+            <div className="col-span-3">Variant (SKU)</div>
+            <div className="col-span-3">Attributes</div>
+            <div className="col-span-2">Price Mod (৳)</div>
+            <div className="col-span-2 text-center">Stock</div>
+            <div className="col-span-2 text-center">Status</div>
           </div>
 
           {fields.map((field, index) => {
@@ -406,15 +406,21 @@ function ExistingVariants({
               .map(([key, val]) => `${key}: ${val}`)
               .join(", ");
 
+            // Get stock quantity from projection
+            const stockQty = stockLookup.get(variant.sku);
+            const hasStock = stockQty !== undefined;
+            const isOutOfStock = hasStock && stockQty === 0;
+            const isLowStock = hasStock && stockQty > 0 && stockQty <= 10;
+
             return (
               <div key={field.id} className="grid grid-cols-12 gap-3 items-start">
-                <div className="col-span-4">
+                <div className="col-span-3">
                   <div className="flex h-10 items-center rounded-md border border-input bg-muted/50 px-3 py-2 text-xs font-mono truncate">
                     {variant.sku || "(auto-generated)"}
                   </div>
                 </div>
 
-                <div className="col-span-4">
+                <div className="col-span-3">
                   <div className="flex h-10 items-center rounded-md border border-input bg-muted/50 px-3 py-2 text-xs truncate">
                     {attributesStr || "(none)"}
                   </div>
@@ -424,7 +430,7 @@ function ExistingVariants({
                   control={control}
                   name={`variants.${index}.priceModifier`}
                   render={({ field: rhfField, fieldState }) => (
-                    <Field className="col-span-3" data-invalid={fieldState.invalid}>
+                    <Field className="col-span-2" data-invalid={fieldState.invalid}>
                       <InputGroup>
                         <InputGroupInput
                           {...rhfField}
@@ -442,7 +448,25 @@ function ExistingVariants({
                   )}
                 />
 
-                <div className="col-span-1 flex items-center justify-center h-10">
+                <div className="col-span-2 flex items-center justify-center h-10">
+                  {hasStock ? (
+                    <span
+                      className={`text-sm font-medium ${
+                        isOutOfStock
+                          ? "text-red-600"
+                          : isLowStock
+                          ? "text-yellow-600"
+                          : ""
+                      }`}
+                    >
+                      {stockQty}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">-</span>
+                  )}
+                </div>
+
+                <div className="col-span-2 flex items-center justify-center h-10">
                   <span
                     className={`text-xs px-2 py-0.5 rounded ${
                       variant.isActive
@@ -461,6 +485,7 @@ function ExistingVariants({
         <FieldDescription className="text-xs">
           Price modifier adjusts from base price (e.g., +50 for Large size).
           Inactive variants are hidden but preserved for order history. Manage barcodes in the Barcode tab.
+          Stock quantities are synced from inventory.
         </FieldDescription>
       </div>
     </Card>

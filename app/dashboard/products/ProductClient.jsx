@@ -8,7 +8,7 @@ import { productColumns } from "./product-columns";
 import { Plus, Package } from "lucide-react";
 import HeaderSection from "@/components/custom/dashboard/header-section";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useProductActions, useProducts } from "@/hooks/query/useProducts";
+import { useProductActions, useProducts, useSyncProductStock } from "@/hooks/query/useProducts";
 import { revalidateProductsList } from "@/lib/revalidation";
 
 export function ProductsClient({ token, userRoles = [] }) {
@@ -44,6 +44,7 @@ export function ProductsClient({ token, userRoles = [] }) {
     isLoading,
   } = useProducts(token, apiParams, { public: false });
   const { remove: deleteProduct, isDeleting } = useProductActions();
+  const { mutate: syncStock, isPending: isSyncing } = useSyncProductStock();
 
   const handleEdit = useCallback((item) => {
     setSelected(item);
@@ -61,6 +62,15 @@ export function ProductsClient({ token, userRoles = [] }) {
     [deleteProduct, token]
   );
 
+  const handleSyncStock = useCallback(
+    (item) => {
+      if (confirm(`Sync stock quantity for "${item.name}"?\n\nThis will recalculate the total quantity from all branch stock entries.`)) {
+        syncStock({ token, id: item._id });
+      }
+    },
+    [syncStock, token]
+  );
+
   const handlePageChange = useCallback(
     (page) => {
       const params = new URLSearchParams(searchParams);
@@ -72,12 +82,22 @@ export function ProductsClient({ token, userRoles = [] }) {
     [router, searchParams]
   );
 
-  // Only allow delete for admin/superadmin roles
+  // Role-based permissions
   const isAdmin = userRoles.includes('admin') || userRoles.includes('superadmin');
 
+  // Sync stock: admin, warehouse-admin, warehouse-staff, store-manager (per API docs)
+  const canSyncStock = userRoles.some(role =>
+    ['admin', 'superadmin', 'warehouse-admin', 'warehouse-staff', 'store-manager'].includes(role)
+  );
+
   const columns = useMemo(
-    () => productColumns(handleEdit, isAdmin ? handleDelete : null),
-    [handleEdit, handleDelete, isAdmin]
+    () => productColumns(
+      handleEdit,
+      isAdmin ? handleDelete : null,
+      canSyncStock ? handleSyncStock : null,
+      isAdmin // Show cost price and profit margin for admins only
+    ),
+    [handleEdit, handleDelete, handleSyncStock, isAdmin, canSyncStock]
   );
 
   return (

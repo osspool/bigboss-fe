@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { inventoryApi } from "@/api/platform/inventory-api";
+import { movementApi } from "@/api/inventory";
 import { extractDocs } from "@/lib/utils/extract-docs";
 import type { LowStockItem } from "@/types/inventory.types";
 import { LOW_STOCK_KEYS } from "./inventory-keys";
@@ -21,7 +21,7 @@ export function useLowStock(
 ) {
   const query = useQuery({
     queryKey: LOW_STOCK_KEYS.list(params),
-    queryFn: () => inventoryApi.lowStock({ token, params }),
+    queryFn: () => movementApi.lowStock({ token, params }),
     enabled: !!token && options.enabled !== false,
     staleTime: 30 * 1000, // 30 seconds
   });

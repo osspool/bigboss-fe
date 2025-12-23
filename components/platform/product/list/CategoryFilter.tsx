@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ChevronRight, Check, LayoutGrid, Loader2 } from "lucide-react";
-import { useCategoriesSafe } from "@/contexts/CategoryContext";
+import { useCategoryTree } from "@/hooks/query/useCategories";
 import { cn } from "@/lib/utils";
 
 interface CategoryFilterProps {
@@ -18,8 +18,9 @@ export function CategoryFilter({
 }: CategoryFilterProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(parentCategory);
 
-  // Get categories from context (server-prefetched)
-  const { categoryTree, isLoading } = useCategoriesSafe();
+  // Get categories from React Query (globally cached)
+  const { data: categoryResponse, isLoading } = useCategoryTree(undefined);
+  const categoryTree = categoryResponse?.data || [];
 
   // Memoize flat category structure for efficient lookup
   const categories = useMemo(() => {

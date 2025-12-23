@@ -8,7 +8,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { LowStockItem } from "@/types/inventory.types";
 
 function StockLevelBadge({ quantity, reorderPoint }: { quantity: number; reorderPoint: number }) {
-  const percentage = (quantity / reorderPoint) * 100;
+  const safeReorderPoint = reorderPoint > 0 ? reorderPoint : 1;
+  const percentage = (quantity / safeReorderPoint) * 100;
   const isOut = quantity === 0;
   const isCritical = percentage < 25;
   const isLow = percentage < 50;

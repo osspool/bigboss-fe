@@ -210,7 +210,8 @@ export function InventoryClient({
       quantity: data.quantity,
       mode: data.mode,
       branchId,
-      reason: data.notes || undefined,
+      reason: data.reason || undefined,
+      notes: data.notes || undefined,
     });
 
     setAdjustDialogOpen(false);

@@ -60,20 +60,25 @@ export const TRANSACTION_TYPE_OPTIONS = mapToOptions(TRANSACTION_TYPE_VALUES);
 
 // Monetization library categories (system-managed)
 export const LIBRARY_TRANSACTION_CATEGORIES = {
-  REFUND: 'refund',                       // Org expense
   ORDER_PURCHASE: 'order_purchase',       // Product purchase income
+  ORDER_SUBSCRIPTION: 'order_subscription',
+  WHOLESALE_SALE: 'wholesale_sale',
+  PLATFORM_SUBSCRIPTION: 'platform_subscription',
+  CREATOR_SUBSCRIPTION: 'creator_subscription',
+  ENROLLMENT_PURCHASE: 'enrollment_purchase',
+  ENROLLMENT_SUBSCRIPTION: 'enrollment_subscription',
 };
 
-
-
-// Manual operational categories (app-created via API)
+// App-specific categories (system-managed)
 export const OPERATIONAL_CATEGORIES = {
-  // Income
-  CAPITAL_INJECTION: 'capital_injection',
-  RETAINED_EARNINGS: 'retained_earnings',
-  OTHER_INCOME: 'other_income',
+  // Inventory
+  INVENTORY_PURCHASE: 'inventory_purchase',
+  PURCHASE_RETURN: 'purchase_return',
+  INVENTORY_LOSS: 'inventory_loss',
+  INVENTORY_ADJUSTMENT: 'inventory_adjustment',
+  COGS: 'cogs',
 
-  // Expense
+  // Operational Expenses
   RENT: 'rent',
   UTILITIES: 'utilities',
   EQUIPMENT: 'equipment',
@@ -82,8 +87,11 @@ export const OPERATIONAL_CATEGORIES = {
   MARKETING: 'marketing',
   OTHER_EXPENSE: 'other_expense',
 
-  // Adjustment (type depends on amount sign)
-  ADJUSTMENT: 'adjustment',
+  // Operational Income
+  CAPITAL_INJECTION: 'capital_injection',
+  RETAINED_EARNINGS: 'retained_earnings',
+  TIP_INCOME: 'tip_income',
+  OTHER_INCOME: 'other_income',
 };
 
 // Complete transaction categories (all sources)
@@ -106,7 +114,7 @@ export const MANUAL_CATEGORY_OPTIONS = mapToOptions(MANUAL_CATEGORY_VALUES);
 
 // Library-managed categories (restricted - FE cannot create)
 export const LIBRARY_CATEGORY_VALUES = [
-  ...Object.values(LIBRARY_TRANSACTION_CATEGORIES),
+  ...TRANSACTION_CATEGORIES_VALUES,
 ];
 
 /**
@@ -114,14 +122,25 @@ export const LIBRARY_CATEGORY_VALUES = [
  * Useful for P&L reports and accounting views
  */
 export const INCOME_CATEGORIES = [
-  TRANSACTION_CATEGORIES.ORDER_PURCHASE,        // gym_membership
+  TRANSACTION_CATEGORIES.ORDER_PURCHASE,
+  TRANSACTION_CATEGORIES.ORDER_SUBSCRIPTION,
+  TRANSACTION_CATEGORIES.WHOLESALE_SALE,
+  TRANSACTION_CATEGORIES.PLATFORM_SUBSCRIPTION,
+  TRANSACTION_CATEGORIES.CREATOR_SUBSCRIPTION,
+  TRANSACTION_CATEGORIES.ENROLLMENT_PURCHASE,
+  TRANSACTION_CATEGORIES.ENROLLMENT_SUBSCRIPTION,
+  TRANSACTION_CATEGORIES.PURCHASE_RETURN,
   TRANSACTION_CATEGORIES.CAPITAL_INJECTION,
   TRANSACTION_CATEGORIES.RETAINED_EARNINGS,
+  TRANSACTION_CATEGORIES.TIP_INCOME,
   TRANSACTION_CATEGORIES.OTHER_INCOME,
 ];
 
 export const EXPENSE_CATEGORIES = [
-  TRANSACTION_CATEGORIES.REFUND,
+  TRANSACTION_CATEGORIES.INVENTORY_PURCHASE,
+  TRANSACTION_CATEGORIES.INVENTORY_LOSS,
+  TRANSACTION_CATEGORIES.INVENTORY_ADJUSTMENT,
+  TRANSACTION_CATEGORIES.COGS,
   TRANSACTION_CATEGORIES.RENT,
   TRANSACTION_CATEGORIES.UTILITIES,
   TRANSACTION_CATEGORIES.EQUIPMENT,
@@ -135,10 +154,15 @@ export const EXPENSE_CATEGORIES = [
 export const MANUAL_INCOME_CATEGORIES = [
   TRANSACTION_CATEGORIES.CAPITAL_INJECTION,
   TRANSACTION_CATEGORIES.RETAINED_EARNINGS,
+  TRANSACTION_CATEGORIES.TIP_INCOME,
   TRANSACTION_CATEGORIES.OTHER_INCOME,
 ];
 
 export const MANUAL_EXPENSE_CATEGORIES = [
+  TRANSACTION_CATEGORIES.INVENTORY_PURCHASE,
+  TRANSACTION_CATEGORIES.INVENTORY_LOSS,
+  TRANSACTION_CATEGORIES.INVENTORY_ADJUSTMENT,
+  TRANSACTION_CATEGORIES.COGS,
   TRANSACTION_CATEGORIES.RENT,
   TRANSACTION_CATEGORIES.UTILITIES,
   TRANSACTION_CATEGORIES.EQUIPMENT,
@@ -180,11 +204,14 @@ export const PAYMENT_STATUS_OPTIONS = mapToOptions(PAYMENT_STATUS_VALUES);
 
 // ============ PAYMENT METHOD ============
 export const PAYMENT_METHOD = {
-  BANK: 'bank',
+  CASH: 'cash',
+  BKASH: 'bkash',
+  NAGAD: 'nagad',
+  ROCKET: 'rocket',
+  BANK_TRANSFER: 'bank_transfer',
   CARD: 'card',
   ONLINE: 'online',
   MANUAL: 'manual',
-  CASH: 'cash',
 };
 
 export const PAYMENT_METHOD_VALUES = Object.values(PAYMENT_METHOD);
@@ -194,11 +221,14 @@ export const PAYMENT_METHOD_VALUES = Object.values(PAYMENT_METHOD);
  * Extracts values from PAYMENT_METHOD enum with custom labels
  */
 export const PAYMENT_METHOD_OPTIONS = createOptionsFromEnum(PAYMENT_METHOD, {
-  bank: 'Bank Transfer',
+  cash: 'Cash',
+  bkash: 'bKash',
+  nagad: 'Nagad',
+  rocket: 'Rocket',
+  bank_transfer: 'Bank Transfer',
   card: 'Card',
   online: 'Online',
   manual: 'Manual',
-  cash: 'Cash',
 });
 
 // ============ PAYMENT GATEWAY TYPES ============

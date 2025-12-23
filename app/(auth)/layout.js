@@ -1,6 +1,13 @@
 import { Layout } from "@/components/layout/Layout";
+import Providers from "@/components/providers/Providers";
 import { auth } from "./auth";
 
+/**
+ * Auth Layout
+ *
+ * Wraps auth pages with Providers (React Query, etc.) so Header
+ * can fetch categories via useCategoryTree hook.
+ */
 export default async function AuthLayout({ children }) {
   const session = await auth();
 
@@ -15,10 +22,12 @@ export default async function AuthLayout({ children }) {
   } : null;
 
   return (
-    <Layout user={user}>
-      <div className="flex items-center justify-center py-12">
-        {children}
-      </div>
-    </Layout>
+    <Providers>
+      <Layout user={user}>
+        <div className="flex items-center justify-center py-12">
+          {children}
+        </div>
+      </Layout>
+    </Providers>
   );
 }

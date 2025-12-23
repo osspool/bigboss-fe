@@ -53,7 +53,14 @@ export function ProductDetailPage({ product, recommendations = [], token }: Prod
   const { addToCart, isUpdating } = useCart(token);
 
   // Check if product has variants
-  const hasVariants = product.productType === 'variant' && product.variants && product.variants.length > 0;
+  // More robust check: look for actual variant data, not just productType
+  // This handles cases where productType might be inconsistent with actual data
+  const hasVariants = Boolean(
+    product.variants &&
+    product.variants.length > 0 &&
+    product.variationAttributes &&
+    product.variationAttributes.length > 0
+  );
 
   // Initialize selected attributes with first values
   useEffect(() => {

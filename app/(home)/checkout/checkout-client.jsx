@@ -209,6 +209,9 @@ export default function CheckoutClient({ token, userId }) {
     };
 
     const basePayload = {
+      // Idempotency key prevents duplicate orders on retry
+      // @see docs/api/commerce/checkout.md
+      idempotencyKey: crypto.randomUUID(),
       deliveryAddress,
       delivery: {
         method: zoneName || "standard",

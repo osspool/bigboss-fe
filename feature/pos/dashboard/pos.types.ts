@@ -1,4 +1,5 @@
-import type { PaymentMethod, PaymentMethodConfig } from "@/types/common.types";
+import type { PaymentMethodConfig } from "@/types/common.types";
+import type { PosPaymentMethod } from "@/types/pos.types";
 
 /**
  * POS Cart Item (UI State)
@@ -15,10 +16,5 @@ export interface PosCartItem {
   image?: string;
 }
 
-export interface CategoryOption {
-  slug: string;
-  label: string;
-}
-
 // Re-export from common types for convenience
-export type { PaymentMethod as PosPaymentMethod, PaymentMethodConfig as PlatformPaymentMethod };
+export type { PosPaymentMethod, PaymentMethodConfig as PlatformPaymentMethod };

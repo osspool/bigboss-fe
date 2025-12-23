@@ -7,11 +7,11 @@ import { toast } from "sonner";
 import { useBranch } from "@/contexts/BranchContext";
 import { useStockRequestActions } from "@/hooks/query/useStockRequests";
 import { Button } from "@/components/ui/button";
-import { FormGenerator } from "@/components/form/form-system";
+import { FormGenerator, type InferSchemaValues } from "@/components/form/form-system";
 import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
 import { useScannedLineItems } from "@/feature/inventory/ui/useScannedLineItems";
 import { InventoryScanSection } from "@/feature/inventory/forms/inventory-scan-section";
-import { createRequestFormSchema, type RequestFormValues } from "@/feature/inventory/forms/inventory-form-schemas";
+import { createRequestFormSchema } from "@/feature/inventory/forms/inventory-form-schemas";
 
 interface RequestCreateDialogProps {
   token: string;
@@ -24,6 +24,19 @@ export function RequestCreateDialog({ token, disabled }: RequestCreateDialogProp
 
   const [open, setOpen] = useState(false);
   const requestingBranchLabel = selectedBranch ? `${selectedBranch.name} (${selectedBranch.code})` : "";
+
+  const priorityOptions = useMemo(
+    () => [
+      { value: "low", label: "Low" },
+      { value: "normal", label: "Normal" },
+      { value: "high", label: "High" },
+      { value: "urgent", label: "Urgent" },
+    ],
+    []
+  );
+
+  const schema = useMemo(() => createRequestFormSchema({ priorityOptions }), [priorityOptions]);
+  type RequestFormValues = InferSchemaValues<typeof schema>;
   const form = useForm<RequestFormValues>({
     defaultValues: {
       requestingBranchLabel,
@@ -91,16 +104,6 @@ export function RequestCreateDialog({ token, disabled }: RequestCreateDialogProp
     reset();
   }, [selectedBranch, scan.items, create, reset]);
 
-  const priorityOptions = useMemo(
-    () => [
-      { value: "low", label: "Low" },
-      { value: "normal", label: "Normal" },
-      { value: "high", label: "High" },
-      { value: "urgent", label: "Urgent" },
-    ],
-    []
-  );
-
   const footer = (
     <div className="flex gap-2 w-full">
       <Button variant="outline" type="button" className="flex-1" onClick={() => setOpen(false)} disabled={isCreating}>
@@ -137,8 +140,8 @@ export function RequestCreateDialog({ token, disabled }: RequestCreateDialogProp
         footer={footer}
       >
         <div className="space-y-5">
-          <FormGenerator<RequestFormValues>
-            schema={createRequestFormSchema({ priorityOptions })}
+          <FormGenerator
+            schema={schema}
             control={form.control}
             disabled={isCreating || disabled}
           />

@@ -36,7 +36,7 @@ export function icon(iconName: string, className = "h-4 w-4"): () => ReactNode {
 // FIELD HELPERS
 // ============================================================================
 
-interface FieldProps extends Partial<BaseField> {
+interface FieldProps<T extends FieldValues = FieldValues> extends Partial<BaseField<T>> {
   placeholder?: string;
   description?: string;
   required?: boolean;
@@ -46,7 +46,7 @@ interface FieldProps extends Partial<BaseField> {
   [key: string]: unknown;
 }
 
-interface SelectFieldProps extends FieldProps {
+interface SelectFieldProps<T extends FieldValues = FieldValues> extends FieldProps<T> {
   searchPlaceholder?: string;
   emptyText?: string;
 }
@@ -76,7 +76,11 @@ export const field = {
   /**
    * Text input field
    */
-  text: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  text: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "text",
     name,
     label,
@@ -86,7 +90,11 @@ export const field = {
   /**
    * Email input field
    */
-  email: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  email: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "email",
     name,
     label,
@@ -97,7 +105,11 @@ export const field = {
   /**
    * URL input field
    */
-  url: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  url: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "url",
     name,
     label,
@@ -108,7 +120,11 @@ export const field = {
   /**
    * Telephone input field
    */
-  tel: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  tel: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "tel",
     name,
     label,
@@ -119,7 +135,11 @@ export const field = {
   /**
    * Number input field
    */
-  number: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  number: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "number",
     name,
     label,
@@ -130,7 +150,11 @@ export const field = {
   /**
    * Password input field
    */
-  password: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  password: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "password",
     name,
     label,
@@ -141,7 +165,11 @@ export const field = {
   /**
    * Textarea field
    */
-  textarea: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  textarea: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "textarea",
     name,
     label,
@@ -152,12 +180,12 @@ export const field = {
   /**
    * Select dropdown field
    */
-  select: (
+  select: <T extends FieldValues = FieldValues>(
     name: string,
     label: string,
     options: FieldOption[],
-    props: FieldProps = {}
-  ): BaseField => ({
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "select",
     name,
     label,
@@ -168,12 +196,12 @@ export const field = {
   /**
    * Combobox (searchable select) field
    */
-  combobox: (
+  combobox: <T extends FieldValues = FieldValues>(
     name: string,
     label: string,
     options: FieldOption[],
-    props: SelectFieldProps = {}
-  ): BaseField => ({
+    props: SelectFieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "combobox",
     name,
     label,
@@ -186,12 +214,12 @@ export const field = {
   /**
    * Multi-select field (tag choice)
    */
-  multiselect: (
+  multiselect: <T extends FieldValues = FieldValues>(
     name: string,
     label: string,
     options: FieldOption[],
-    props: FieldProps = {}
-  ): BaseField => ({
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "multiselect",
     name,
     label,
@@ -203,12 +231,12 @@ export const field = {
   /**
    * Tag choice field (multi-select with tag display)
    */
-  tagChoice: (
+  tagChoice: <T extends FieldValues = FieldValues>(
     name: string,
     label: string,
     options: FieldOption[],
-    props: FieldProps = {}
-  ): BaseField => ({
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "tagChoice",
     name,
     label,
@@ -220,7 +248,11 @@ export const field = {
   /**
    * Switch (toggle) field
    */
-  switch: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  switch: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "switch",
     name,
     label,
@@ -230,7 +262,11 @@ export const field = {
   /**
    * Checkbox field
    */
-  checkbox: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  checkbox: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "checkbox",
     name,
     label,
@@ -240,12 +276,12 @@ export const field = {
   /**
    * Radio group field
    */
-  radio: (
+  radio: <T extends FieldValues = FieldValues>(
     name: string,
     label: string,
     options: FieldOption[],
-    props: FieldProps = {}
-  ): BaseField => ({
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "radio",
     name,
     label,
@@ -256,7 +292,11 @@ export const field = {
   /**
    * Date picker field
    */
-  date: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  date: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "date",
     name,
     label,
@@ -266,7 +306,11 @@ export const field = {
   /**
    * DateTime picker field
    */
-  datetime: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  datetime: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "datetime",
     name,
     label,
@@ -276,7 +320,11 @@ export const field = {
   /**
    * Tag input field (free-form tags)
    */
-  tags: (name: string, label: string, props: FieldProps = {}): BaseField => ({
+  tags: <T extends FieldValues = FieldValues>(
+    name: string,
+    label: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "tags",
     name,
     label,
@@ -287,12 +335,12 @@ export const field = {
   /**
    * Slug field (URL-safe string)
    */
-  slug: (
+  slug: <T extends FieldValues = FieldValues>(
     name: string,
     label: string,
     sourceValue?: string,
-    props: FieldProps = {}
-  ): BaseField => ({
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "slug",
     name,
     label,
@@ -304,12 +352,12 @@ export const field = {
   /**
    * Custom field with render function
    */
-  custom: (
+  custom: <T extends FieldValues = FieldValues>(
     name: string,
     label: string,
     render: (props: { control?: unknown; disabled?: boolean }) => ReactNode,
-    props: FieldProps = {}
-  ): BaseField => ({
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "custom",
     name,
     label,
@@ -321,7 +369,10 @@ export const field = {
    * Heading/divider field for visual organization
    * Used to separate sections in the form
    */
-  heading: (text: string, props: FieldProps = {}): BaseField => ({
+  heading: <T extends FieldValues = FieldValues>(
+    text: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "heading",
     name: `heading-${Math.random().toString(36).substring(7)}`,
     label: text,
@@ -332,7 +383,11 @@ export const field = {
    * Info/note field for displaying informational messages
    * Used to show hints, warnings, or additional context
    */
-  info: (title: string, message: string, props: FieldProps = {}): BaseField => ({
+  info: <T extends FieldValues = FieldValues>(
+    title: string,
+    message: string,
+    props: FieldProps<T> = {}
+  ): BaseField<T> => ({
     type: "info",
     name: `info-${Math.random().toString(36).substring(7)}`,
     label: title,

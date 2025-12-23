@@ -106,7 +106,8 @@ export interface Category {
  * ```
  */
 export interface CategoryTreeNode extends Category {
-  children: CategoryTreeNode[];
+  /** Child categories (empty array for leaf nodes) */
+  children?: CategoryTreeNode[];
 }
 
 // ==================== Create/Update Payloads ====================

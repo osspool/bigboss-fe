@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { FolderTree, Hash, Package, Calendar, Pencil, Image as ImageIcon, Check, X } from "lucide-react";
+import { FolderTree, Hash, Package, Calendar, Pencil, Image as ImageIcon, Check, X, Trash } from "lucide-react";
 import { ActionDropdown } from "@/components/custom/ui/dropdown-wrapper";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
@@ -191,7 +191,7 @@ export const categoryColumns = (onEdit, onDelete) => [
       if (onDelete) {
         items.push({
           label: hasProducts ? 'Cannot Delete (has products)' : 'Delete',
-          icon: Pencil,
+          icon: Trash,
           onClick: hasProducts ? undefined : () => onDelete?.(item),
           variant: 'destructive',
           disabled: hasProducts,

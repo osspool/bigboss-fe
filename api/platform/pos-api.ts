@@ -21,6 +21,7 @@ class PosApi extends BaseApi {
   async getProducts(options: {
     token: string;
     branchId?: string;
+    /** Filter by category slug (matches both parent and child categories) */
     category?: string;
     search?: string;
     inStockOnly?: boolean;

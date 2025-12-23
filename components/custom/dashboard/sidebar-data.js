@@ -72,6 +72,14 @@ export const data = {
       title: "Inventory",
       items: [
         {
+          title: "Suppliers",
+          url: "/dashboard/suppliers",
+          icon: Building2Icon,
+          isActive: true,
+          items: [],
+          roles: ["admin", "superadmin", "store-manager", "warehouse-admin", "warehouse-staff"],
+        },
+        {
           title: "POS",
           url: "/dashboard/pos",
           icon: SquareTerminal,

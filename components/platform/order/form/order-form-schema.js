@@ -85,8 +85,9 @@ export const deliveryAddressSchema = {
         required: true,
         placeholder: "City name",
       }),
-      field.text("deliveryAddress.state", "State/Division", {
-        placeholder: "State or division",
+      field.text("deliveryAddress.division", "Division", {
+        placeholder: "e.g., Dhaka, Chittagong",
+        description: "Division name (API uses 'division')",
       }),
       field.text("deliveryAddress.postalCode", "Postal Code", {
         placeholder: "Postal/ZIP code",

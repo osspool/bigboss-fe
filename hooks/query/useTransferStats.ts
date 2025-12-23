@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { inventoryApi } from "@/api/platform/inventory-api";
+import { transferApi } from "@/api/inventory";
 import type { TransferStats } from "@/types/inventory.types";
 import { TRANSFER_KEYS } from "./inventory-keys";
 
@@ -22,7 +22,7 @@ export function useTransferStats(
 ) {
   return useQuery({
     queryKey: TRANSFER_STATS_KEYS.byBranch(branchId),
-    queryFn: () => inventoryApi.transferStats({ token, params: branchId ? { branchId } : {} }),
+    queryFn: () => transferApi.stats({ token, params: branchId ? { branchId } : {} }),
     enabled: !!token && options.enabled !== false,
     staleTime: 30 * 1000, // 30 seconds
     select: (data) => data?.data as TransferStats,

@@ -61,6 +61,22 @@ class ProductApi extends BaseApi<Product, ProductPayload, ProductPayload> {
       }
     });
   }
+
+  /**
+   * Sync product stock quantity
+   * Recomputes product.quantity by summing all StockEntry quantities across branches
+   * (Requires: admin, warehouse-admin, warehouse-staff, or store-manager role)
+   */
+  async syncStock(id: string, options = {}) {
+    return this.request<{
+      productId: string;
+      totalQuantity: number;
+      synced: boolean;
+      errors: any[];
+    }>('POST', `${this.baseUrl}/${id}/sync-stock`, {
+      ...options,
+    });
+  }
 }
 
 /**

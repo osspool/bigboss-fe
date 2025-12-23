@@ -118,6 +118,36 @@ class CategoryApi extends BaseApi<Category, CreateCategoryPayload, UpdateCategor
       ...options,
     });
   }
+
+  /**
+   * Sync product counts for all categories
+   * POST /categories/sync-product-count
+   *
+   * Recalculates `productCount` for all categories based on current products.
+   * Use when manual data fixes or migrations may have desynced counts.
+   *
+   * @param token - Auth token (admin or inventory staff required)
+   * @param options - Additional fetch options
+   * @returns Number of categories updated
+   *
+   * @example
+   * ```typescript
+   * const { data } = await categoryApi.syncProductCount({ token });
+   * // data = { updated: 42 }
+   * ```
+   */
+  async syncProductCount({
+    token,
+    options = {},
+  }: {
+    token: string;
+    options?: FetchOptions;
+  }): Promise<ApiResponse<{ updated: number }>> {
+    return handleApiRequest('POST', `${this.baseUrl}/sync-product-count`, {
+      token,
+      ...options,
+    });
+  }
 }
 
 // Create and export a singleton instance

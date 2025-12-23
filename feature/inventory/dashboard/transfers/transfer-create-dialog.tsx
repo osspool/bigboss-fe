@@ -7,11 +7,11 @@ import { toast } from "sonner";
 import { useBranch } from "@/contexts/BranchContext";
 import { useTransferActions } from "@/hooks/query/useTransfers";
 import { Button } from "@/components/ui/button";
-import { FormGenerator } from "@/components/form/form-system";
+import { FormGenerator, type InferSchemaValues } from "@/components/form/form-system";
 import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
 import { useScannedLineItems } from "@/feature/inventory/ui/useScannedLineItems";
 import { InventoryScanSection } from "@/feature/inventory/forms/inventory-scan-section";
-import { createTransferFormSchema, type TransferFormValues } from "@/feature/inventory/forms/inventory-form-schemas";
+import { createTransferFormSchema } from "@/feature/inventory/forms/inventory-form-schemas";
 import type { Branch } from "@/types/branch.types";
 
 interface TransferCreateDialogProps {
@@ -30,6 +30,17 @@ export function TransferCreateDialog({ token, disabled }: TransferCreateDialogPr
 
   const [open, setOpen] = useState(false);
   const senderLabel = selectedBranch ? `${selectedBranch.name} (${selectedBranch.code})` : "";
+  const schema = useMemo(
+    () =>
+      createTransferFormSchema({
+        receiverOptions: receiverOptions.map((b) => ({
+          value: b._id,
+          label: `${b.name} (${b.code})`,
+        })),
+      }),
+    [receiverOptions]
+  );
+  type TransferFormValues = InferSchemaValues<typeof schema>;
 
   const form = useForm<TransferFormValues>({
     defaultValues: {
@@ -140,13 +151,8 @@ export function TransferCreateDialog({ token, disabled }: TransferCreateDialogPr
         footer={footer}
       >
         <div className="space-y-5">
-          <FormGenerator<TransferFormValues>
-            schema={createTransferFormSchema({
-              receiverOptions: receiverOptions.map((b) => ({
-                value: b._id,
-                label: `${b.name} (${b.code})`,
-              })),
-            })}
+          <FormGenerator
+            schema={schema}
             control={form.control}
             disabled={isCreating || disabled}
           />

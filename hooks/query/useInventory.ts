@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { posApi } from '@/api/platform/pos-api';
+import { adjustmentApi } from '@/api/inventory';
 import { toast } from 'sonner';
 import type { PosProduct, PosProductsResponse } from '@/types/pos.types';
 import type { AdjustStockPayload, AdjustStockResult, BulkAdjustmentPayload } from '@/types/inventory.types';
@@ -122,7 +123,7 @@ export function useStockActions(token: string) {
   // Single item adjustment
   const adjustMutation = useMutation({
     mutationFn: (data: AdjustStockPayload) =>
-      posApi.adjustStock({ token, data }),
+      adjustmentApi.adjustStock({ token, data }),
     onSuccess: (result, variables) => {
       invalidateStockQueries(variables.branchId);
       toast.success('Stock adjusted successfully');
@@ -147,10 +148,16 @@ export function useStockActions(token: string) {
       variantSku?: string;
       notes?: string;
     }) =>
-      posApi.setStock({
+      adjustmentApi.adjustStock({
         token,
-        productId,
-        data: { quantity, branchId, variantSku, notes },
+        data: {
+          productId,
+          quantity,
+          branchId,
+          variantSku,
+          mode: 'set',
+          notes,
+        },
       }),
     onSuccess: (_, variables) => {
       invalidateStockQueries(variables.branchId);
@@ -164,11 +171,22 @@ export function useStockActions(token: string) {
   // Bulk adjustment
   const bulkAdjustMutation = useMutation({
     mutationFn: (data: BulkAdjustmentPayload) =>
-      posApi.bulkAdjust({ token, data }),
+      adjustmentApi.create({
+        token,
+        data: {
+          adjustments: data.adjustments,
+          branchId: data.branchId,
+          reason: data.reason,
+        },
+      }),
     onSuccess: (result, variables) => {
       invalidateStockQueries(variables.branchId);
-      const processed = (result as { data?: AdjustStockResult })?.data?.processed || 0;
-      toast.success(`${processed} items updated`);
+      const processed = (result as { data?: AdjustStockResult })?.data?.processed;
+      toast.success(
+        typeof processed === 'number'
+          ? `${processed} items updated`
+          : 'Bulk adjustment completed'
+      );
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to bulk adjust stock');

@@ -6,9 +6,8 @@ import { useFormSubmitState } from "@/hooks/use-form-submit-state";
 /**
  * Transaction Sheet Component
  *
- * Displays a side sheet for creating/editing transactions
- * - Frontend can create manual operational transactions
- * - Library-managed transactions have restricted editable fields
+ * Displays a side sheet for reviewing transactions
+ * - Transactions are system-managed (notes only)
  */
 export function TransactionSheet({
   token,
@@ -20,7 +19,7 @@ export function TransactionSheet({
   const { isSubmitting, handleSubmitStateChange } = useFormSubmitState();
 
   const handleSuccess = () => {
-    if (!isEdit) onOpenChange(false);
+    onOpenChange(false);
   };
 
   const handleCancel = () => onOpenChange(false);
@@ -29,14 +28,14 @@ export function TransactionSheet({
     <FormSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={isEdit ? "Edit Transaction" : "Add New Transaction"}
-      description={isEdit ? "Update transaction details" : "Create a new manual transaction"}
+      title="Transaction Notes"
+      description={isEdit ? "Update transaction notes" : "Select a transaction to view details"}
       size="lg"
       className="px-4"
       formId="transaction-sheet-form"
-      submitLabel={isEdit ? "Update Transaction" : "Create Transaction"}
-      cancelLabel={isEdit ? "Close" : "Cancel"}
-      submitDisabled={isSubmitting}
+      submitLabel="Save Notes"
+      cancelLabel="Close"
+      submitDisabled={isSubmitting || !isEdit}
       submitLoading={isSubmitting}
       onCancel={handleCancel}
     >

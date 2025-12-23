@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   experimental: {
     serverComponentsHmrCache: false, // defaults to true
   },
+  // Transpile packages to fix HMR issues with ESM modules
+  transpilePackages: ["react-phone-number-input"],
   images: {
     remotePatterns: [
       {

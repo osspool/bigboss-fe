@@ -49,12 +49,14 @@ export function StockAdjustmentDialog({
 }) {
   const [quantity, setQuantity] = useState("");
   const [selectedVariant, setSelectedVariant] = useState("");
+  const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
 
   // Reset form when product changes
   useEffect(() => {
     setQuantity("");
     setSelectedVariant("");
+    setReason("");
     setNotes("");
   }, [product]);
 
@@ -132,9 +134,10 @@ export function StockAdjustmentDialog({
       mode: "set", // Always use "set" mode
       quantity: qty,
       variantSku: selectedVariant || undefined,
+      reason: reason || undefined,
       notes: notes || undefined,
     });
-  }, [quantity, selectedVariant, notes, product, productType, onSubmit, capability, currentStock]);
+  }, [quantity, selectedVariant, reason, notes, product, productType, onSubmit, capability, currentStock]);
 
   if (!product) return null;
 
@@ -254,10 +257,26 @@ export function StockAdjustmentDialog({
 
           {/* Notes */}
           <div className="space-y-2">
+            <Label>Reason</Label>
+            <Select value={reason} onValueChange={setReason}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select reason (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="damaged">Damaged</SelectItem>
+                <SelectItem value="lost">Lost</SelectItem>
+                <SelectItem value="recount">Recount</SelectItem>
+                <SelectItem value="correction">Correction</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-2">
             <Label htmlFor="notes">Notes (optional)</Label>
             <Textarea
               id="notes"
-              placeholder="Reason for adjustment..."
+              placeholder="Additional details (optional)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}

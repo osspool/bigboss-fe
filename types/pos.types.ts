@@ -5,7 +5,6 @@
  */
 import type { Product, ProductVariant, ProductImage } from './product.types';
 import type { CreateAdjustmentPayload, BulkAdjustmentPayload } from './inventory.types';
-import type { PaymentMethod } from './common.types';
 
 // Re-export for convenience
 export type { CreateAdjustmentPayload, BulkAdjustmentPayload };
@@ -65,10 +64,12 @@ export interface PosProductsResponse {
 
 export interface PosProductsParams {
   branchId?: string;
+  /** Filter by category slug (matches both parent and child categories) */
   category?: string;
   search?: string;
   inStockOnly?: boolean;
   lowStockOnly?: boolean;
+  sort?: string;
   after?: string;
   limit?: number;
 }
@@ -122,7 +123,7 @@ export interface PosOrderItem {
 }
 
 export interface PosPayment {
-  method: PaymentMethod;
+  method: PosPaymentMethod;
   amount?: number;
   reference?: string;
 }
@@ -136,12 +137,26 @@ export interface PosCustomer {
 export interface PosOrderPayload {
   items: PosOrderItem[];
   branchId?: string;
+  branchSlug?: string;
   customer?: PosCustomer;
   payment?: PosPayment;
   discount?: number;
   deliveryMethod?: 'pickup' | 'delivery';
+  deliveryAddress?: {
+    recipientName: string;
+    recipientPhone: string;
+    addressLine1?: string;
+    city?: string;
+    [key: string]: unknown;
+  };
+  deliveryPrice?: number;
+  deliveryAreaId?: number;
+  terminalId?: string;
   idempotencyKey?: string;
+  notes?: string;
 }
+
+export type PosPaymentMethod = 'cash' | 'bkash' | 'nagad' | 'card';
 
 // ============= Receipt =============
 

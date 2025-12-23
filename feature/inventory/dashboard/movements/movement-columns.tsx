@@ -4,9 +4,24 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { StockMovement } from "@/types/inventory.types";
+import { cn } from "@/lib/utils";
+import type { StockMovement, StockMovementType } from "@/types/inventory.types";
 
 export type MovementRow = StockMovement & { productName?: string };
+
+// Movement type colors following API docs quantity sign convention
+// Positive: purchase, return, transfer_in, initial
+// Negative: sale, transfer_out, adjustment (can be either)
+const typeColors: Record<StockMovementType, string> = {
+  purchase: "bg-green-100 text-green-700 border-green-200",
+  return: "bg-green-100 text-green-700 border-green-200",
+  transfer_in: "bg-green-100 text-green-700 border-green-200",
+  initial: "bg-blue-100 text-blue-700 border-blue-200",
+  recount: "bg-blue-100 text-blue-700 border-blue-200",
+  sale: "bg-red-100 text-red-700 border-red-200",
+  transfer_out: "bg-amber-100 text-amber-700 border-amber-200",
+  adjustment: "bg-gray-100 text-gray-700 border-gray-200",
+};
 
 export function movementColumns({
   onView,
@@ -17,11 +32,14 @@ export function movementColumns({
     {
       id: "type",
       header: "Type",
-      cell: ({ row }) => (
-        <Badge variant="outline" className="capitalize">
-          {String(row.original.type || "-").replace(/_/g, " ")}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const type = row.original.type;
+        return (
+          <Badge variant="outline" className={cn("capitalize", type && typeColors[type])}>
+            {String(type || "-").replace(/_/g, " ")}
+          </Badge>
+        );
+      },
     },
     {
       id: "product",
@@ -44,9 +62,21 @@ export function movementColumns({
     {
       id: "quantity",
       header: "Qty",
-      cell: ({ row }) => (
-        <span className="font-mono text-sm">{row.original.quantity ?? "-"}</span>
-      ),
+      cell: ({ row }) => {
+        const qty = row.original.quantity;
+        if (qty == null) return <span className="font-mono text-sm">-</span>;
+        const isPositive = qty > 0;
+        const isNegative = qty < 0;
+        return (
+          <span className={cn(
+            "font-mono text-sm",
+            isPositive && "text-green-600",
+            isNegative && "text-red-600"
+          )}>
+            {isPositive ? "+" : ""}{qty}
+          </span>
+        );
+      },
     },
     {
       id: "balanceAfter",

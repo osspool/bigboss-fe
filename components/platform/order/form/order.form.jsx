@@ -184,7 +184,8 @@ export function OrderForm({
         }
 
         // Check if delivery address changed
-        const addrFields = ['label', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'recipientName'];
+        // Field names match API: division (not state), recipientPhone (not phone)
+        const addrFields = ['label', 'addressLine1', 'addressLine2', 'city', 'division', 'postalCode', 'country', 'recipientPhone', 'recipientName'];
         const addrChanged = addrFields.some(f =>
           values.deliveryAddress?.[f] !== order.deliveryAddress?.[f]
         );

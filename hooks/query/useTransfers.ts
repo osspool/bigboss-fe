@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { inventoryApi } from "@/api/platform/inventory-api";
-import { extractDocs } from "@/lib/utils/extract-docs";
+import { transferApi } from "@/api/inventory";
+import { extractDocs, extractPagination } from "@/lib/utils/extract-docs";
 import type {
   CreateTransferPayload,
   DispatchTransferPayload,
@@ -26,15 +26,17 @@ export function useTransfers(
 ) {
   const query = useQuery({
     queryKey: TRANSFER_KEYS.list(params),
-    queryFn: () => inventoryApi.listTransfers({ token, params }),
+    queryFn: () => transferApi.list({ token, params }),
     enabled: !!token && options.enabled !== false,
     staleTime: 15 * 1000,
   });
 
   const docs = useMemo(() => extractDocs<Transfer>(query.data), [query.data]);
+  const pagination = useMemo(() => extractPagination(query.data), [query.data]);
 
   return {
     transfers: docs,
+    pagination,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     error: query.error as Error | null,
@@ -45,7 +47,7 @@ export function useTransfers(
 export function useTransferDetail(token: string, id: string, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: TRANSFER_KEYS.detail(id),
-    queryFn: () => inventoryApi.getTransfer({ token, id }),
+    queryFn: () => transferApi.getById({ token, id }),
     enabled: !!token && !!id && options.enabled !== false,
     staleTime: 10 * 1000,
   });
@@ -73,7 +75,7 @@ export function useTransferActions(token: string) {
   };
 
   const create = useMutation({
-    mutationFn: (data: CreateTransferPayload) => inventoryApi.createTransfer({ token, data }),
+    mutationFn: (data: CreateTransferPayload) => transferApi.create({ token, data }),
     onSuccess: () => {
       invalidateTransferQueries();
       toast.success("Transfer created");
@@ -82,7 +84,7 @@ export function useTransferActions(token: string) {
   });
 
   const approve = useMutation({
-    mutationFn: (id: string) => inventoryApi.approveTransfer({ token, id }),
+    mutationFn: (id: string) => transferApi.approve({ token, id }),
     onSuccess: () => {
       invalidateTransferQueries();
       toast.success("Transfer approved");
@@ -93,7 +95,7 @@ export function useTransferActions(token: string) {
   // Dispatch decrements sender stock
   const dispatch = useMutation({
     mutationFn: ({ id, data }: { id: string; data?: DispatchTransferPayload }) =>
-      inventoryApi.dispatchTransfer({ token, id, data }),
+      transferApi.dispatch({ token, id, data }),
     onSuccess: () => {
       invalidateStockQueries();
       toast.success("Transfer dispatched");
@@ -102,7 +104,7 @@ export function useTransferActions(token: string) {
   });
 
   const inTransit = useMutation({
-    mutationFn: (id: string) => inventoryApi.markInTransit({ token, id }),
+    mutationFn: (id: string) => transferApi.markInTransit({ token, id }),
     onSuccess: () => {
       invalidateTransferQueries();
       toast.success("Marked in-transit");
@@ -113,7 +115,7 @@ export function useTransferActions(token: string) {
   // Receive increments receiver stock
   const receive = useMutation({
     mutationFn: ({ id, data }: { id: string; data?: ReceiveTransferPayload }) =>
-      inventoryApi.receiveTransfer({ token, id, data }),
+      transferApi.receive({ token, id, data }),
     onSuccess: () => {
       invalidateStockQueries();
       toast.success("Transfer received");
@@ -123,7 +125,7 @@ export function useTransferActions(token: string) {
 
   const cancel = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
-      inventoryApi.cancelTransfer({ token, id, data: { reason } }),
+      transferApi.cancel({ token, id, reason }),
     onSuccess: () => {
       invalidateTransferQueries();
       toast.success("Transfer cancelled");

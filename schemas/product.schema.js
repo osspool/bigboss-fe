@@ -244,6 +244,18 @@ export const productUpdateSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+// ==================== Product Type ====================
+
+/**
+ * Product type values
+ * - 'simple': Regular product without variations
+ * - 'variant': Product with variations (Size, Color, etc.)
+ *
+ * NOTE: productType is auto-determined by backend based on presence of variationAttributes.
+ * Frontend should NOT send this field - it's read-only.
+ */
+export const PRODUCT_TYPE_VALUES = ['simple', 'variant'];
+
 /**
  * Product view schema (for displaying product data)
  * Includes all fields returned by backend
@@ -253,6 +265,7 @@ export const productViewSchema = z.object({
   name: z.string(),
   slug: z.string(),
   sku: z.string().optional(),
+  shortDescription: z.string().optional(),
   description: z.string().optional(),
   basePrice: z.number(),
   costPrice: z.number().optional(), // Role-restricted (admin only)
@@ -261,12 +274,60 @@ export const productViewSchema = z.object({
   profitMargin: z.number().optional(), // Role-restricted (admin only)
   profitMarginPercent: z.number().optional(), // Role-restricted (admin only)
   quantity: z.number(),
+  /**
+   * Product type: 'simple' or 'variant'
+   * Auto-determined by backend based on presence of variationAttributes.
+   * - If variationAttributes is provided → 'variant'
+   * - If no variationAttributes → 'simple'
+   */
+  productType: z.enum(PRODUCT_TYPE_VALUES).default('simple'),
   category: z.string(),
   parentCategory: z.string().optional(),
+  // Simple product identifiers
+  barcode: z.string().optional(),
+
   images: z.array(imageSchema).optional().default([]),
   featuredImage: imageSchema.optional(),
   tags: z.array(z.string()).optional().default([]),
   style: z.array(z.string()).optional().default([]),
+
+  // Variant product fields
+  variationAttributes: z.array(z.object({
+    name: z.string(),
+    values: z.array(z.string()),
+  })).optional().default([]),
+
+  variants: z.array(z.object({
+    sku: z.string(),
+    barcode: z.string().optional(),
+    attributes: z.record(z.string(), z.string()),
+    priceModifier: z.number().default(0),
+    costPrice: z.number().optional(),
+    vatRate: z.number().optional().nullable(),
+    images: z.array(imageSchema).optional(),
+    shipping: z.object({
+      weightGrams: z.number().optional(),
+      dimensionsCm: z.object({
+        length: z.number().optional(),
+        width: z.number().optional(),
+        height: z.number().optional(),
+      }).optional(),
+    }).optional(),
+    isActive: z.boolean().optional(),
+  })).optional().default([]),
+
+  // Shipping info (simple products)
+  shipping: z.object({
+    weightGrams: z.number().optional(),
+    dimensionsCm: z.object({
+      length: z.number().optional(),
+      width: z.number().optional(),
+      height: z.number().optional(),
+    }).optional(),
+  }).optional(),
+
+  // Properties (key-value)
+  properties: z.record(z.unknown()).optional(),
 
   // Discount info
   discount: z.object({
@@ -282,6 +343,15 @@ export const productViewSchema = z.object({
     totalSales: z.number().optional(),
     totalQuantitySold: z.number().optional(),
     viewCount: z.number().optional(),
+  }).optional(),
+
+  // Stock projection for variant products (read-only)
+  stockProjection: z.object({
+    variants: z.array(z.object({
+      sku: z.string(),
+      quantity: z.number(),
+    })).optional(),
+    syncedAt: z.string().optional(),
   }).optional(),
 
   averageRating: z.number().optional(),

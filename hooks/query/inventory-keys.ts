@@ -49,10 +49,15 @@ export const MOVEMENT_KEYS = {
 };
 
 // ============================================
-// PURCHASES
+// PURCHASES (Supplier Invoices)
 // ============================================
 export const PURCHASE_KEYS = {
   all: ["inventory", "purchases"] as const,
+  lists: () => [...PURCHASE_KEYS.all, "list"] as const,
+  list: (params?: Record<string, unknown>) => [...PURCHASE_KEYS.lists(), params] as const,
+  details: () => [...PURCHASE_KEYS.all, "detail"] as const,
+  detail: (id: string) => [...PURCHASE_KEYS.details(), id] as const,
+  // Legacy - for backward compatibility
   history: (params?: Record<string, unknown>) => [...PURCHASE_KEYS.all, "history", params] as const,
 };
 
@@ -90,5 +95,18 @@ export function getTransferStateInvalidationKeys() {
     TRANSFER_KEYS.all,            // Transfer list and details
     TRANSFER_KEYS.stats,          // Stats counts change
     REQUEST_KEYS.all,             // If transfer was from request fulfillment
+  ];
+}
+
+/**
+ * Get all keys that should be invalidated when a purchase state changes.
+ * Use this for: receive, pay, cancel.
+ */
+export function getPurchaseStateInvalidationKeys() {
+  return [
+    PURCHASE_KEYS.all,            // Purchase list and details
+    INVENTORY_KEYS.all,           // Stock levels change on receive
+    MOVEMENT_KEYS.all,            // New movements created
+    LOW_STOCK_KEYS.all,           // Low stock alerts may change
   ];
 }
