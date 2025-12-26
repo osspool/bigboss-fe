@@ -9,19 +9,8 @@ import {
   PARENT_CATEGORY_OPTIONS,
   CATEGORY_OPTIONS,
   STOCK_STATUS_OPTIONS,
+  type InventorySearchHook,
 } from "@/hooks/filter/use-inventory-search";
-
-type InventorySearchHook = {
-  searchValue: string;
-  setSearchValue: (v: string) => void;
-  searchType: string;
-  parentCategory: string;
-  category: string;
-  stockStatus: string;
-  setParentCategory: (v: string) => void;
-  setCategory: (v: string) => void;
-  setStockStatus: (v: string) => void;
-};
 
 /**
  * Inventory Search & Filter Bar

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useWatch } from "react-hook-form";
 import {
   FormSystemProvider,
   type ComponentRegistry,
@@ -31,6 +32,17 @@ import { FormSection } from "@/components/form/form-system/components/FormSectio
 // ============================================================================
 
 type AdapterComponent = React.ComponentType<any>;
+type DynamicTextResolver = (name?: string) => unknown;
+
+const resolveDynamicText = (
+  value: unknown,
+  watch?: DynamicTextResolver
+) => (typeof value === "function" ? value(watch) : value);
+
+const getValueByPath = (source: unknown, path?: string) => {
+  if (!path) return source;
+  return path.split(".").reduce((acc: any, key) => (acc ? acc[key] : undefined), source as any);
+};
 
 // ============================================================================
 // ADAPTER FACTORY FUNCTIONS
@@ -43,12 +55,20 @@ type AdapterComponent = React.ComponentType<any>;
 function createAdapter(Component: AdapterComponent) {
   return function Adapter(props: FieldComponentProps) {
     const { field, control, disabled, ...rest } = props;
+    const watchedValues = useWatch({ control });
+    const watch = (name?: string) => getValueByPath(watchedValues, name);
+    const resolvedRest = {
+      ...rest,
+      description: resolveDynamicText(rest.description, watch),
+      helperText: resolveDynamicText(rest.helperText, watch),
+    };
+
     return (
       <Component
         {...field}
         control={control}
         disabled={disabled}
-        {...rest}
+        {...resolvedRest}
       />
     );
   };
@@ -62,6 +82,13 @@ function createSelectAdapter(Component: AdapterComponent) {
   return function SelectAdapter(props: FieldComponentProps) {
     const { field, control, disabled, ...rest } = props;
     const { options, ...fieldWithoutOptions } = field;
+    const watchedValues = useWatch({ control });
+    const watch = (name?: string) => getValueByPath(watchedValues, name);
+    const resolvedRest = {
+      ...rest,
+      description: resolveDynamicText(rest.description, watch),
+      helperText: resolveDynamicText(rest.helperText, watch),
+    };
 
     // Transform options to items format expected by SelectInput
     const items = options?.map((opt) => {
@@ -90,7 +117,7 @@ function createSelectAdapter(Component: AdapterComponent) {
         control={control}
         disabled={disabled}
         items={items}
-        {...rest}
+        {...resolvedRest}
       />
     );
   };

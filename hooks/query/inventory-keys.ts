@@ -62,15 +62,6 @@ export const PURCHASE_KEYS = {
 };
 
 // ============================================
-// LOW STOCK
-// ============================================
-export const LOW_STOCK_KEYS = {
-  all: ["inventory", "low-stock"] as const,
-  list: (params?: { branchId?: string; threshold?: number }) =>
-    [...LOW_STOCK_KEYS.all, "list", params] as const,
-};
-
-// ============================================
 // INVALIDATION HELPERS
 // ============================================
 
@@ -82,7 +73,6 @@ export function getStockChangeInvalidationKeys(branchId?: string) {
   return [
     INVENTORY_KEYS.all,           // All inventory product queries
     MOVEMENT_KEYS.all,            // Audit trail (new movements created)
-    LOW_STOCK_KEYS.all,           // Low stock alerts may change
   ];
 }
 
@@ -107,6 +97,5 @@ export function getPurchaseStateInvalidationKeys() {
     PURCHASE_KEYS.all,            // Purchase list and details
     INVENTORY_KEYS.all,           // Stock levels change on receive
     MOVEMENT_KEYS.all,            // New movements created
-    LOW_STOCK_KEYS.all,           // Low stock alerts may change
   ];
 }

@@ -1,20 +1,16 @@
-import type { PaymentMethodConfig } from "@/types/common.types";
-import type { PosPaymentMethod } from "@/types/pos.types";
+// Re-export POS types from central location
+export type {
+  PosCartItem,
+  PosPaymentMethod,
+  PaymentOption,
+  SplitPaymentEntry,
+  PaymentState,
+} from "@/types/pos.types";
 
-/**
- * POS Cart Item (UI State)
- * This is a UI-specific type for the POS cart, not an API type
- */
-export interface PosCartItem {
-  productId: string;
-  productName: string;
-  variantSku?: string;
-  variantLabel?: string;
-  quantity: number;
-  unitPrice: number;
-  lineTotal: number;
-  image?: string;
+export type { PaymentMethodConfig as PlatformPaymentMethod } from "@/types/common.types";
+
+// Local UI-specific types
+export interface CategoryOption {
+  slug: string;
+  label: string;
 }
-
-// Re-export from common types for convenience
-export type { PosPaymentMethod, PaymentMethodConfig as PlatformPaymentMethod };

@@ -10,6 +10,7 @@ export const UserRole = {
   FINANCE_ADMIN: 'finance-admin',
   FINANCE_MANAGER: 'finance-manager',
   STORE_MANAGER: 'store-manager',
+  STORE_STAFF: 'store-staff',
   WAREHOUSE_ADMIN: 'warehouse-admin',
   WAREHOUSE_STAFF: 'warehouse-staff',
 } as const;
@@ -68,6 +69,48 @@ export const loginApi = async (data: { email: string; password: string }): Promi
   return handleApiRequest("POST", "/api/v1/auth/login", {
     body: data,
   });
+};
+
+/** Allowed roles for discount authorization */
+export const DISCOUNT_ALLOWED_ROLES: UserRoleType[] = ['superadmin', 'admin', 'store-manager'];
+
+/**
+ * Verify manager credentials for discount authorization
+ * Returns the user if credentials are valid AND user has allowed roles
+ */
+export const verifyManagerAuth = async (data: {
+  email: string;
+  password: string;
+  allowedRoles?: UserRoleType[];
+}): Promise<{ success: boolean; user?: User; message?: string }> => {
+  const { email, password, allowedRoles = DISCOUNT_ALLOWED_ROLES } = data;
+
+  try {
+    const response = await handleApiRequest<AuthResponse>("POST", "/api/v1/auth/login", {
+      body: { email, password },
+    });
+
+    const user = response.user;
+    if (!user) {
+      return { success: false, message: "Invalid credentials" };
+    }
+
+    // Check if user has any of the allowed roles
+    const hasAllowedRole = user.roles?.some(role => allowedRoles.includes(role));
+    if (!hasAllowedRole) {
+      return {
+        success: false,
+        message: "You don't have permission to authorize discounts"
+      };
+    }
+
+    return { success: true, user };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.message || "Authentication failed"
+    };
+  }
 };
 
 export const registerApi = async (data: { 

@@ -115,6 +115,13 @@ class PurchaseApi extends BaseApi<Purchase, CreatePurchasePayload, UpdatePurchas
     amount,
     method,
     reference,
+    accountNumber,
+    walletNumber,
+    bankName,
+    accountName,
+    proofUrl,
+    transactionDate,
+    notes,
     options = {},
   }: {
     token: string;
@@ -122,13 +129,31 @@ class PurchaseApi extends BaseApi<Purchase, CreatePurchasePayload, UpdatePurchas
     amount: number;
     method: string;
     reference?: string;
+    accountNumber?: string;
+    walletNumber?: string;
+    bankName?: string;
+    accountName?: string;
+    proofUrl?: string;
+    transactionDate?: string;
+    notes?: string;
     options?: FetchOptions;
   }): Promise<ApiResponse<Purchase>> {
     return this.action({
       token,
       id,
       action: "pay",
-      data: { amount, method, reference },
+      data: {
+        amount,
+        method,
+        reference,
+        accountNumber,
+        walletNumber,
+        bankName,
+        accountName,
+        proofUrl,
+        transactionDate,
+        notes,
+      },
       options,
     });
   }

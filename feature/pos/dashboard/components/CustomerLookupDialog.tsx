@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Customer } from "@/types/customer.types";
+import { getReadableTextColor, getTierColor } from "@/lib/loyalty-utils";
 
 interface CustomerLookupDialogProps {
   open: boolean;
@@ -76,11 +77,28 @@ export function CustomerLookupDialog({
               <p className="text-sm font-medium">{customer.name || "Customer"}</p>
               <p className="text-xs text-muted-foreground">{customer.phone}</p>
             </div>
-            {customer.tier && (
-              <Badge variant="secondary" className="capitalize">
-                {customer.tier}
-              </Badge>
-            )}
+            {(customer.membership?.tier || customer.tier) && (() => {
+              const tierName = customer.membership?.tier || customer.tier;
+              const tierColor = getTierColor(tierName);
+              const tierTextColor = getReadableTextColor(tierColor);
+              return (
+                <Badge
+                  variant="secondary"
+                  className="capitalize"
+                  style={
+                    tierColor
+                      ? {
+                          backgroundColor: tierColor,
+                          color: tierTextColor,
+                          borderColor: "transparent",
+                        }
+                      : undefined
+                  }
+                >
+                  {tierName}
+                </Badge>
+              );
+            })()}
           </Button>
         ))}
       </div>

@@ -19,6 +19,7 @@ export type UserRoleType =
   | 'finance-admin'
   | 'finance-manager'
   | 'store-manager'
+  | 'store-staff'
   | 'warehouse-admin'
   | 'warehouse-staff';
 

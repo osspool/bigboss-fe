@@ -1,5 +1,6 @@
 import { customerApi } from '@/api/platform/customer-api';
 import { createCrudHooks } from '@/hooks/factories';
+import { useMutationWithTransition } from '@/hooks/factories/mutation.factory';
 import { useQuery } from '@tanstack/react-query';
 
 // Create standard CRUD hooks
@@ -31,6 +32,26 @@ export function useCurrentCustomer(token, options = {}) {
     enabled: !!token,
     staleTime: 5 * 60 * 1000, // 5 minutes
     ...options,
+  });
+}
+
+/**
+ * Hook to perform membership actions for a customer
+ * Supports enroll, deactivate, reactivate, and adjust points.
+ */
+export function useCustomerMembership(token) {
+  return useMutationWithTransition({
+    mutationFn: ({ id, action, points, reason, type }) =>
+      customerApi.membershipAction({
+        token,
+        id,
+        data: { action, points, reason, type },
+      }),
+    invalidateQueries: [KEYS.lists(), KEYS.details()],
+    messages: {
+      success: "Membership updated successfully",
+      error: "Failed to update membership",
+    },
   });
 }
 

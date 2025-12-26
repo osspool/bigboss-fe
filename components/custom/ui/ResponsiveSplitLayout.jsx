@@ -72,7 +72,11 @@ export const ResponsiveSplitLayout = ({
             {leftPanel.title || 'Left'}
           </div>
         ),
-        content: leftPanel.content
+        content: (
+          <div className={cn("h-full overflow-y-auto", leftPanelClassName)}>
+            {leftPanel.content}
+          </div>
+        )
       },
       {
         value: 'right',
@@ -87,19 +91,26 @@ export const ResponsiveSplitLayout = ({
             )}
           </div>
         ),
-        content: rightPanel.content
+        content: (
+          <div className={cn("h-full overflow-y-auto", rightPanelClassName)}>
+            {rightPanel.content}
+          </div>
+        )
       }
     ];
 
     return (
-      <div className="h-full">
+      <div className={cn("h-full flex flex-col", className)}>
         <DynamicTabs
           tabs={tabs}
           defaultValue="left"
           value={mobileView}
           onValueChange={setMobileView}
           variant="default"
-          className="h-full flex flex-col"
+          layout="flex"
+          className="h-full"
+          listWrapperClassName="px-4 py-2 flex-shrink-0"
+          contentClassName="mt-0 flex-1 min-h-0"
         />
       </div>
     );

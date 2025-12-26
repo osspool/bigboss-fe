@@ -8,6 +8,7 @@ import {
   getAvailableVariants,
   getPosProductImage,
   isVariantProduct,
+  calculateVariantPrice,
 } from "@/hooks/query/usePos";
 import type { PosProduct } from "@/types/pos.types";
 
@@ -26,6 +27,33 @@ export function ProductCard({
   const inStock = product.branchStock?.inStock ?? false;
   const lowStock = product.branchStock?.lowStock ?? false;
   const stockQty = product.branchStock?.quantity ?? 0;
+
+  // Calculate price display for variant products
+  const getPriceDisplay = () => {
+    if (!hasVariants) {
+      return { price: product.basePrice, showFrom: false };
+    }
+
+    const variants = getAvailableVariants(product);
+    if (variants.length === 0) {
+      return { price: product.basePrice, showFrom: false };
+    }
+
+    // Calculate all variant prices
+    const prices = variants.map((v) =>
+      calculateVariantPrice(product.basePrice, v.priceModifier || 0)
+    );
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
+    // Show "From" if there's a price range
+    return {
+      price: minPrice,
+      showFrom: minPrice !== maxPrice,
+    };
+  };
+
+  const { price: displayPrice, showFrom } = getPriceDisplay();
 
   const handleClick = () => {
     if (!inStock) return;
@@ -87,7 +115,8 @@ export function ProductCard({
 
           <div className="flex items-center justify-between pt-1">
             <span className="text-base font-bold text-primary">
-              {formatPrice(product.basePrice)}
+              {showFrom && <span className="text-xs font-normal text-muted-foreground mr-1">From</span>}
+              {formatPrice(displayPrice)}
             </span>
             {inStock && (
               <span className="text-xs text-muted-foreground">Qty: {stockQty}</span>

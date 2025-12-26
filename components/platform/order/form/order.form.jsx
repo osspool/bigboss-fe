@@ -1002,13 +1002,16 @@ export function OrderForm({
       <form
         id={formId}
         onSubmit={form.handleSubmit(handleSubmit, handleSubmitError)}
-        className="space-y-6"
+        className="flex flex-col h-full min-h-0 gap-6"
       >
         <DynamicTabs
           defaultValue="summary"
           tabs={tabs}
-          variant="outline"
-        />
+        variant="outline"
+        layout="flex"
+        scrollable
+        className="flex-1 min-h-0"
+      />
 
         <FormErrorSummary errors={formErrors} />
 

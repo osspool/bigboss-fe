@@ -157,7 +157,7 @@ export const productCreateSchema = z.object({
 
   tags: z.array(z.string()).optional().default([]),
 
-  style: z.array(z.enum(['casual', 'street', 'urban', 'desi', 'formal', 'sport', 'ethnic', 'party'])).optional().default([]),
+  style: z.array(z.string()).optional().default([]),
 
   discount: discountSchema,
 
@@ -237,7 +237,7 @@ export const productUpdateSchema = z.object({
 
   tags: z.array(z.string()).optional(),
 
-  style: z.array(z.enum(['casual', 'street', 'urban', 'desi', 'formal', 'sport', 'ethnic', 'party'])).optional(),
+  style: z.array(z.string()).optional(),
 
   discount: discountSchema,
 

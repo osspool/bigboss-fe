@@ -51,6 +51,30 @@ export function PlatformConfigForm({ token }) {
         isRegistered: false,
         defaultRate: 0,
         pricesIncludeVat: true,
+        invoice: {
+          prefix: "",
+          showVatBreakdown: true,
+        },
+        supplementaryDuty: {
+          enabled: false,
+          defaultRate: 0,
+        },
+      },
+      membership: {
+        enabled: false,
+        pointsPerAmount: 1,
+        amountPerPoint: 100,
+        roundingMode: "floor",
+        tiers: [],
+        cardPrefix: "MBR",
+        cardDigits: 8,
+        redemption: {
+          enabled: false,
+          minRedeemPoints: 100,
+          minOrderAmount: 0,
+          maxRedeemPercent: 50,
+          pointsPerBdt: 10,
+        },
       },
       policies: {},
     },
@@ -59,6 +83,16 @@ export function PlatformConfigForm({ token }) {
   const { fields: paymentFields, append: appendPayment, remove: removePayment } = useFieldArray({
     control: form.control,
     name: "paymentMethods",
+  });
+
+  const { fields: pickupFields, append: appendPickup, remove: removePickup } = useFieldArray({
+    control: form.control,
+    name: "checkout.pickupBranches",
+  });
+
+  const { fields: tierFields, append: appendTier, remove: removeTier } = useFieldArray({
+    control: form.control,
+    name: "membership.tiers",
   });
 
   // Load config data into form
@@ -81,6 +115,30 @@ export function PlatformConfigForm({ token }) {
           isRegistered: false,
           defaultRate: 0,
           pricesIncludeVat: true,
+          invoice: {
+            prefix: "",
+            showVatBreakdown: true,
+          },
+          supplementaryDuty: {
+            enabled: false,
+            defaultRate: 0,
+          },
+        },
+        membership: config.membership || {
+          enabled: false,
+          pointsPerAmount: 1,
+          amountPerPoint: 100,
+          roundingMode: "floor",
+          tiers: [],
+          cardPrefix: "MBR",
+          cardDigits: 8,
+          redemption: {
+            enabled: false,
+            minRedeemPoints: 100,
+            minOrderAmount: 0,
+            maxRedeemPercent: 50,
+            pointsPerBdt: 10,
+          },
         },
         policies: config.policies || {},
       });
@@ -220,7 +278,7 @@ export function PlatformConfigForm({ token }) {
 
           {/* Tabs */}
           <Tabs defaultValue="payment" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="payment" className="flex items-center gap-2">
                 <Icon name="wallet" className="h-4 w-4" />
                 Payment
@@ -240,6 +298,10 @@ export function PlatformConfigForm({ token }) {
               <TabsTrigger value="policies" className="flex items-center gap-2">
                 <Icon name="file-text" className="h-4 w-4" />
                 Policies
+              </TabsTrigger>
+              <TabsTrigger value="membership" className="flex items-center gap-2">
+                <Icon name="award" className="h-4 w-4" />
+                Membership
               </TabsTrigger>
             </TabsList>
 
@@ -328,6 +390,85 @@ export function PlatformConfigForm({ token }) {
                     </p>
                   </div>
 
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-medium">Pickup Branches</h4>
+                        <p className="text-xs text-muted-foreground">
+                          Optional branches for store pickup selection.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          appendPickup({ branchId: "", branchCode: "", branchName: "" })
+                        }
+                        disabled={isUpdating}
+                      >
+                        Add Branch
+                      </Button>
+                    </div>
+
+                    {pickupFields.length === 0 ? (
+                      <Alert>
+                        <Icon name="info" className="h-4 w-4" />
+                        <AlertDescription>
+                          No pickup branches configured. Store pickup will use defaults.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <div className="space-y-3">
+                        {pickupFields.map((field, index) => (
+                          <Card key={field.id}>
+                            <CardContent className="pt-4 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">Branch {index + 1}</p>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => removePickup(index)}
+                                  disabled={isUpdating}
+                                >
+                                  <Icon name="trash" className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+
+                              <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Branch ID</Label>
+                                  <Input
+                                    {...form.register(`checkout.pickupBranches.${index}.branchId`)}
+                                    placeholder="12345"
+                                    disabled={isUpdating}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Branch Code</Label>
+                                  <Input
+                                    {...form.register(`checkout.pickupBranches.${index}.branchCode`)}
+                                    placeholder="DHK"
+                                    disabled={isUpdating}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Branch Name</Label>
+                                  <Input
+                                    {...form.register(`checkout.pickupBranches.${index}.branchName`)}
+                                    placeholder="Dhaka Main"
+                                    disabled={isUpdating}
+                                  />
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <Alert>
                     <Icon name="info" className="h-4 w-4" />
                     <AlertDescription>
@@ -395,6 +536,15 @@ export function PlatformConfigForm({ token }) {
                           disabled={isUpdating}
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="vatCircle">VAT Circle/Zone</Label>
+                        <Input
+                          id="vatCircle"
+                          {...form.register("vat.vatCircle")}
+                          placeholder="Dhaka Circle"
+                          disabled={isUpdating}
+                        />
+                      </div>
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -408,6 +558,65 @@ export function PlatformConfigForm({ token }) {
                       <Label htmlFor="pricesIncludeVat" className="cursor-pointer">
                         Catalog prices include VAT
                       </Label>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="invoicePrefix">Invoice Prefix</Label>
+                        <Input
+                          id="invoicePrefix"
+                          {...form.register("vat.invoice.prefix")}
+                          placeholder="INV-"
+                          disabled={isUpdating}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2 pt-6">
+                        <input
+                          type="checkbox"
+                          id="showVatBreakdown"
+                          {...form.register("vat.invoice.showVatBreakdown")}
+                          className="rounded"
+                          disabled={isUpdating}
+                        />
+                        <Label htmlFor="showVatBreakdown" className="cursor-pointer">
+                          Show VAT breakdown on invoice
+                        </Label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="supplementaryDutyEnabled"
+                          {...form.register("vat.supplementaryDuty.enabled")}
+                          className="rounded"
+                          disabled={isUpdating}
+                        />
+                        <Label htmlFor="supplementaryDutyEnabled" className="cursor-pointer">
+                          Enable supplementary duty
+                        </Label>
+                      </div>
+
+                      {form.watch("vat.supplementaryDuty.enabled") && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="supplementaryDutyRate">Supplementary Duty Rate (%)</Label>
+                            <Input
+                              id="supplementaryDutyRate"
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              {...form.register("vat.supplementaryDuty.defaultRate", {
+                                valueAsNumber: true,
+                              })}
+                              placeholder="0"
+                              disabled={isUpdating}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -542,6 +751,305 @@ export function PlatformConfigForm({ token }) {
                 </div>
               </div>
             </TabsContent>
+
+            {/* Membership Tab */}
+            <TabsContent value="membership" className="space-y-4 mt-6">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="membershipEnabled"
+                    {...form.register("membership.enabled")}
+                    className="rounded"
+                    disabled={isUpdating}
+                  />
+                  <Label htmlFor="membershipEnabled" className="cursor-pointer">
+                    Enable membership program
+                  </Label>
+                </div>
+
+                {form.watch("membership.enabled") && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="pointsPerAmount">Points Per Amount</Label>
+                        <Input
+                          id="pointsPerAmount"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          {...form.register("membership.pointsPerAmount", {
+                            valueAsNumber: true,
+                          })}
+                          placeholder="1"
+                          disabled={isUpdating}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="amountPerPoint">Amount Per Point (BDT)</Label>
+                        <Input
+                          id="amountPerPoint"
+                          type="number"
+                          min="1"
+                          step="1"
+                          {...form.register("membership.amountPerPoint", {
+                            valueAsNumber: true,
+                          })}
+                          placeholder="100"
+                          disabled={isUpdating}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Rounding Mode</Label>
+                        <Select
+                          value={form.watch("membership.roundingMode") || "floor"}
+                          onValueChange={(value) => form.setValue("membership.roundingMode", value)}
+                        >
+                          <SelectTrigger disabled={isUpdating}>
+                            <SelectValue placeholder="Select mode" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="floor">Floor</SelectItem>
+                            <SelectItem value="round">Round</SelectItem>
+                            <SelectItem value="ceil">Ceil</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cardPrefix">Card Prefix</Label>
+                        <Input
+                          id="cardPrefix"
+                          {...form.register("membership.cardPrefix")}
+                          placeholder="MBR"
+                          disabled={isUpdating}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="cardDigits">Card Digits</Label>
+                        <Input
+                          id="cardDigits"
+                          type="number"
+                          min="4"
+                          max="12"
+                          {...form.register("membership.cardDigits", {
+                            valueAsNumber: true,
+                          })}
+                          placeholder="8"
+                          disabled={isUpdating}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-sm font-semibold">Membership Tiers</h3>
+                          <p className="text-xs text-muted-foreground">
+                            Define tier thresholds, multipliers, and discounts.
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            appendTier({
+                              name: "",
+                              minPoints: 0,
+                              pointsMultiplier: 1,
+                              discountPercent: 0,
+                              color: "",
+                            })
+                          }
+                          disabled={isUpdating}
+                        >
+                          Add Tier
+                        </Button>
+                      </div>
+
+                      {tierFields.length === 0 ? (
+                        <Alert>
+                          <Icon name="info" className="h-4 w-4" />
+                          <AlertDescription>
+                            No tiers configured. Add a tier to enable tier-based benefits.
+                          </AlertDescription>
+                        </Alert>
+                      ) : (
+                        <div className="space-y-3">
+                          {tierFields.map((field, index) => (
+                            <Card key={field.id}>
+                              <CardContent className="pt-4 space-y-4">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-medium">
+                                    Tier {index + 1}
+                                  </p>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => removeTier(index)}
+                                    disabled={isUpdating}
+                                  >
+                                    <Icon name="trash" className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>Name</Label>
+                                    <Input
+                                      {...form.register(`membership.tiers.${index}.name`)}
+                                      placeholder="Gold"
+                                      disabled={isUpdating}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Min Points</Label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      {...form.register(`membership.tiers.${index}.minPoints`, {
+                                        valueAsNumber: true,
+                                      })}
+                                      placeholder="0"
+                                      disabled={isUpdating}
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>Points Multiplier</Label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      {...form.register(`membership.tiers.${index}.pointsMultiplier`, {
+                                        valueAsNumber: true,
+                                      })}
+                                      placeholder="1"
+                                      disabled={isUpdating}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Discount Percent</Label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.01"
+                                      {...form.register(`membership.tiers.${index}.discountPercent`, {
+                                        valueAsNumber: true,
+                                      })}
+                                      placeholder="5"
+                                      disabled={isUpdating}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>Tier Color (optional)</Label>
+                                    <Input
+                                      {...form.register(`membership.tiers.${index}.color`)}
+                                      placeholder="#FFD700"
+                                      disabled={isUpdating}
+                                    />
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-sm font-semibold">Redemption Rules</h3>
+                          <p className="text-xs text-muted-foreground">
+                            Configure how points can be redeemed at POS/checkout.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="redemptionEnabled"
+                          {...form.register("membership.redemption.enabled")}
+                          className="rounded"
+                          disabled={isUpdating}
+                        />
+                        <Label htmlFor="redemptionEnabled" className="cursor-pointer">
+                          Enable points redemption
+                        </Label>
+                      </div>
+
+                      {form.watch("membership.redemption.enabled") && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Minimum Redeem Points</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              {...form.register("membership.redemption.minRedeemPoints", {
+                                valueAsNumber: true,
+                              })}
+                              placeholder="100"
+                              disabled={isUpdating}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Minimum Order Amount (BDT)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              {...form.register("membership.redemption.minOrderAmount", {
+                                valueAsNumber: true,
+                              })}
+                              placeholder="0"
+                              disabled={isUpdating}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Max Redeem Percent</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              {...form.register("membership.redemption.maxRedeemPercent", {
+                                valueAsNumber: true,
+                              })}
+                              placeholder="50"
+                              disabled={isUpdating}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Points Per BDT</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              {...form.register("membership.redemption.pointsPerBdt", {
+                                valueAsNumber: true,
+                              })}
+                              placeholder="10"
+                              disabled={isUpdating}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
           </Tabs>
 
           {/* Form Actions */}
@@ -581,6 +1089,7 @@ function PaymentMethodForm({ index, form, onRemove, disabled }) {
   const type = form.watch(`paymentMethods.${index}.type`);
   const provider = form.watch(`paymentMethods.${index}.provider`);
   const isActive = form.watch(`paymentMethods.${index}.isActive`);
+  const cardTypes = form.watch(`paymentMethods.${index}.cardTypes`) || [];
 
   const getMethodLabel = () => {
     if (type === "cash") return "Cash on Delivery";
@@ -749,6 +1258,27 @@ function PaymentMethodForm({ index, form, onRemove, disabled }) {
                   placeholder="City Bank"
                   disabled={disabled}
                 />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label>Card Types</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {["visa", "mastercard", "amex", "unionpay", "other"].map((cardType) => (
+                    <label key={cardType} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={cardTypes.includes(cardType)}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...cardTypes, cardType]
+                            : cardTypes.filter((value) => value !== cardType);
+                          form.setValue(`paymentMethods.${index}.cardTypes`, next);
+                        }}
+                        disabled={disabled}
+                      />
+                      <span className="capitalize">{cardType.replace("_", " ")}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="col-span-2 space-y-2">
                 <Label>Note (optional)</Label>

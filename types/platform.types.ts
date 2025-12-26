@@ -57,6 +57,37 @@ export interface PlatformPolicies {
   shippingPolicy?: string;
 }
 
+// ==================== Membership ====================
+
+export type MembershipRoundingMode = "floor" | "round" | "ceil";
+
+export interface MembershipTierConfig {
+  name: string;
+  minPoints: number;
+  pointsMultiplier: number;
+  discountPercent: number;
+  color?: string;
+}
+
+export interface MembershipRedemptionConfig {
+  enabled: boolean;
+  minRedeemPoints: number;
+  minOrderAmount: number;
+  maxRedeemPercent: number;
+  pointsPerBdt: number;
+}
+
+export interface MembershipConfig {
+  enabled: boolean;
+  pointsPerAmount: number;
+  amountPerPoint: number;
+  roundingMode: MembershipRoundingMode;
+  tiers: MembershipTierConfig[];
+  cardPrefix: string;
+  cardDigits: number;
+  redemption?: MembershipRedemptionConfig;
+}
+
 // ==================== Platform Config ====================
 
 export interface PlatformConfig {
@@ -67,6 +98,7 @@ export interface PlatformConfig {
   checkout: CheckoutSettings;
   logistics: LogisticsSettings;
   vat: PlatformVatConfig;
+  membership?: MembershipConfig;
   policies?: PlatformPolicies;
   isSingleton: boolean;
   createdAt: string;
@@ -81,6 +113,7 @@ export interface UpdatePlatformConfigPayload {
   checkout?: Partial<CheckoutSettings>;
   logistics?: Partial<LogisticsSettings>;
   vat?: Partial<PlatformVatConfig>;
+  membership?: Partial<MembershipConfig>;
   policies?: Partial<PlatformPolicies>;
 }
 

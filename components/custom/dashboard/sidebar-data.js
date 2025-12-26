@@ -98,10 +98,6 @@ export const data = {
               url: "/dashboard/inventory",
             },
             {
-              title: "Low Stock Alerts",
-              url: "/dashboard/inventory/low-stock",
-            },
-            {
               title: "Transfers (Challan)",
               url: "/dashboard/inventory/transfers",
             },

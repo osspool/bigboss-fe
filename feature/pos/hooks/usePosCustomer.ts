@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { useCustomers } from "@/hooks/query/useCustomers";
 import { buildFilterParams, getApiParams } from "@/lib/filter-utils";
@@ -12,6 +12,8 @@ export interface UsePosCustomerReturn {
   selectedCustomer: Customer | null;
   customerName: string;
   customerPhone: string;
+  membershipCardId: string;
+  membershipLookupStatus: "idle" | "searching" | "found" | "not_found";
   // Search state
   customerSearch: string;
   customerResults: Customer[];
@@ -22,6 +24,7 @@ export interface UsePosCustomerReturn {
   // Actions
   setCustomerName: (value: string) => void;
   setCustomerPhone: (value: string) => void;
+  setMembershipCardId: (value: string) => void;
   setCustomerSearch: (value: string) => void;
   setCreateDialogOpen: (open: boolean) => void;
   setLookupDialogOpen: (open: boolean) => void;
@@ -29,6 +32,7 @@ export interface UsePosCustomerReturn {
   clearCustomer: () => void;
   handleCustomerCreated: (customer: Customer) => void;
   triggerSearch: () => void;
+  triggerMembershipLookup: () => void;
   resetCustomer: () => void;
 }
 
@@ -36,8 +40,13 @@ export function usePosCustomer(token: string): UsePosCustomerReturn {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerName, setCustomerNameState] = useState("");
   const [customerPhone, setCustomerPhoneState] = useState("");
+  const [membershipCardId, setMembershipCardIdState] = useState("");
+  const [membershipLookupStatus, setMembershipLookupStatus] = useState<
+    "idle" | "searching" | "found" | "not_found"
+  >("idle");
   const [customerSearch, setCustomerSearch] = useState("");
   const [searchApplied, setSearchApplied] = useState("");
+  const [membershipSearchApplied, setMembershipSearchApplied] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [lookupDialogOpen, setLookupDialogOpen] = useState(false);
 
@@ -96,6 +105,40 @@ export function usePosCustomer(token: string): UsePosCustomerReturn {
     [customerResultsRaw, normalizedSearch.length]
   );
 
+  const membershipParams = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("limit", "1");
+
+    if (!membershipSearchApplied) {
+      return getApiParams(params);
+    }
+
+    const filterParams = buildFilterParams(
+      { membershipCardId: membershipSearchApplied },
+      { membershipCardId: { paramName: "membership.cardId", type: "string", defaultValue: "" } }
+    );
+    for (const [key, value] of filterParams) {
+      params.set(key, value);
+    }
+
+    return getApiParams(params);
+  }, [membershipSearchApplied]);
+
+  const {
+    items: membershipResultsRaw,
+    isLoading: membershipLoading,
+    isFetching: membershipFetching,
+    refetch: refetchMembership,
+  } = useCustomers(token, membershipParams, {
+    enabled: !!token && membershipSearchApplied.length >= 4,
+    refetchOnWindowFocus: false,
+  });
+
+  const membershipResults = useMemo(
+    () => (membershipSearchApplied.length >= 4 ? ((membershipResultsRaw || []) as Customer[]) : []),
+    [membershipResultsRaw, membershipSearchApplied.length]
+  );
+
   const setCustomerName = useCallback((value: string) => {
     setCustomerNameState(value);
     if (selectedCustomer) setSelectedCustomer(null);
@@ -106,10 +149,20 @@ export function usePosCustomer(token: string): UsePosCustomerReturn {
     if (selectedCustomer) setSelectedCustomer(null);
   }, [selectedCustomer]);
 
+  const setMembershipCardId = useCallback((value: string) => {
+    setMembershipCardIdState(value);
+    if (!value.trim()) {
+      setMembershipSearchApplied("");
+    }
+    setMembershipLookupStatus("idle");
+  }, []);
+
   const selectCustomer = useCallback((customer: Customer) => {
     setSelectedCustomer(customer);
     setCustomerNameState(customer.name || "");
     setCustomerPhoneState(customer.phone || "");
+    setMembershipCardIdState(customer.membership?.cardId || "");
+    setMembershipLookupStatus(customer.membership?.cardId ? "found" : "idle");
     setCustomerSearch("");
     setSearchApplied("");
     setLookupDialogOpen(false);
@@ -119,14 +172,19 @@ export function usePosCustomer(token: string): UsePosCustomerReturn {
     setSelectedCustomer(null);
     setCustomerNameState("");
     setCustomerPhoneState("");
+    setMembershipCardIdState("");
+    setMembershipLookupStatus("idle");
     setCustomerSearch("");
     setSearchApplied("");
+    setMembershipSearchApplied("");
   }, []);
 
   const handleCustomerCreated = useCallback((customer: Customer) => {
     setSelectedCustomer(customer);
     setCustomerNameState(customer.name || "");
     setCustomerPhoneState(customer.phone || "");
+    setMembershipCardIdState(customer.membership?.cardId || "");
+    setMembershipLookupStatus(customer.membership?.cardId ? "found" : "idle");
     setCustomerSearch("");
     setSearchApplied("");
     setLookupDialogOpen(false);
@@ -144,18 +202,59 @@ export function usePosCustomer(token: string): UsePosCustomerReturn {
     }
   }, [customerSearch, searchApplied, refetchCustomers]);
 
+  const triggerMembershipLookup = useCallback(() => {
+    const trimmed = membershipCardId.trim();
+    if (!trimmed) {
+      setMembershipSearchApplied("");
+      setMembershipLookupStatus("idle");
+      return;
+    }
+    if (trimmed === membershipSearchApplied) {
+      setMembershipLookupStatus("searching");
+      refetchMembership();
+      return;
+    }
+    setMembershipLookupStatus("searching");
+    setMembershipSearchApplied(trimmed);
+  }, [membershipCardId, membershipSearchApplied, refetchMembership]);
+
+  useEffect(() => {
+    if (!membershipSearchApplied) return;
+    if (membershipLoading || membershipFetching) return;
+
+    if (membershipResults.length > 0) {
+      selectCustomer(membershipResults[0]);
+      setMembershipLookupStatus("found");
+      return;
+    }
+
+    setMembershipLookupStatus("not_found");
+    toast.error("Membership card not found");
+  }, [
+    membershipSearchApplied,
+    membershipResults,
+    membershipLoading,
+    membershipFetching,
+    selectCustomer,
+  ]);
+
   const resetCustomer = useCallback(() => {
     setSelectedCustomer(null);
     setCustomerNameState("");
     setCustomerPhoneState("");
+    setMembershipCardIdState("");
+    setMembershipLookupStatus("idle");
     setCustomerSearch("");
     setSearchApplied("");
+    setMembershipSearchApplied("");
   }, []);
 
   return {
     selectedCustomer,
     customerName,
     customerPhone,
+    membershipCardId,
+    membershipLookupStatus,
     customerSearch,
     customerResults,
     isSearching: customersLoading || customersFetching,
@@ -163,6 +262,7 @@ export function usePosCustomer(token: string): UsePosCustomerReturn {
     lookupDialogOpen,
     setCustomerName,
     setCustomerPhone,
+    setMembershipCardId,
     setCustomerSearch,
     setCreateDialogOpen,
     setLookupDialogOpen,
@@ -170,6 +270,7 @@ export function usePosCustomer(token: string): UsePosCustomerReturn {
     clearCustomer,
     handleCustomerCreated,
     triggerSearch,
+    triggerMembershipLookup,
     resetCustomer,
   };
 }

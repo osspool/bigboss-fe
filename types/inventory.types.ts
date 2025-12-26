@@ -99,6 +99,19 @@ export type PurchasePaymentStatus = 'unpaid' | 'partial' | 'paid';
 export type PurchasePaymentTerms = 'cash' | 'credit';
 export type PurchaseActionType = 'receive' | 'pay' | 'cancel';
 
+export interface PurchasePaymentDetails {
+  amount: number;
+  method: string;
+  reference?: string;
+  accountNumber?: string;
+  walletNumber?: string;
+  bankName?: string;
+  accountName?: string;
+  proofUrl?: string;
+  transactionDate?: string;
+  notes?: string;
+}
+
 // Purchase item (request shape)
 export interface PurchaseItem {
   productId: string;
@@ -150,11 +163,7 @@ export interface CreatePurchasePayload {
   notes?: string;
   autoApprove?: boolean;
   autoReceive?: boolean;
-  payment?: {
-    amount: number;
-    method: string;
-    reference?: string;
-  };
+  payment?: PurchasePaymentDetails;
 }
 
 // Update purchase payload (draft only)
@@ -177,6 +186,13 @@ export interface PurchasePayPayload {
   amount: number;
   method: string;
   reference?: string;
+  accountNumber?: string;
+  walletNumber?: string;
+  bankName?: string;
+  accountName?: string;
+  proofUrl?: string;
+  transactionDate?: string;
+  notes?: string;
 }
 
 export interface PurchaseCancelPayload {
@@ -201,6 +217,7 @@ export interface TransferItemPayload {
   productId: string;
   variantSku?: string;
   quantity: number;
+  cartonNumber?: string;
 }
 
 // Transfer item (response shape - populated from API)
@@ -211,6 +228,7 @@ export interface TransferItem {
   productSku?: string;
   variantSku?: string;
   variantAttributes?: Record<string, string>;
+  cartonNumber?: string;
   quantity: number;
   quantityReceived?: number;
   costPrice?: number;
@@ -224,6 +242,7 @@ export interface TransportDetails {
   estimatedArrival?: string;
   courierName?: string;
   trackingId?: string;
+  notes?: string;
 }
 
 export interface TransferStatusHistoryEntry {
@@ -292,6 +311,7 @@ export interface TransferActionPayload {
   action: TransferActionType;
   transport?: TransportDetails; // For 'dispatch'
   items?: {
+    itemId?: string;
     productId: string;
     variantSku?: string;
     quantityReceived: number;
@@ -312,6 +332,7 @@ export interface DispatchTransferPayload {
 
 export interface ReceiveTransferPayload {
   items?: {
+    itemId?: string;
     productId: string;
     variantSku?: string;
     quantityReceived: number;
@@ -330,6 +351,7 @@ export interface StockRequestItem {
   approvedQuantity?: number;
   // Preferred field (API docs)
   quantityApproved?: number;
+  quantityFulfilled?: number;
   notes?: string;
 }
 
@@ -349,6 +371,9 @@ export interface StockRequest {
   notes?: string;
   reviewNotes?: string;
   rejectionReason?: string;
+  totalQuantityRequested?: number;
+  totalQuantityApproved?: number;
+  totalQuantityFulfilled?: number;
 
   createdAt: string;
   updatedAt: string;
@@ -376,11 +401,13 @@ export interface StockRequestActionPayload {
   items?: {
     productId: string;
     variantSku?: string;
-    quantityApproved: number;
-  }[]; // For 'approve'
-  reason?: string; // For 'reject' or 'cancel'
-  remarks?: string; // For 'fulfill'
-  documentType?: string; // For 'fulfill'
+    quantityApproved?: number;
+    quantity?: number;
+  }[];
+  reason?: string;
+  remarks?: string;
+  reviewNotes?: string;
+  documentType?: string;
 }
 
 // ============= Adjustments =============
@@ -390,6 +417,7 @@ export interface AdjustmentItem {
   variantSku?: string;
   quantity: number;
   mode: 'add' | 'remove' | 'set';
+  reason?: string;
 }
 
 export interface CreateAdjustmentPayload {
@@ -440,6 +468,12 @@ export interface AdjustStockResult {
   productId?: string;
   variantSku?: string | null;
   newQuantity?: number;
+  message?: string;
+  transaction?: {
+    _id?: string;
+    amount?: number;
+    category?: string;
+  };
 }
 
 // ============= Low Stock =============
@@ -474,4 +508,7 @@ export interface MovementQueryParams {
   endDate?: string;
   page?: number;
   limit?: number;
+  sort?: string;
+  after?: string;
+  cursor?: string;
 }

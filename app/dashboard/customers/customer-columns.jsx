@@ -1,8 +1,9 @@
 "use client";
 import React from "react";
-import { User, Phone, Mail, Calendar, Pencil } from "lucide-react";
+import { User, Phone, Mail, Calendar, Pencil, Award } from "lucide-react";
 import { ActionDropdown } from "@/components/custom/ui/dropdown-wrapper";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { getReadableTextColor, getTierColor } from "@/lib/loyalty-utils";
 
 const NameCell = React.memo(({ item }) => {
   const name = item.name || "-";
@@ -71,6 +72,40 @@ const StatsCell = React.memo(({ item }) => {
 });
 StatsCell.displayName = "StatsCell";
 
+const MembershipCell = React.memo(({ item }) => {
+  const membership = item.membership;
+  if (!membership?.cardId) {
+    return (
+      <div className="text-xs text-muted-foreground">Not enrolled</div>
+    );
+  }
+  const tierName = membership.tier;
+  const tierColor = getTierColor(tierName);
+  const tierTextColor = getReadableTextColor(tierColor);
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <Award className="h-4 w-4 text-muted-foreground" />
+        <span className="font-mono">{membership.cardId}</span>
+      </div>
+      <div className="text-xs text-muted-foreground">
+        <span
+          className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium mr-2"
+          style={
+            tierColor
+              ? { backgroundColor: tierColor, color: tierTextColor }
+              : undefined
+          }
+        >
+          {tierName || "Tier"}
+        </span>
+        {membership.points?.current ?? 0} pts
+      </div>
+    </div>
+  );
+});
+MembershipCell.displayName = "MembershipCell";
+
 const DateCell = React.memo(({ item }) => {
   const dateStr = item.createdAt;
   const display = dateStr ? new Date(dateStr).toLocaleDateString('en-GB') : "-";
@@ -131,6 +166,12 @@ export const customersColumns = (onEdit, onDelete) => [
     id: 'stats',
     header: 'Stats',
     cell: ({ row }) => <StatsCell item={row.original} />,
+    enableSorting: false,
+  },
+  {
+    id: 'membership',
+    header: 'Membership',
+    cell: ({ row }) => <MembershipCell item={row.original} />,
     enableSorting: false,
   },
   {

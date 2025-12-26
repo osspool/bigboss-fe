@@ -10,6 +10,20 @@ import { LiteEditorField } from "@/components/form/lite-editor/lite-editor-field
 import { VariationField } from "./VariationField";
 import { BarcodeManager } from "./BarcodeManager";
 
+const normalizeStyleTag = (value = "") =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+
+const formatStyleTag = (value = "") =>
+  value
+    .replace(/-/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+
 const DISCOUNT_TYPE_OPTIONS = [
   // Allow clearing discount selection
   { value: "", label: "No Discount" },
@@ -174,9 +188,12 @@ export const createProductFormSchema = ({
           "style-section",
           null,
           [
-            field.tagChoice("style", "Product Style", PRODUCT_STYLES, {
-              placeholder: "Select style(s)",
-              description: "Select one or more styles that best describe this product",
+            field.tags("style", "Product Style", {
+              placeholder: "Add styles (press Enter or comma)",
+              description: "Add one or more styles to describe this product",
+              suggestions: PRODUCT_STYLES.map((style) => style.value),
+              transformTag: normalizeStyleTag,
+              formatTag: formatStyleTag,
               fullWidth: true,
             }),
           ],

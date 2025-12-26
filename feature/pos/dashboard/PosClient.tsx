@@ -1,7 +1,23 @@
 "use client";
 
+/**
+ * PosClient - Main Point of Sale orchestrator component
+ *
+ * This component manages the entire POS workflow including:
+ * - Product search and selection (barcode, search, browse)
+ * - Cart management with discounts and membership benefits
+ * - Customer lookup and membership card scanning
+ * - Payment processing (single or split payments)
+ * - Order checkout and receipt generation
+ *
+ * Layout: Fixed-height split panel (Products | Cart) with internal scrolling
+ * State: Coordinated through custom hooks (usePosCart, usePosCustomer, usePosPayment)
+ *
+ * @see feature/pos/README.md for architecture details
+ */
+
 import { useDeferredValue, useMemo, useCallback, useEffect, useState } from "react";
-import { Package, Loader2, ShoppingCart, AlertTriangle } from "lucide-react";
+import { Package, Loader2, ShoppingCart, AlertTriangle, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,10 +28,9 @@ import {
   usePosProducts,
   usePosOrders,
   usePosLookupMutation,
-  usePosReceipt,
   generateIdempotencyKey,
 } from "@/hooks/query/usePos";
-import type { PosProduct, PosReceiptResponse } from "@/types/pos.types";
+import type { PosProduct, PosPaymentMethod, PosReceiptData } from "@/types/pos.types";
 import { toast } from "sonner";
 import { VariantSelectorDialog } from "./components/VariantSelectorDialog";
 import { CartPanel } from "./components/CartPanel";
@@ -23,13 +38,14 @@ import { ProductsPanel } from "./components/ProductsPanel";
 import { ReceiptPanel } from "./components/ReceiptPanel";
 import { CustomerQuickAddDialog } from "./components/CustomerQuickAddDialog";
 import { CustomerLookupDialog } from "./components/CustomerLookupDialog";
-import { paymentNeedsReference } from "./pos-payment";
+import { paymentNeedsReference } from "../hooks/usePosPayment";
 import { usePosCart, usePosCustomer, usePosPayment } from "../hooks";
-import { extractOrderId, isValidBDPhone } from "../utils";
-
-// ============================================
-// MAIN COMPONENT
-// ============================================
+import { useManagerAuth } from "../hooks/useManagerAuth";
+import { calculateOrderTotals, isValidBDPhone, parsePositiveNumber, transformOrderToReceipt } from "../utils";
+import { ManagerAuthDialog } from "./components/ManagerAuthDialog";
+import { useMembershipConfig } from "@/hooks/query/usePlatformConfig";
+import { getReadableTextColor, getTierColor } from "@/lib/loyalty-utils";
+import HeaderSection from "@/components/custom/dashboard/header-section";
 
 interface PosClientProps {
   token: string;
@@ -48,8 +64,8 @@ export function PosClient({ token }: PosClientProps) {
   const [variantSelectorOpen, setVariantSelectorOpen] = useState(false);
   const [selectedProductForVariant, setSelectedProductForVariant] = useState<PosProduct | null>(null);
 
-  // Receipt state
-  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  // Receipt state - store receipt data directly from order response (no extra API call)
+  const [lastReceipt, setLastReceipt] = useState<PosReceiptData | null>(null);
   const [lastCashReceived, setLastCashReceived] = useState<number | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
 
@@ -59,7 +75,33 @@ export function PosClient({ token }: PosClientProps) {
   // Custom hooks
   const cart = usePosCart();
   const customer = usePosCustomer(token);
-  const payment = usePosPayment(token, cart.cartSummary.total);
+  const { membership } = useMembershipConfig(token);
+  const discountAuth = useManagerAuth();
+
+  // Discount auth dialog state
+  const [discountAuthDialogOpen, setDiscountAuthDialogOpen] = useState(false);
+
+  const orderTotals = useMemo(
+    () =>
+      calculateOrderTotals({
+        items: cart.cart,
+        manualDiscountInput: cart.discountInput,
+        membershipConfig: membership,
+        customer: customer.selectedCustomer,
+        pointsToRedeemInput: cart.pointsToRedeemInput,
+      }),
+    [
+      cart.cart,
+      cart.discountInput,
+      membership,
+      customer.selectedCustomer,
+      cart.pointsToRedeemInput,
+    ]
+  );
+
+  const payment = usePosPayment(token, orderTotals.total);
+  const cartMembershipCardId = cart.membershipCardId;
+  const setCartMembershipCardId = cart.setMembershipCardId;
 
   // Product filters
   const productFilters = useMemo(
@@ -86,15 +128,6 @@ export function PosClient({ token }: PosClientProps) {
 
   const { createOrder, isCreatingOrder } = usePosOrders(token);
 
-  const {
-    data: receiptResponse,
-    isLoading: receiptLoading,
-    isError: receiptError,
-    refetch: refetchReceipt,
-  } = usePosReceipt(token, lastOrderId || "", { enabled: !!lastOrderId });
-
-  const lastReceipt = (receiptResponse as PosReceiptResponse | undefined)?.data ?? null;
-
   // Category tree for filter
   const { data: categoryTreeResponse } = useCategoryTree(token);
   const categoryTree = categoryTreeResponse?.data || [];
@@ -110,6 +143,12 @@ export function PosClient({ token }: PosClientProps) {
       setShowReceipt(false);
     }
   }, [cart.cart.length, showReceipt]);
+
+  useEffect(() => {
+    if (customer.membershipCardId !== cartMembershipCardId) {
+      setCartMembershipCardId(customer.membershipCardId);
+    }
+  }, [customer.membershipCardId, cartMembershipCardId, setCartMembershipCardId]);
 
   // ============================================
   // HANDLERS
@@ -196,30 +235,80 @@ export function PosClient({ token }: PosClientProps) {
     }
 
     try {
-      if (payment.paymentMethods.length === 0 && !payment.paymentMethodsLoading) {
+      if (payment.options.length === 0 && !payment.isLoading) {
         toast.error("No active payment methods configured");
         return;
       }
 
-      if (paymentNeedsReference(payment.selectedPosMethod)) {
-        if (!payment.paymentReference.trim()) {
-          toast.error("Payment reference is required");
+      let paymentPayload: {
+        payment?: { method: PosPaymentMethod; amount: number; reference?: string };
+        payments?: { method: PosPaymentMethod; amount: number; reference?: string }[];
+      } = {};
+
+      if (payment.state.mode === "split") {
+        // Validate all split entries
+        if (!payment.validateAllSplits()) {
+          toast.error("Please fix split payment errors");
           return;
         }
+
+        if (payment.state.splitEntries.length === 0) {
+          toast.error("Add at least one split payment");
+          return;
+        }
+
+        const payments = payment.state.splitEntries.map((entry) => {
+          const amount = parsePositiveNumber(entry.amount);
+          return {
+            method: entry.posMethod,
+            amount,
+            ...(entry.reference.trim() && { reference: entry.reference.trim() }),
+          };
+        });
+
+        const splitTotal = payments.reduce((sum, p) => sum + p.amount, 0);
+        if (Math.abs(splitTotal - orderTotals.total) > 0.01) {
+          toast.error("Split payment total must match order total");
+          return;
+        }
+
+        paymentPayload = { payments };
       } else {
-        if (!payment.cashReceived.trim()) {
-          toast.error("Enter cash received");
-          return;
+        if (paymentNeedsReference(payment.state.selectedMethod)) {
+          if (!payment.state.reference.trim()) {
+            toast.error("Payment reference is required");
+            return;
+          }
+        } else {
+          if (!payment.state.cashReceived.trim()) {
+            toast.error("Enter cash received");
+            return;
+          }
+          if (payment.state.amountDue > 0) {
+            toast.error("Insufficient cash received");
+            return;
+          }
         }
-        if (payment.amountDue > 0) {
-          toast.error("Insufficient cash received");
-          return;
-        }
+
+        paymentPayload = {
+          payment: {
+            method: payment.state.selectedMethod,
+            amount: orderTotals.total,
+            ...(paymentNeedsReference(payment.state.selectedMethod) && {
+              reference: payment.state.reference.trim(),
+            }),
+          },
+        };
       }
 
       const trimmedPhone = customer.customerPhone.trim();
       if (trimmedPhone && !isValidBDPhone(trimmedPhone)) {
         toast.error("Phone number must be 11 digits (01XXXXXXXXX)");
+        return;
+      }
+
+      if (cart.pointsToRedeemInput.trim() && orderTotals.redemptionError) {
+        toast.error(orderTotals.redemptionError);
         return;
       }
 
@@ -232,31 +321,39 @@ export function PosClient({ token }: PosClientProps) {
         })),
         branchId,
         deliveryMethod: "pickup" as const,
+        ...(cartMembershipCardId.trim() && {
+          membershipCardId: cartMembershipCardId.trim(),
+        }),
         customer: {
           name: customer.customerName.trim() || "Walk-in Customer",
           ...(trimmedPhone && { phone: trimmedPhone }),
           ...(customer.selectedCustomer?._id && { id: customer.selectedCustomer._id }),
         },
-        payment: {
-          method: payment.selectedPosMethod,
-          amount: cart.cartSummary.total,
-          ...(paymentNeedsReference(payment.selectedPosMethod) && {
-            reference: payment.paymentReference.trim(),
-          }),
-        },
+        ...paymentPayload,
         ...(cart.cartSummary.discount > 0 && { discount: cart.cartSummary.discount }),
+        ...(orderTotals.pointsRedeemed > 0 && { pointsToRedeem: orderTotals.pointsRedeemed }),
         idempotencyKey: generateIdempotencyKey(),
       };
 
       const response = await createOrder(orderData);
-      const nextOrderId = extractOrderId(response);
+
+      // Transform order response to receipt format (no extra API call needed)
+      const branchInfo = {
+        name: selectedBranch?.name || "Store",
+        phone: selectedBranch?.phone,
+      };
+      const receipt = transformOrderToReceipt(response, branchInfo);
 
       // Success - reset state
       cart.resetCart();
-      payment.resetPayment();
+      payment.reset();
       customer.resetCustomer();
-      setLastOrderId(nextOrderId);
-      setLastCashReceived(payment.selectedPosMethod === "cash" ? payment.cashReceivedNumber : null);
+      setLastReceipt(receipt);
+      setLastCashReceived(
+        payment.state.mode === "single" && payment.state.selectedMethod === "cash"
+          ? parsePositiveNumber(payment.state.cashReceived)
+          : null
+      );
       setShowReceipt(true);
       toast.success("Order completed! Ready to print receipt.");
     } catch (error) {
@@ -264,15 +361,65 @@ export function PosClient({ token }: PosClientProps) {
       toast.error(message);
       console.error("Checkout failed:", error);
     }
-  }, [cart, branchId, createOrder, payment, customer]);
+  }, [cart, branchId, selectedBranch, createOrder, payment, customer, orderTotals]);
 
   const handleNewSale = useCallback(() => {
-    setLastOrderId(null);
+    setLastReceipt(null);
     setLastCashReceived(null);
     setShowReceipt(false);
-    payment.resetPayment();
+    payment.reset();
     customer.resetCustomer();
   }, [payment, customer]);
+
+  // ============================================
+  // VIEW MODELS
+  // ============================================
+
+  const cartViewModel = useMemo(() => ({
+    items: cart.cart,
+    subtotal: orderTotals.subtotal,
+    discount: orderTotals.manualDiscount,
+    tierDiscount: orderTotals.tierDiscount,
+    tierName: orderTotals.tierName,
+    redemptionDiscount: orderTotals.redemptionDiscount,
+    total: orderTotals.total,
+    pointsToEarn: orderTotals.pointsToEarn,
+  }), [cart.cart, orderTotals]);
+
+  const customerViewModel = useMemo(() => {
+    const tierName = customer.selectedCustomer?.membership?.tier || null;
+    const tierColor = getTierColor(tierName);
+    const tierTextColor = getReadableTextColor(tierColor);
+
+    return {
+      selected: customer.selectedCustomer,
+      name: customer.customerName,
+      phone: customer.customerPhone,
+      membershipCardId: customer.membershipCardId,
+      membershipStatus: customer.membershipLookupStatus,
+      tierName,
+      tierColor,
+      tierTextColor,
+    };
+  }, [
+    customer.selectedCustomer,
+    customer.customerName,
+    customer.customerPhone,
+    customer.membershipCardId,
+    customer.membershipLookupStatus,
+  ]);
+
+  const paymentViewModel = useMemo(() => ({
+    options: payment.options,
+    isLoading: payment.isLoading,
+    state: payment.state,
+    selectedOption: payment.selectedOption,
+  }), [payment.options, payment.isLoading, payment.state, payment.selectedOption]);
+
+  const discountAuthViewModel = useMemo(() => ({
+    isAuthorized: discountAuth.isAuthorized,
+    authorizedByName: discountAuth.authorizedBy?.name || null,
+  }), [discountAuth.isAuthorized, discountAuth.authorizedBy]);
 
   // ============================================
   // LOADING STATES
@@ -306,31 +453,26 @@ export function PosClient({ token }: PosClientProps) {
   // ============================================
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden bg-background">
+    <div className="flex flex-col gap-2 h-full">
       {/* Header */}
-      <div className="border-b bg-card px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Point of Sale</h1>
-            <p className="text-sm text-muted-foreground">
-              {selectedBranch.name} ({selectedBranch.code})
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            {summary.lowStockCount > 0 && (
-              <Badge variant="secondary" className="gap-1">
-                <AlertTriangle className="h-3 w-3" />
-                {summary.lowStockCount} Low Stock
-              </Badge>
-            )}
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <HeaderSection
+        icon={Package}
+        title="Point of Sale"
+        variant="compact"
+        actions={[
+          {
+            icon: RefreshCcw,
+            text: "Refresh",
+            loadingText: "Refreshing...",
+            variant: "outline",
+            size: "sm",
+            onClick: () => refetch(),
+            loading: isFetching,
+          },
+        ]}
+      />
 
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0">
         <ResponsiveSplitLayout
           className="h-full"
           persistLayoutKey="pos-split-layout"
@@ -338,8 +480,8 @@ export function PosClient({ token }: PosClientProps) {
           desktopVariant="fixed"
           mobileBreakpoint="lg"
           rightPanelWidth={380}
-          leftPanelClassName="overflow-hidden min-w-[600px]"
-          rightPanelClassName="overflow-hidden bg-card border-l min-w-[340px] max-w-[420px]"
+          leftPanelClassName=""
+          rightPanelClassName="bg-card border-l"
           leftPanel={{
             icon: <Package className="h-4 w-4" />,
             title: "Products",
@@ -371,41 +513,67 @@ export function PosClient({ token }: PosClientProps) {
                 {showReceipt && cart.cart.length === 0 ? (
                   <ReceiptPanel
                     receipt={lastReceipt}
-                    isLoading={receiptLoading}
-                    hasError={receiptError || !lastOrderId}
-                    onRetry={lastOrderId ? refetchReceipt : () => {}}
+                    isLoading={false}
+                    hasError={!lastReceipt}
+                    onRetry={handleNewSale}
                     onNewSale={handleNewSale}
                     cashReceived={lastCashReceived}
                   />
                 ) : (
                   <CartPanel
-                    cart={cart.cart}
-                    cartSummary={cart.cartSummary}
-                    isCreatingOrder={isCreatingOrder}
-                    onCheckout={handleCheckout}
-                    onClearCart={cart.clearCart}
-                    onRemoveItem={cart.removeItem}
+                    cart={cartViewModel}
+                    customer={customerViewModel}
+                    payment={paymentViewModel}
+                    discountInput={cart.discountInput}
+                    pointsToRedeemInput={cart.pointsToRedeemInput}
+                    redemption={{
+                      enabled: !!membership?.enabled
+                        && !!membership?.redemption?.enabled
+                        && !!customer.selectedCustomer?.membership?.cardId,
+                      pointsBalance: customer.selectedCustomer?.membership?.points?.current ?? 0,
+                      minRedeemPoints: membership?.redemption?.minRedeemPoints ?? 0,
+                      maxRedeemPoints: Math.min(
+                        orderTotals.maxAllowedPoints,
+                        customer.selectedCustomer?.membership?.points?.current ?? 0
+                      ),
+                      pointsPerBdt: membership?.redemption?.pointsPerBdt ?? 1,
+                      estimatedDiscount: orderTotals.redemptionDiscount,
+                      error: orderTotals.redemptionError,
+                    }}
+                    discountAuth={discountAuthViewModel}
+                    isCheckingOut={isCreatingOrder}
                     onUpdateQuantity={cart.updateQuantity}
-                    paymentMethods={payment.paymentMethods}
-                    paymentMethodsLoading={payment.paymentMethodsLoading}
-                    selectedPaymentKey={payment.selectedPaymentKey}
-                    onSelectPaymentKey={payment.setSelectedPaymentKey}
-                    selectedPosPaymentMethod={payment.selectedPosMethod}
-                    paymentReference={payment.paymentReference}
-                    onPaymentReferenceChange={payment.setPaymentReference}
-                    cashReceived={payment.cashReceived}
-                    onCashReceivedChange={payment.setCashReceived}
-                    changeAmount={payment.changeAmount}
-                    amountDue={payment.amountDue}
-                    selectedCustomer={customer.selectedCustomer}
+                    onRemoveItem={cart.removeItem}
+                    onClearCart={cart.clearCart}
+                    onCustomerNameChange={customer.setCustomerName}
+                    onCustomerPhoneChange={customer.setCustomerPhone}
+                    onMembershipChange={(value) => {
+                      customer.setMembershipCardId(value);
+                      setCartMembershipCardId(value);
+                    }}
+                    onMembershipLookup={customer.triggerMembershipLookup}
                     onClearCustomer={customer.clearCustomer}
                     onOpenCustomerLookup={() => customer.setLookupDialogOpen(true)}
-                    customerName={customer.customerName}
-                    onCustomerNameChange={customer.setCustomerName}
-                    customerPhone={customer.customerPhone}
-                    onCustomerPhoneChange={customer.setCustomerPhone}
-                    discount={cart.discountInput}
                     onDiscountChange={cart.setDiscountInput}
+                    onRequestDiscountAuth={() => setDiscountAuthDialogOpen(true)}
+                    onClearDiscountAuth={() => {
+                      discountAuth.clearAuth();
+                      cart.setDiscountInput("");
+                    }}
+                    onPointsToRedeemChange={cart.setPointsToRedeemInput}
+                    onUseMaxPoints={() => {
+                      if (orderTotals.maxAllowedPoints > 0) {
+                        cart.setPointsToRedeemInput(String(orderTotals.maxAllowedPoints));
+                      }
+                    }}
+                    onSelectPayment={payment.selectPayment}
+                    onPaymentModeChange={payment.setMode}
+                    onCashChange={payment.setCashReceived}
+                    onReferenceChange={payment.setReference}
+                    onSplitAdd={payment.addSplit}
+                    onSplitUpdate={payment.updateSplit}
+                    onSplitRemove={payment.removeSplit}
+                    onCheckout={handleCheckout}
                   />
                 )}
                 <CustomerQuickAddDialog
@@ -433,6 +601,18 @@ export function PosClient({ token }: PosClientProps) {
                     customer.setLookupDialogOpen(false);
                     customer.setCreateDialogOpen(true);
                   }}
+                />
+                <ManagerAuthDialog
+                  open={discountAuthDialogOpen}
+                  onOpenChange={(open) => {
+                    setDiscountAuthDialogOpen(open);
+                    if (!open) discountAuth.reset();
+                  }}
+                  onAuthorize={discountAuth.authorize}
+                  isPending={discountAuth.isPending}
+                  error={discountAuth.error}
+                  title="Discount Authorization"
+                  description="Enter manager or admin credentials to authorize discounts for this sale."
                 />
               </>
             ),

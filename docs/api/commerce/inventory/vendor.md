@@ -62,6 +62,8 @@ Base path: `/api/v1/inventory/suppliers`
 
 **Uniqueness:** Vendor names are treated as case-insensitive for active suppliers.
 
+**Note:** Supplier payment terms/credit days are defaults and can be overridden per purchase invoice.
+
 ## List Vendors
 
 ```http

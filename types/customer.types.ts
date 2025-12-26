@@ -73,6 +73,23 @@ export interface CustomerStats {
   };
 }
 
+// ==================== Membership ====================
+
+export interface CustomerMembership {
+  cardId: string;
+  isActive: boolean;
+  enrolledAt?: string;
+  points?: {
+    current?: number;
+    lifetime?: number;
+    redeemed?: number;
+  };
+  tier?: string;
+  tierOverride?: string;
+  tierOverrideReason?: string;
+  tierOverrideBy?: string;
+}
+
 // ==================== Main Customer ====================
 
 export interface Customer {
@@ -89,6 +106,7 @@ export interface Customer {
   tags?: string[];
   notes?: string;
   isActive?: boolean;
+  membership?: CustomerMembership | null;
 
   // Virtuals
   defaultAddress?: CustomerAddress | null;
@@ -129,4 +147,3 @@ export interface CustomerQueryParams {
 
 export type CustomerListResponse = ListResponse<Customer>;
 export type CustomerResponse = ApiResponse<Customer>;
-

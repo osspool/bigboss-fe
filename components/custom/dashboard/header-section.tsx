@@ -1,8 +1,50 @@
 "use client";
+
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+
+interface HeaderAction {
+  text: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  size?: "default" | "sm" | "lg" | "icon";
+  className?: string;
+  icon?: LucideIcon;
+  iconPosition?: "left" | "right";
+  loadingText?: string;
+  loading?: boolean;
+}
+
+interface HeaderBadge {
+  text: string;
+  variant?: "default" | "secondary" | "destructive" | "outline";
+  className?: string;
+}
+
+interface HeaderMetadata {
+  text: string;
+  icon?: LucideIcon;
+}
+
+interface HeaderSectionProps {
+  title?: string;
+  description?: string;
+  actions?: HeaderAction[] | null;
+  icon?: LucideIcon | null;
+  iconClassName?: string;
+  loading?: boolean;
+  variant?: "default" | "compact" | "hero" | "minimal";
+  className?: string;
+  badge?: HeaderBadge | ReactNode;
+  breadcrumbs?: ReactNode;
+  metadata?: HeaderMetadata[];
+  children?: ReactNode;
+}
 
 const HeaderSection = ({
   title,
@@ -11,13 +53,13 @@ const HeaderSection = ({
   icon: Icon = null,
   iconClassName,
   loading = false,
-  variant = "default", // 'default' | 'compact' | 'hero' | 'minimal'
+  variant = "default",
   className,
   badge,
   breadcrumbs,
   metadata,
   children,
-}) => {
+}: HeaderSectionProps) => {
   // Variant-specific styles
   const variants = {
     default: {
@@ -52,7 +94,7 @@ const HeaderSection = ({
       iconInner: "size-4",
       spacing: "space-y-0.5",
     },
-  };
+  } as const;
 
   const currentVariant = variants[variant] || variants.default;
 
@@ -78,6 +120,10 @@ const HeaderSection = ({
       </div>
     );
   }
+
+  const isBadgeObject = (badge: HeaderBadge | ReactNode): badge is HeaderBadge => {
+    return typeof badge === "object" && badge !== null && "text" in badge;
+  };
 
   return (
     <div
@@ -117,19 +163,23 @@ const HeaderSection = ({
                 {title}
               </h1>
               {badge && (
-                <Badge 
-                  variant={badge.variant || "secondary"} 
-                  className={cn("ml-2", badge.className)}
-                >
-                  {badge.text}
-                </Badge>
+                isBadgeObject(badge) ? (
+                  <Badge
+                    variant={badge.variant || "secondary"}
+                    className={cn("ml-2", badge.className)}
+                  >
+                    {badge.text}
+                  </Badge>
+                ) : (
+                  badge
+                )
               )}
             </div>
-            
+
             {description && (
               <p className={currentVariant.description}>{description}</p>
             )}
-            
+
             {/* Metadata */}
             {metadata && (
               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
@@ -147,27 +197,35 @@ const HeaderSection = ({
         {/* Actions */}
         {actions && (
           <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
-            {actions.map((action, index) => (
-              <Button
-                key={index}
-                onClick={action.onClick}
-                disabled={loading || action.disabled}
-                variant={action.variant || "default"}
-                size={action.size || (variant === "compact" ? "sm" : "default")}
-                className={cn(
-                  variant === "hero" && "shadow-md hover:shadow-lg",
-                  action.className
-                )}
-              >
-                {action.icon && action.iconPosition !== "right" && (
-                  <action.icon className="size-4 mr-2" />
-                )}
-                <span>{loading ? action.loadingText || "Loading..." : action.text}</span>
-                {action.icon && action.iconPosition === "right" && (
-                  <action.icon className="size-4 ml-2" />
-                )}
-              </Button>
-            ))}
+            {actions.map((action, index) => {
+              const isActionLoading = action.loading ?? false;
+              const isDisabled = loading || action.disabled || isActionLoading;
+              const displayText = isActionLoading
+                ? (action.loadingText || action.text)
+                : action.text;
+
+              return (
+                <Button
+                  key={index}
+                  onClick={action.onClick}
+                  disabled={isDisabled}
+                  variant={action.variant || "default"}
+                  size={action.size || (variant === "compact" ? "sm" : "default")}
+                  className={cn(
+                    variant === "hero" && "shadow-md hover:shadow-lg",
+                    action.className
+                  )}
+                >
+                  {action.icon && action.iconPosition !== "right" && (
+                    <action.icon className="size-4 mr-2" />
+                  )}
+                  <span>{displayText}</span>
+                  {action.icon && action.iconPosition === "right" && (
+                    <action.icon className="size-4 ml-2" />
+                  )}
+                </Button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -188,3 +246,4 @@ const HeaderSection = ({
 };
 
 export default HeaderSection;
+export type { HeaderAction, HeaderBadge, HeaderMetadata, HeaderSectionProps };

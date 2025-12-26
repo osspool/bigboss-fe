@@ -54,6 +54,7 @@ interface TagInputProps {
   // Tag validation/transformation
   validateTag?: (tag: string) => boolean;
   transformTag?: (tag: string) => string;
+  formatTag?: (tag: string) => string;
 
   // Styling
   className?: string;
@@ -111,6 +112,7 @@ export default function TagInput({
   delimiter = ",",
   validateTag,
   transformTag,
+  formatTag,
   ...props
 }: TagInputProps) {
   const descriptionText = description || helperText;
@@ -298,7 +300,10 @@ export default function TagInput({
   const renderTagInput = ({ field, disabled: isDisabled, error }: RenderTagInputProps) => {
     const tags: string[] = field ? field.value || [] : propValue || [];
     const showInput = !isDisabled && canAddMoreTags(tags.length);
-    const normalizedInput = (inputValue || "").toLowerCase().trim();
+    const normalizedInputRaw = (inputValue || "").trim();
+    const normalizedInput = (transformTag ? transformTag(normalizedInputRaw) : normalizedInputRaw)
+      .toLowerCase()
+      .trim();
 
     const filteredSuggestions = useMemo(() => {
       if (!normalizedInput) return [];
@@ -309,7 +314,7 @@ export default function TagInput({
         .filter((s) => s.toLowerCase().includes(normalizedInput))
         .filter((s) => allowDuplicates || !existingSet.has(s.toLowerCase()))
         .slice(0, suggestionLimit);
-    }, [normalizedInput, tags]);
+    }, [normalizedInput, tags, suggestions, transformTag, allowDuplicates, suggestionLimit]);
 
     return (
       <>
@@ -321,47 +326,51 @@ export default function TagInput({
               "p-2.5 rounded-md bg-muted/30 border border-border/50"
             )}
           >
-            {tags.map((tag, index) => (
-              <Badge
-                key={`${tag}-${index}`}
-                variant="secondary"
-                className={cn(
-                  "group flex items-center gap-1.5 px-2.5 py-1",
-                  "bg-background border border-border shadow-sm",
-                  "hover:border-primary/50 transition-all duration-200",
-                  "animate-in fade-in-0 zoom-in-95",
-                  isDisabled && "opacity-60"
-                )}
-              >
-                <Tag className="h-3 w-3 text-muted-foreground" />
-                <span
-                  className="max-w-[200px] truncate text-sm font-medium"
-                  title={tag}
+            {tags.map((tag, index) => {
+              const displayTag = formatTag ? formatTag(tag) : tag;
+
+              return (
+                <Badge
+                  key={`${tag}-${index}`}
+                  variant="secondary"
+                  className={cn(
+                    "group flex items-center gap-1.5 px-2.5 py-1",
+                    "bg-background border border-border shadow-sm",
+                    "hover:border-primary/50 transition-all duration-200",
+                    "animate-in fade-in-0 zoom-in-95",
+                    isDisabled && "opacity-60"
+                  )}
                 >
-                  {tag}
-                </span>
-                {!isDisabled && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "h-4 w-4 p-0 ml-0.5",
-                      "text-muted-foreground/60 hover:text-destructive",
-                      "hover:bg-destructive/10 rounded-sm",
-                      "transition-colors"
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveTag(tags, index, field);
-                    }}
-                    aria-label={`Remove ${tag}`}
+                  <Tag className="h-3 w-3 text-muted-foreground" />
+                  <span
+                    className="max-w-[200px] truncate text-sm font-medium"
+                    title={displayTag}
                   >
-                    <X className="h-3 w-3" />
-                  </Button>
-                )}
-              </Badge>
-            ))}
+                    {displayTag}
+                  </span>
+                  {!isDisabled && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "h-4 w-4 p-0 ml-0.5",
+                        "text-muted-foreground/60 hover:text-destructive",
+                        "hover:bg-destructive/10 rounded-sm",
+                        "transition-colors"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveTag(tags, index, field);
+                      }}
+                      aria-label={`Remove ${displayTag}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </Badge>
+              );
+            })}
           </div>
         )}
 
@@ -424,9 +433,9 @@ export default function TagInput({
                       handleAddMultipleTags(tags, [sug], field);
                       setInputValue("");
                     }}
-                    aria-label={`Add ${sug}`}
+                    aria-label={`Add ${formatTag ? formatTag(sug) : sug}`}
                   >
-                    {sug}
+                    {formatTag ? formatTag(sug) : sug}
                     <Plus className="h-3 w-3 ml-1.5 opacity-70" />
                   </Button>
                 ))}

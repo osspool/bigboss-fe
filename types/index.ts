@@ -221,6 +221,7 @@ export type {
   // Stock Movement (Audit)
   StockMovement,
   // Purchase
+  PurchasePaymentDetails,
   PurchaseItem,
   CreatePurchasePayload,
   RecordPurchasePayload,

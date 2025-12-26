@@ -51,8 +51,9 @@ export function CustomerForm({
     () => createCustomerFormSchema({
       isEdit,
       customer,
+      token,
     }),
-    [isEdit, customer]
+    [isEdit, customer, token]
   );
 
   const handleSubmitForm = useCallback(

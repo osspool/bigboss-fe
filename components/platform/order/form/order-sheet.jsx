@@ -53,6 +53,7 @@ export function OrderSheet({
       title={`Order #${shortId}`}
       description={`Placed on ${createdDate}`}
       size="lg"
+      innerClassName="overflow-hidden"
       formId="order-sheet-form"
       submitLabel="Save Changes"
       cancelLabel="Close"

@@ -8,6 +8,7 @@ import type {
   UpdatePlatformConfigPayload,
   CheckoutSettings,
   PaymentMethodConfig,
+  MembershipConfig,
 } from "@/types/platform.types";
 
 // ============================================
@@ -22,10 +23,12 @@ export function usePlatformConfig(token: string | null = null, select: string | 
     queryKey: ["platform-config", select],
     queryFn: async () => {
       const response = await platformApi.getConfig({ token, select });
-      if (response.success) {
+      if (response.success && response.data) {
         return response.data;
       }
-      throw new Error(response.message || "Failed to fetch platform config");
+      throw new Error(
+        response.message || "Failed to fetch platform config"
+      );
     },
     staleTime: token ? 0 : 5 * 60 * 1000, // 5 minutes for public, 0 for authenticated
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -142,6 +145,37 @@ export function useDeliveryZones(token: string | null = null) {
     freeDeliveryThreshold: checkout?.freeDeliveryThreshold || 0,
     allowStorePickup: checkout?.allowStorePickup || false,
     pickupBranches: checkout?.pickupBranches || [],
+    isLoading: queryResult.isLoading,
+    isError: queryResult.isError,
+    error: queryResult.error,
+    refetch: queryResult.refetch,
+  };
+}
+
+// ============================================
+// MEMBERSHIP CONFIG HOOK
+// ============================================
+
+/**
+ * Hook to fetch membership config only
+ * Convenience hook for loyalty programs
+ */
+export function useMembershipConfig(token: string | null = null) {
+  const queryResult = useQuery<MembershipConfig | null>({
+    queryKey: ["platform-config", "membership"],
+    queryFn: async () => {
+      const response = await platformApi.getMembershipConfig({ token });
+      if (response.success) {
+        return response.data?.membership || null;
+      }
+      throw new Error(response.message || "Failed to fetch membership config");
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  return {
+    membership: queryResult.data,
     isLoading: queryResult.isLoading,
     isError: queryResult.isError,
     error: queryResult.error,

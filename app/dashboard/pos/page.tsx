@@ -17,9 +17,12 @@ export default async function PosPage() {
   ];
 
   return (
-    <div className="flex flex-1 flex-col gap-2">
+    <div className="absolute inset-0 flex flex-col gap-2">
+      <div className="mx-4">
+        
       <PageHeader items={breadcrumbItems} />
-      <div className="flex-1 min-h-0">
+      </div>
+      <div className="flex-1 min-h-0 overflow-hidden">
         <PosClient token={token} />
       </div>
     </div>

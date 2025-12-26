@@ -31,9 +31,9 @@ export default async function InventoryPage({ searchParams }) {
   return (
     <div className="flex flex-1 flex-col gap-2">
       <PageHeader items={breadcrumbItems} />
-      <div className="px-4">
+
         <InventoryNav />
-      </div>
+
       <div className="flex-1">
         <InventoryClient
           token={token}

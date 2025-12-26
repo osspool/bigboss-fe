@@ -192,15 +192,24 @@ export const ReceiptPanel = memo(function ReceiptPanel({
               </p>
             </div>
           </div>
+        <div className="text-xs text-muted-foreground">
+          {receipt.customer?.name || "Walk-in Customer"}
+          {receipt.customer?.phone ? ` • ${receipt.customer.phone}` : ""}
+        </div>
+        {receipt.membership?.cardId && (
           <div className="text-xs text-muted-foreground">
-            {receipt.customer?.name || "Walk-in Customer"}
-            {receipt.customer?.phone ? ` • ${receipt.customer.phone}` : ""}
+            Membership: {receipt.membership.cardId}
+            {receipt.membership.tier ? ` • ${receipt.membership.tier}` : ""}
+            {typeof receipt.membership.pointsEarned === "number"
+              ? ` • +${receipt.membership.pointsEarned} pts`
+              : ""}
           </div>
-          {receipt.payment.reference && (
-            <div className="text-xs text-muted-foreground">
-              Ref: <span className="font-medium text-foreground">{receipt.payment.reference}</span>
-            </div>
-          )}
+        )}
+        {receipt.payment.reference && (
+          <div className="text-xs text-muted-foreground">
+            Ref: <span className="font-medium text-foreground">{receipt.payment.reference}</span>
+          </div>
+        )}
         </div>
 
         <div className="rounded-lg border bg-card p-4">
@@ -307,6 +316,15 @@ export const ReceiptPanel = memo(function ReceiptPanel({
           <div>Date: {formatDateTime(receipt.date)}</div>
           <div>Cashier: {receipt.cashier || "-"}</div>
           <div>Customer: {receipt.customer?.name || "Walk-in"}</div>
+          {receipt.membership?.cardId && (
+            <div>
+              Membership: {receipt.membership.cardId}
+              {receipt.membership.tier ? ` • ${receipt.membership.tier}` : ""}
+              {typeof receipt.membership.pointsEarned === "number"
+                ? ` • +${receipt.membership.pointsEarned} pts`
+                : ""}
+            </div>
+          )}
           <div style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
           {normalizedItems.map((item, index) => (
             <div key={`${item.name}-print-${index}`} style={{ marginBottom: "4px" }}>

@@ -4,7 +4,7 @@ import { adjustmentApi } from '@/api/inventory';
 import { toast } from 'sonner';
 import type { PosProduct, PosProductsResponse } from '@/types/pos.types';
 import type { AdjustStockPayload, AdjustStockResult, BulkAdjustmentPayload } from '@/types/inventory.types';
-import { INVENTORY_KEYS, MOVEMENT_KEYS, LOW_STOCK_KEYS } from './inventory-keys';
+import { INVENTORY_KEYS, MOVEMENT_KEYS } from './inventory-keys';
 
 // Re-export for backward compatibility
 export { INVENTORY_KEYS };
@@ -117,7 +117,6 @@ export function useStockActions(token: string) {
       queryKey: INVENTORY_KEYS.products(branchId),
     });
     queryClient.invalidateQueries({ queryKey: MOVEMENT_KEYS.all });
-    queryClient.invalidateQueries({ queryKey: LOW_STOCK_KEYS.all });
   };
 
   // Single item adjustment

@@ -6,7 +6,6 @@ export { InventoryNav } from "./ui/InventoryNav";
 
 // Dashboard Clients
 export { InventoryClient } from "./dashboard/stock/InventoryClient";
-export { LowStockClient } from "./dashboard/low-stock/LowStockClient";
 export { TransfersClient } from "./dashboard/transfers/transfers-client";
 export { RequestsClient } from "./dashboard/requests/requests-client";
 export { PurchasesClient } from "./dashboard/purchases/purchases-client";

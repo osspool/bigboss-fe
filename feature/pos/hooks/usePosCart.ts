@@ -14,6 +14,8 @@ import { calculateCartTotals } from "../utils";
 
 export interface UsePosCartReturn {
   cart: PosCartItem[];
+  membershipCardId: string;
+  pointsToRedeemInput: string;
   cartSummary: {
     subtotal: number;
     discount: number;
@@ -22,6 +24,8 @@ export interface UsePosCartReturn {
   };
   discountInput: string;
   setDiscountInput: (value: string) => void;
+  setMembershipCardId: (value: string) => void;
+  setPointsToRedeemInput: (value: string) => void;
   addToCart: (product: PosProduct, variantSku?: string) => void;
   updateQuantity: (index: number, delta: number) => void;
   removeItem: (index: number) => void;
@@ -32,6 +36,8 @@ export interface UsePosCartReturn {
 export function usePosCart(): UsePosCartReturn {
   const [cart, setCart] = useState<PosCartItem[]>([]);
   const [discountInput, setDiscountInput] = useState("");
+  const [membershipCardId, setMembershipCardId] = useState("");
+  const [pointsToRedeemInput, setPointsToRedeemInput] = useState("");
 
   const cartSummary = useMemo(
     () => calculateCartTotals(cart, discountInput),
@@ -112,19 +118,26 @@ export function usePosCart(): UsePosCartReturn {
   const clearCart = useCallback(() => {
     if (window.confirm("Clear all items from cart?")) {
       setCart([]);
+      setPointsToRedeemInput("");
     }
   }, []);
 
   const resetCart = useCallback(() => {
     setCart([]);
     setDiscountInput("");
+    setMembershipCardId("");
+    setPointsToRedeemInput("");
   }, []);
 
   return {
     cart,
+    membershipCardId,
+    pointsToRedeemInput,
     cartSummary,
     discountInput,
     setDiscountInput,
+    setMembershipCardId,
+    setPointsToRedeemInput,
     addToCart,
     updateQuantity,
     removeItem,

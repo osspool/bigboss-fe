@@ -73,8 +73,8 @@ export async function DashboardAuthWrapper({ children }) {
       <SidebarProvider>
         <AppSidebar user={session?.user} userRoles={sidebarRoles} />
         <SidebarInset>
-          <div className="flex flex-1 flex-col">
-            <div className="@container/main flex flex-1 flex-col gap-2 px-4">
+          <div className="flex flex-1 flex-col min-h-0">
+            <div className="@container/main flex flex-1 flex-col gap-2 px-4 min-h-0">
               {children}
             </div>
           </div>

@@ -64,8 +64,17 @@ export function useStockRequestActions(token: string) {
   });
 
   const approve = useMutation({
-    mutationFn: ({ id, reviewNotes }: { id: string; reviewNotes?: string }) =>
-      requestApi.approve({ token, id, reviewNotes }),
+    mutationFn: ({
+      id,
+      items,
+      reviewNotes,
+      notes,
+    }: {
+      id: string;
+      items?: { productId: string; variantSku?: string; quantityApproved: number }[];
+      reviewNotes?: string;
+      notes?: string;
+    }) => requestApi.approve({ token, id, items, reviewNotes, notes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: REQUEST_KEYS.all });
       toast.success("Request approved");
@@ -85,8 +94,22 @@ export function useStockRequestActions(token: string) {
 
   // Fulfill creates a transfer (challan) - invalidate both requests and transfers
   const fulfill = useMutation({
-    mutationFn: ({ id, remarks }: { id: string; remarks?: string }) =>
-      requestApi.fulfill({ token, id, remarks, documentType: "delivery_challan" }),
+    mutationFn: ({
+      id,
+      remarks,
+      items,
+    }: {
+      id: string;
+      remarks?: string;
+      items?: { productId: string; variantSku?: string; quantity: number }[];
+    }) =>
+      requestApi.fulfill({
+        token,
+        id,
+        remarks,
+        items,
+        documentType: "delivery_challan",
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: REQUEST_KEYS.all });
       queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });

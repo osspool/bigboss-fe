@@ -166,6 +166,21 @@ class PlatformApi {
   } = {}): Promise<ApiResponse<Pick<PlatformConfig, "vat">>> {
     return this.getConfig({ token, select: "vat" });
   }
+
+  /**
+   * Get membership configuration
+   * Convenience method for loyalty programs
+   *
+   * @param options.token - Optional access token
+   * @returns Platform config with only membership field
+   */
+  async getMembershipConfig({
+    token,
+  }: {
+    token?: string | null;
+  } = {}): Promise<ApiResponse<Pick<PlatformConfig, "membership">>> {
+    return this.getConfig({ token, select: "membership" });
+  }
 }
 
 // Create and export singleton instance

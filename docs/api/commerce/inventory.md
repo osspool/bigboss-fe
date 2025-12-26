@@ -459,7 +459,10 @@ Example: `REQ-202512-0042` (42nd request of December 2025)
 {
   "action": "fulfill",
   "documentType": "delivery_challan",
-  "remarks": "Urgent shipment"
+  "remarks": "Urgent shipment",
+  "items": [
+    { "productId": "...", "variantSku": "SKU-RED-M", "quantity": 4 }
+  ]
 }
 
 // Cancel request
@@ -499,41 +502,18 @@ pending → approved → fulfilled
   rejected / cancelled
 ```
 
+**Fulfillment notes:**
+- If `items` is omitted on `fulfill`, approved quantities are sent.
+- If `items` is provided, any item not listed defaults to `0`.
+- `quantityFulfilled` is tracked per item and rolled into `totalQuantityFulfilled`.
+
 **Priority Levels:** `low`, `normal` (default), `high`, `urgent`
 
-### Stock viewing & audit
+### Stock audit
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/inventory/low-stock` | Low stock alerts |
 | GET | `/api/v1/inventory/movements` | Stock movement audit trail |
-
-**Low-stock query parameters:**
-| Param | Description |
-|-------|-------------|
-| `branchId` | Filter by branch (defaults to user's branch) |
-| `threshold` | Custom threshold override (defaults to product's `reorderPoint`) |
-
-**Low-stock response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "_id": "stockentry_id",
-      "product": {
-        "_id": "product_id",
-        "name": "Cotton T-Shirt",
-        "slug": "cotton-tshirt"
-      },
-      "variantSku": "TSHIRT-M-RED",
-      "quantity": 3,
-      "reorderPoint": 10,
-      "needsReorder": true
-    }
-  ]
-}
-```
 
 **Movements query parameters:**
 | Param | Description |

@@ -139,7 +139,10 @@ export interface PosOrderPayload {
   branchId?: string;
   branchSlug?: string;
   customer?: PosCustomer;
+  membershipCardId?: string;
+  pointsToRedeem?: number;
   payment?: PosPayment;
+  payments?: PosPayment[];
   discount?: number;
   deliveryMethod?: 'pickup' | 'delivery';
   deliveryAddress?: {
@@ -156,7 +159,14 @@ export interface PosOrderPayload {
   notes?: string;
 }
 
-export type PosPaymentMethod = 'cash' | 'bkash' | 'nagad' | 'card';
+export type PosPaymentMethod =
+  | 'cash'
+  | 'bkash'
+  | 'nagad'
+  | 'rocket'
+  | 'upay'
+  | 'bank_transfer'
+  | 'card';
 
 // ============= Receipt =============
 
@@ -193,6 +203,12 @@ export interface PosReceiptData {
     name?: string;
     phone?: string | null;
   };
+  membership?: {
+    cardId?: string;
+    tier?: string;
+    pointsEarned?: number;
+    tierDiscount?: number;
+  };
   items: PosReceiptItem[];
   subtotal: number;
   discount: number;
@@ -219,4 +235,51 @@ export interface PosLookupResult {
   product: PosProduct;
   variant?: ProductVariant;
   scannedCode: string;
+}
+
+// ============= POS Cart Item (UI State) =============
+
+export interface PosCartItem {
+  productId: string;
+  productName: string;
+  variantSku?: string;
+  variantLabel?: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  image?: string;
+}
+
+// ============= Split Payment Types =============
+
+export interface SplitPaymentEntry {
+  id: string;
+  paymentKey: string;
+  posMethod: PosPaymentMethod;
+  amount: string;
+  reference: string;
+  error?: string;
+}
+
+export interface PaymentOption {
+  key: string;
+  posMethod: PosPaymentMethod;
+  label: string;
+  needsReference: boolean;
+  note?: string;
+  walletNumber?: string;
+}
+
+export interface PaymentState {
+  mode: "single" | "split";
+  selectedKey: string | null;
+  selectedMethod: PosPaymentMethod;
+  reference: string;
+  cashReceived: string;
+  changeAmount: number;
+  amountDue: number;
+  splitEntries: SplitPaymentEntry[];
+  splitTotal: number;
+  splitRemaining: number;
+  splitIsBalanced: boolean;
 }

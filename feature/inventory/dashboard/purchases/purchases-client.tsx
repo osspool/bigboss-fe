@@ -79,6 +79,7 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
   });
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
+  const [payReference, setPayReference] = useState("");
 
   // Update URL with filters
   const updateFilters = useCallback(
@@ -120,6 +121,7 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
   const handlePayClick = useCallback((purchase: Purchase) => {
     setPayAmount(String(purchase.dueAmount || 0));
     setPayMethod("cash");
+    setPayReference("");
     setPayDialog({ open: true, purchase });
   }, []);
 
@@ -135,12 +137,13 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
         id: payDialog.purchase._id,
         amount,
         method: payMethod,
+        reference: payReference.trim() || undefined,
       });
       setPayDialog({ open: false, purchase: null });
     } catch (err) {
       // Error handled by hook
     }
-  }, [payDialog.purchase, payAmount, payMethod, pay]);
+  }, [payDialog.purchase, payAmount, payMethod, payReference, pay]);
 
   const handleCancel = useCallback(
     async (purchase: Purchase) => {
@@ -257,6 +260,15 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
                   placeholder="Enter amount"
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="payReference">Reference (optional)</Label>
+              <Input
+                id="payReference"
+                value={payReference}
+                onChange={(e) => setPayReference(e.target.value)}
+                placeholder="Transaction/reference ID"
+              />
             </div>
             <div className="space-y-2">
               <Label>Payment Method</Label>

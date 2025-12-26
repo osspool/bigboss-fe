@@ -14,6 +14,7 @@ export interface ScannedLineItemBase {
   variantLabel?: string;
   subtitle?: string;
   quantity: number;
+  cartonNumber?: string;
 }
 
 type LookupData = NonNullable<PosLookupResponse["data"]>;
@@ -101,6 +102,15 @@ export function useScannedLineItems<TItem extends ScannedLineItemBase = ScannedL
     });
   }, []);
 
+  const updateItemAt = useCallback((index: number, patch: Partial<TItem>) => {
+    setItems((prev) => {
+      const next = [...prev];
+      if (!next[index]) return prev;
+      next[index] = { ...next[index], ...patch };
+      return next;
+    });
+  }, []);
+
   const removeAt = useCallback((index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
   }, []);
@@ -121,6 +131,7 @@ export function useScannedLineItems<TItem extends ScannedLineItemBase = ScannedL
     isLookingUp: lookupMutation.isPending,
     add,
     updateQuantityAt,
+    updateItemAt,
     removeAt,
     reset,
   };

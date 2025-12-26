@@ -13,7 +13,6 @@ import {
   TRANSFER_KEYS,
   INVENTORY_KEYS,
   MOVEMENT_KEYS,
-  LOW_STOCK_KEYS,
 } from "./inventory-keys";
 
 // Re-export for backward compatibility
@@ -71,7 +70,6 @@ export function useTransferActions(token: string) {
     queryClient.invalidateQueries({ queryKey: TRANSFER_KEYS.all });
     queryClient.invalidateQueries({ queryKey: INVENTORY_KEYS.all });
     queryClient.invalidateQueries({ queryKey: MOVEMENT_KEYS.all });
-    queryClient.invalidateQueries({ queryKey: LOW_STOCK_KEYS.all });
   };
 
   const create = useMutation({

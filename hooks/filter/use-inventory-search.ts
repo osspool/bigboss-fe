@@ -3,10 +3,72 @@
 import { useState, useCallback, useMemo } from "react";
 import { CATEGORIES } from "@/data/constants";
 
+// Types
+export type SearchType = "lookup" | "name";
+export type StockStatus = "all" | "ok" | "low" | "out";
+
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
+export interface InventoryFilters {
+  parentCategory: string;
+  category: string;
+  stockStatus: StockStatus;
+}
+
+export interface InventoryFilterParams {
+  searchType: SearchType;
+  searchValue: string;
+  parentCategory: string;
+  category: string;
+  stockStatus: StockStatus;
+  search?: string;
+  parentCategoryFilter?: string;
+  categoryFilter?: string;
+  inStockOnly?: boolean;
+  lowStockOnly?: boolean;
+}
+
+export interface InventorySearchHook {
+  // Search state
+  searchValue: string;
+  setSearchValue: (v: string) => void;
+  searchType: SearchType;
+  setSearchType: (v: SearchType) => void;
+
+  // Filter state
+  filters: InventoryFilters;
+  parentCategory: string;
+  setParentCategory: (v: string) => void;
+  category: string;
+  setCategory: (v: string) => void;
+  stockStatus: StockStatus;
+  setStockStatus: (v: string) => void;
+  updateFilter: (key: string, value: string) => void;
+
+  // Actions
+  handleSearch: () => void;
+  clearSearch: () => void;
+  getFilterParams: () => InventoryFilterParams;
+
+  // Status flags
+  hasActiveFilters: boolean;
+  hasActiveSearch: boolean;
+
+  // Index signature for BaseSearchHook compatibility
+  [key: string]: unknown;
+}
+
+interface UseInventorySearchOptions {
+  onFilterChange?: (params: InventoryFilterParams) => void;
+}
+
 /**
  * Build parent category options (Men, Women, Kids, Collections)
  */
-function buildParentCategoryOptions() {
+function buildParentCategoryOptions(): SelectOption[] {
   return [
     { value: "all", label: "All Categories" },
     ...Object.entries(CATEGORIES).map(([, cat]) => ({
@@ -20,8 +82,8 @@ function buildParentCategoryOptions() {
  * Build subcategory options from all parent categories
  * Labels show hierarchy (e.g., "Men → T-Shirts") but values are just the subcategory slug
  */
-function buildCategoryOptions() {
-  const bySlug = new Map();
+function buildCategoryOptions(): SelectOption[] {
+  const bySlug = new Map<string, { slug: string; subLabel: string; parents: string[] }>();
 
   for (const cat of Object.values(CATEGORIES)) {
     for (const sub of cat.subcategories) {
@@ -44,7 +106,7 @@ function buildCategoryOptions() {
   return [
     { value: "all", label: "All Subcategories" },
     ...Array.from(bySlug.values()).map((entry) => ({
-      value: entry.slug, // Just the subcategory slug (e.g., "hoodies")
+      value: entry.slug,
       label:
         entry.parents.length > 1
           ? `${entry.parents.join(" / ")} → ${entry.subLabel}`
@@ -56,7 +118,7 @@ function buildCategoryOptions() {
 export const PARENT_CATEGORY_OPTIONS = buildParentCategoryOptions();
 export const CATEGORY_OPTIONS = buildCategoryOptions();
 
-export const STOCK_STATUS_OPTIONS = [
+export const STOCK_STATUS_OPTIONS: SelectOption[] = [
   { value: "all", label: "All Stock" },
   { value: "ok", label: "In Stock" },
   { value: "low", label: "Low Stock" },
@@ -70,25 +132,21 @@ export const STOCK_STATUS_OPTIONS = [
  * while managing state locally (not URL-based)
  *
  * Follows the same pattern as product search with separate parent category and category filters
- *
- * @param {Object} options
- * @param {Function} options.onFilterChange - Callback when filters change
- * @returns {Object} Search hook interface
  */
-export function useInventorySearch(options = {}) {
+export function useInventorySearch(options: UseInventorySearchOptions = {}): InventorySearchHook {
   const { onFilterChange } = options;
 
   // Search state
   const [searchValue, setSearchValue] = useState("");
-  const [searchType, setSearchType] = useState("lookup");
+  const [searchType, setSearchType] = useState<SearchType>("lookup");
 
   // Filter state - separate filters like product search
   const [parentCategory, setParentCategory] = useState("all");
   const [category, setCategory] = useState("all");
-  const [stockStatus, setStockStatus] = useState("all");
+  const [stockStatus, setStockStatus] = useState<StockStatus>("all");
 
   // Combined filters object for Search.Filters component
-  const filters = useMemo(() => ({
+  const filters = useMemo<InventoryFilters>(() => ({
     parentCategory,
     category,
     stockStatus,
@@ -104,7 +162,7 @@ export function useInventorySearch(options = {}) {
   }, [searchValue]);
 
   // Build filter params for API
-  const getFilterParams = useCallback(() => {
+  const getFilterParams = useCallback((): InventoryFilterParams => {
     const trimmed = searchValue.trim();
     return {
       searchType,
@@ -144,7 +202,7 @@ export function useInventorySearch(options = {}) {
   }, [onFilterChange]);
 
   // Update individual filter
-  const updateFilter = useCallback((key, value) => {
+  const updateFilter = useCallback((key: string, value: string) => {
     switch (key) {
       case "parentCategory":
         setParentCategory(value);
@@ -153,7 +211,7 @@ export function useInventorySearch(options = {}) {
         setCategory(value);
         break;
       case "stockStatus":
-        setStockStatus(value);
+        setStockStatus(value as StockStatus);
         break;
       default:
         break;
@@ -174,7 +232,7 @@ export function useInventorySearch(options = {}) {
     category,
     setCategory,
     stockStatus,
-    setStockStatus,
+    setStockStatus: (v: string) => setStockStatus(v as StockStatus),
     updateFilter,
 
     // Actions (for Search.Actions)

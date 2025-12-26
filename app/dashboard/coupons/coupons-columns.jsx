@@ -29,7 +29,7 @@ export const couponsColumns = (handleEdit, handleDelete) => [
     cell: ({ row }) => {
       const amount = row.original.discountAmount;
       const type = row.original.discountType;
-      return type === "percentage" ? `৳{amount}%` : `৳${amount}`;
+      return type === "percentage" ? `${amount}%` : `৳${amount}`;
     },
   },
   {
@@ -64,9 +64,9 @@ export const couponsColumns = (handleEdit, handleDelete) => [
             <Pencil className="mr-2 h-4 w-4" />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="text-red-600"
-            onClick={() => handleDelete(row.original._id)}
+            onClick={() => handleDelete?.(row.original)}
           >
             <Trash className="mr-2 h-4 w-4" />
             Delete

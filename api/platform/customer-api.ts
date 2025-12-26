@@ -46,9 +46,37 @@ class CustomerApi extends BaseApi<Customer, CustomerPayload, CustomerPayload> {
       ...options,
     });
   }
+
+  /**
+   * Membership actions
+   * POST /customers/:id/membership
+   */
+  async membershipAction({
+    token,
+    id,
+    data,
+  }: {
+    token: string;
+    id: string;
+    data: {
+      action: "enroll" | "deactivate" | "reactivate" | "adjust";
+      points?: number;
+      reason?: string;
+      type?: "bonus" | "correction" | "manual_redemption" | "redemption" | "expiry";
+    };
+  }): Promise<ApiResponse<Customer>> {
+    if (!token) {
+      throw new Error("Authentication required");
+    }
+
+    return handleApiRequest("POST", `${this.baseUrl}/${id}/membership`, {
+      token,
+      body: data,
+      cache: this.config.cache,
+    });
+  }
 }
 
 export const customerApi = new CustomerApi();
 export { CustomerApi };
 export type { CustomerQueryParams };
-

@@ -6,6 +6,8 @@
  * - common/revenue/enums.js
  */
 
+import type { PaymentMethod, PaymentGatewayType } from "./common.types";
+
 export enum TransactionType {
   INCOME = 'income',
   EXPENSE = 'expense',
@@ -60,20 +62,6 @@ export enum TransactionCategory {
   RETAINED_EARNINGS = 'retained_earnings',
   TIP_INCOME = 'tip_income',
   OTHER_INCOME = 'other_income',
-}
-
-/**
- * Payment Methods (Bangladesh)
- */
-export enum PaymentMethod {
-  CASH = 'cash',
-  BKASH = 'bkash',
-  NAGAD = 'nagad',
-  ROCKET = 'rocket',
-  BANK_TRANSFER = 'bank_transfer',
-  CARD = 'card',
-  ONLINE = 'online',
-  MANUAL = 'manual',
 }
 
 export interface TransactionPaymentDetails {
@@ -222,4 +210,3 @@ export interface CategoryReport {
     count: number;
   }[];
 }
-import type { PaymentMethod, PaymentGatewayType } from "./common.types";

@@ -33,6 +33,7 @@ export function ProductSheet({
       description={isEdit ? "Update product details" : "Create a new product listing"}
       size="lg"
       className="px-4"
+      innerClassName="overflow-hidden"
       formId="product-sheet-form"
       submitLabel={isEdit ? "Update Product" : "Create Product"}
       cancelLabel={isEdit ? "Close" : "Cancel"}

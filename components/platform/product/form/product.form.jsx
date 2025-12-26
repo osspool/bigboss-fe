@@ -13,6 +13,13 @@ import { revalidateProduct } from "@/lib/revalidation";
 import { useCategoryTree, getParentCategoryOptions, getAllCategoryOptions } from "@/hooks/query/useCategories";
 import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
+const normalizeStyleValue = (value = "") =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+
 export function ProductForm({
   token,
   product = null,
@@ -153,7 +160,9 @@ export function ProductForm({
 
         // Clean up style array
         if (data.style && Array.isArray(data.style) && data.style.length > 0) {
-          cleanData.style = data.style.filter((s) => s && s.trim());
+          cleanData.style = data.style
+            .map((style) => normalizeStyleValue(style))
+            .filter((style) => style && style.trim());
         }
 
         // Clean up variationAttributes array
@@ -308,7 +317,7 @@ export function ProductForm({
     <form
       id={formId}
       onSubmit={form.handleSubmit(handleSubmitForm, handleFormError)}
-      className="flex flex-col h-full"
+      className="flex flex-col h-full min-h-0"
     >
       <DynamicTabs
         tabs={tabsContent}
@@ -316,10 +325,8 @@ export function ProductForm({
         onValueChange={setActiveTab}
         variant="default"
         layout="flex"
-        className="flex-1"
-        listWrapperClassName="px-0"
-        listClassName="mb-4 gap-0.5"
-        contentClassName="px-1"
+        scrollable
+        className="flex-1 min-h-0"
       />
       
       <FormErrorSummary errors={formErrors} className="mt-4" />

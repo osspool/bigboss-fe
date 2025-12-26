@@ -26,7 +26,7 @@ class MovementApi extends BaseApi<StockMovement> {
    * Get stock movements (audit trail)
    * GET /inventory/movements
    *
-   * @param params - Filters (productId, branchId, type, startDate, endDate, page, limit)
+   * @param params - Filters (productId, branchId, type, startDate, endDate, page, limit, sort, after/cursor)
    */
   async list({
     token,

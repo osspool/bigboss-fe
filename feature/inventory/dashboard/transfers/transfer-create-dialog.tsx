@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useBranch } from "@/contexts/BranchContext";
 import { useTransferActions } from "@/hooks/query/useTransfers";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { FormGenerator, type InferSchemaValues } from "@/components/form/form-system";
 import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
 import { useScannedLineItems } from "@/feature/inventory/ui/useScannedLineItems";
@@ -63,6 +64,7 @@ export function TransferCreateDialog({ token, disabled }: TransferCreateDialogPr
         variantSku,
         variantLabel: lookup?.matchedVariant?.attributes ? undefined : variantSku,
         quantity: qty,
+        cartonNumber: "",
         subtitle: `${variantSku ? `Variant: ${variantSku}` : "Simple"} • Available: ${lookup?.quantity ?? "-"}`,
       };
     },
@@ -107,6 +109,7 @@ export function TransferCreateDialog({ token, disabled }: TransferCreateDialogPr
         productId: i.productId,
         variantSku: i.variantSku,
         quantity: i.quantity,
+        cartonNumber: i.cartonNumber?.trim() || undefined,
       })),
       remarks: data.remarks?.trim() || undefined,
     });
@@ -172,6 +175,14 @@ export function TransferCreateDialog({ token, disabled }: TransferCreateDialogPr
             items={scan.items}
             onQuantityChange={scan.updateQuantityAt}
             onRemove={scan.removeAt}
+            renderRight={(item, index) => (
+              <Input
+                className="w-28"
+                value={item.cartonNumber || ""}
+                onChange={(e) => scan.updateItemAt(index, { cartonNumber: e.target.value })}
+                placeholder="Carton"
+              />
+            )}
           />
         </div>
       </SheetWrapper>

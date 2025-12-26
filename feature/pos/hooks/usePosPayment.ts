@@ -3,119 +3,285 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { usePaymentMethods } from "@/hooks/query/usePlatformConfig";
 import type { PaymentMethodConfig } from "@/types/common.types";
-import type { PosPaymentMethod } from "@/types/pos.types";
-import { getPaymentKey, mapPlatformMethodToPosMethod } from "../dashboard/pos-payment";
-import { parseCashReceived, calculateChange, calculateAmountDue } from "../utils";
+import type {
+  PosPaymentMethod,
+  PaymentOption,
+  SplitPaymentEntry,
+  PaymentState,
+} from "@/types/pos.types";
+import { parseCashReceived, calculateChange, calculateAmountDue, parsePositiveNumber } from "../utils";
 
-export interface UsePosPaymentReturn {
-  // Payment methods
-  paymentMethods: PaymentMethodConfig[];
-  paymentMethodsLoading: boolean;
-  selectedPaymentKey: string | null;
-  selectedPosMethod: PosPaymentMethod;
-  // Cash handling
-  cashReceived: string;
-  cashReceivedNumber: number;
-  changeAmount: number;
-  amountDue: number;
-  // Reference handling
-  paymentReference: string;
-  // Actions
-  setSelectedPaymentKey: (key: string | null) => void;
-  setCashReceived: (value: string) => void;
-  setPaymentReference: (value: string) => void;
-  resetPayment: () => void;
+// ============= Payment Mapping (consolidated from pos-payment.ts) =============
+
+function getPaymentKey(method: PaymentMethodConfig, index: number): string {
+  return method._id || `${method.type}:${method.provider || ""}:${method.name}:${index}`;
 }
 
+function mapPlatformMethodToPosMethod(method: PaymentMethodConfig): PosPaymentMethod | null {
+  switch (method.type) {
+    case "cash":
+      return "cash";
+    case "mfs": {
+      const provider = (method.provider || "").toLowerCase();
+      if (provider === "bkash" || provider === "nagad" || provider === "rocket" || provider === "upay") {
+        return provider as PosPaymentMethod;
+      }
+      return null;
+    }
+    case "bank_transfer":
+      return "bank_transfer";
+    case "card":
+      return "card";
+    default:
+      return null;
+  }
+}
+
+export function paymentNeedsReference(posMethod: PosPaymentMethod): boolean {
+  return posMethod !== "cash";
+}
+
+// ============= Split Entry Factory =============
+
+function createSplitEntry(option: PaymentOption): SplitPaymentEntry {
+  const suffix = Math.random().toString(16).slice(2);
+  return {
+    id: `split_${Date.now()}_${suffix}`,
+    paymentKey: option.key,
+    posMethod: option.posMethod,
+    amount: "",
+    reference: "",
+    error: undefined,
+  };
+}
+
+// ============= Hook Return Type =============
+
+export interface UsePosPaymentReturn {
+  options: PaymentOption[];
+  isLoading: boolean;
+  state: PaymentState;
+  selectedOption: PaymentOption | null;
+  // Actions
+  selectPayment: (key: string) => void;
+  setMode: (mode: "single" | "split") => void;
+  setCashReceived: (value: string) => void;
+  setReference: (value: string) => void;
+  addSplit: (paymentKey?: string) => void;
+  updateSplit: (id: string, patch: Partial<Pick<SplitPaymentEntry, "paymentKey" | "amount" | "reference">>) => void;
+  removeSplit: (id: string) => void;
+  validateSplitEntry: (id: string) => string | undefined;
+  validateAllSplits: () => boolean;
+  reset: () => void;
+}
+
+// ============= Main Hook =============
+
 export function usePosPayment(token: string, total: number): UsePosPaymentReturn {
-  const [selectedPaymentKey, setSelectedPaymentKey] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [cashReceived, setCashReceived] = useState("");
-  const [paymentReference, setPaymentReference] = useState("");
+  const [reference, setReference] = useState("");
+  const [mode, setMode] = useState<"single" | "split">("single");
+  const [splitEntries, setSplitEntries] = useState<SplitPaymentEntry[]>([]);
 
-  const {
-    paymentMethods: platformPaymentMethods,
-    isLoading: paymentMethodsLoading,
-  } = usePaymentMethods(token);
+  const { paymentMethods: platformMethods, isLoading } = usePaymentMethods(token);
 
-  // Filter active payment methods that can be mapped to POS methods
-  const paymentMethods = useMemo(() => {
-    const list = platformPaymentMethods || [];
-    return list.filter((m) => m?.isActive !== false && mapPlatformMethodToPosMethod(m));
-  }, [platformPaymentMethods]);
-
-  // Get selected platform payment method
-  const selectedPlatformMethod = useMemo(() => {
-    if (paymentMethods.length === 0) return null;
-
-    const keyed = paymentMethods.map((m, idx) => ({
-      key: getPaymentKey(m, idx),
-      method: m,
-    }));
-
-    return keyed.find((k) => k.key === selectedPaymentKey) || keyed[0];
-  }, [paymentMethods, selectedPaymentKey]);
+  // Build payment options with all derived data
+  const options = useMemo<PaymentOption[]>(() => {
+    const list = platformMethods || [];
+    return list
+      .filter((m) => m?.isActive !== false)
+      .map((m, idx) => {
+        const posMethod = mapPlatformMethodToPosMethod(m);
+        if (!posMethod) return null;
+        return {
+          key: getPaymentKey(m, idx),
+          posMethod,
+          label: m.name,
+          needsReference: paymentNeedsReference(posMethod),
+          note: m.note,
+          walletNumber: m.type === "mfs" ? m.walletNumber : undefined,
+        };
+      })
+      .filter(Boolean) as PaymentOption[];
+  }, [platformMethods]);
 
   // Auto-select first payment method (prefer cash)
   useEffect(() => {
-    if (selectedPaymentKey) return;
-    if (paymentMethods.length === 0) return;
+    if (selectedKey || options.length === 0) return;
+    const cash = options.find((o) => o.posMethod === "cash");
+    setSelectedKey((cash || options[0])?.key ?? null);
+  }, [options, selectedKey]);
 
-    const keyed = paymentMethods.map((m, idx) => ({
-      key: getPaymentKey(m, idx),
-      method: m,
-    }));
+  const selectedOption = useMemo(() => {
+    if (options.length === 0) return null;
+    return options.find((o) => o.key === selectedKey) || options[0];
+  }, [options, selectedKey]);
 
-    const cash = keyed.find((k) => k.method.type === "cash");
-    setSelectedPaymentKey((cash || keyed[0])?.key ?? null);
-  }, [paymentMethods, selectedPaymentKey]);
+  const selectedMethod = selectedOption?.posMethod || "cash";
 
-  // Map to POS payment method type
-  const selectedPosMethod = useMemo((): PosPaymentMethod => {
-    const platformMethod = selectedPlatformMethod?.method;
-    const mapped = platformMethod ? mapPlatformMethodToPosMethod(platformMethod) : null;
-    return mapped || "cash";
-  }, [selectedPlatformMethod]);
-
-  // Reset inputs when switching payment method
+  // Reset inputs when switching payment method in single mode
   useEffect(() => {
-    setPaymentReference("");
+    if (mode !== "single") return;
+    setReference("");
     setCashReceived("");
-  }, [selectedPosMethod]);
+  }, [selectedMethod, mode]);
+
+  // Initialize split entries when switching to split mode
+  useEffect(() => {
+    if (mode !== "split" || splitEntries.length > 0) return;
+    const opt = selectedOption || options[0];
+    if (opt) {
+      setSplitEntries([createSplitEntry(opt)]);
+    }
+  }, [mode, splitEntries.length, selectedOption, options]);
 
   // Cash calculations
-  const cashReceivedNumber = useMemo(
-    () => parseCashReceived(cashReceived),
-    [cashReceived]
+  const cashReceivedNumber = useMemo(() => parseCashReceived(cashReceived), [cashReceived]);
+  const changeAmount = useMemo(() => {
+    if (selectedMethod !== "cash") return 0;
+    return calculateChange(cashReceivedNumber, total);
+  }, [cashReceivedNumber, total, selectedMethod]);
+  const amountDue = useMemo(() => {
+    if (selectedMethod !== "cash") return 0;
+    return calculateAmountDue(cashReceivedNumber, total);
+  }, [cashReceivedNumber, total, selectedMethod]);
+
+  // Split calculations
+  const splitTotal = useMemo(
+    () => splitEntries.reduce((sum, e) => sum + parsePositiveNumber(e.amount), 0),
+    [splitEntries]
+  );
+  const splitRemaining = total - splitTotal;
+  const splitIsBalanced = Math.abs(splitRemaining) < 0.01 && splitTotal > 0;
+
+  // Validate a single split entry
+  const validateSplitEntry = useCallback(
+    (id: string): string | undefined => {
+      const entry = splitEntries.find((e) => e.id === id);
+      if (!entry) return undefined;
+
+      const opt = options.find((o) => o.key === entry.paymentKey);
+      if (!opt) return "Invalid payment method";
+
+      const amount = parsePositiveNumber(entry.amount);
+      if (amount <= 0) return "Amount required";
+
+      if (opt.needsReference && !entry.reference.trim()) {
+        return `Reference required for ${opt.label}`;
+      }
+
+      return undefined;
+    },
+    [splitEntries, options]
   );
 
-  const changeAmount = useMemo(() => {
-    if (selectedPosMethod !== "cash") return 0;
-    return calculateChange(cashReceivedNumber, total);
-  }, [cashReceivedNumber, total, selectedPosMethod]);
+  // Validate all split entries and update error states
+  const validateAllSplits = useCallback((): boolean => {
+    let hasError = false;
+    setSplitEntries((prev) =>
+      prev.map((entry) => {
+        const opt = options.find((o) => o.key === entry.paymentKey);
+        let error: string | undefined;
 
-  const amountDue = useMemo(() => {
-    if (selectedPosMethod !== "cash") return 0;
-    return calculateAmountDue(cashReceivedNumber, total);
-  }, [cashReceivedNumber, total, selectedPosMethod]);
+        if (!opt) {
+          error = "Invalid method";
+        } else {
+          const amount = parsePositiveNumber(entry.amount);
+          if (amount <= 0) {
+            error = "Amount required";
+          } else if (opt.needsReference && !entry.reference.trim()) {
+            error = "Reference required";
+          }
+        }
 
-  const resetPayment = useCallback(() => {
-    setPaymentReference("");
-    setCashReceived("");
+        if (error) hasError = true;
+        return { ...entry, error };
+      })
+    );
+    return !hasError;
+  }, [options]);
+
+  // Actions
+  const selectPayment = useCallback((key: string) => setSelectedKey(key), []);
+
+  const addSplit = useCallback(
+    (paymentKey?: string) => {
+      const opt = paymentKey
+        ? options.find((o) => o.key === paymentKey)
+        : selectedOption || options[0];
+      if (!opt) return;
+      setSplitEntries((prev) => [...prev, createSplitEntry(opt)]);
+    },
+    [options, selectedOption]
+  );
+
+  const updateSplit = useCallback(
+    (id: string, patch: Partial<Pick<SplitPaymentEntry, "paymentKey" | "amount" | "reference">>) => {
+      setSplitEntries((prev) =>
+        prev.map((entry) => {
+          if (entry.id !== id) return entry;
+          const updated = { ...entry, ...patch, error: undefined };
+          // Update posMethod if paymentKey changed
+          if (patch.paymentKey) {
+            const opt = options.find((o) => o.key === patch.paymentKey);
+            if (opt) {
+              updated.posMethod = opt.posMethod;
+              if (patch.paymentKey !== entry.paymentKey) {
+                updated.reference = ""; // Clear reference on method change
+              }
+            }
+          }
+          return updated;
+        })
+      );
+    },
+    [options]
+  );
+
+  const removeSplit = useCallback((id: string) => {
+    setSplitEntries((prev) => prev.filter((e) => e.id !== id));
   }, []);
 
-  return {
-    paymentMethods,
-    paymentMethodsLoading,
-    selectedPaymentKey,
-    selectedPosMethod,
+  const reset = useCallback(() => {
+    setReference("");
+    setCashReceived("");
+    setMode("single");
+    setSplitEntries([]);
+  }, []);
+
+  // Build state object
+  const state: PaymentState = {
+    mode,
+    selectedKey,
+    selectedMethod,
+    reference,
     cashReceived,
-    cashReceivedNumber,
     changeAmount,
     amountDue,
-    paymentReference,
-    setSelectedPaymentKey,
+    splitEntries,
+    splitTotal,
+    splitRemaining,
+    splitIsBalanced,
+  };
+
+  return {
+    options,
+    isLoading,
+    state,
+    selectedOption,
+    selectPayment,
+    setMode,
     setCashReceived,
-    setPaymentReference,
-    resetPayment,
+    setReference,
+    addSplit,
+    updateSplit,
+    removeSplit,
+    validateSplitEntry,
+    validateAllSplits,
+    reset,
   };
 }
+
+// Re-export for backward compatibility (deprecated - use types from pos.types.ts)
+export type { PaymentOption, SplitPaymentEntry };

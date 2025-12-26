@@ -43,7 +43,8 @@ export const ProductsPanel = memo(function ProductsPanel({
   onOpenVariantSelector,
 }: ProductsPanelProps) {
   return (
-    <div className="h-full flex flex-col p-6 overflow-hidden bg-background">
+    <div className="h-full flex flex-col p-6 bg-background">
+      {/* Fixed: Search and Barcode */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <form
           className="flex items-center gap-2"
@@ -105,6 +106,7 @@ export const ProductsPanel = memo(function ProductsPanel({
         </form>
       </div>
 
+      {/* Fixed: Category Filters */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
         <Button
           variant={selectedCategory === "all" ? "default" : "outline"}
@@ -126,11 +128,18 @@ export const ProductsPanel = memo(function ProductsPanel({
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      {/* Scrollable: Products Grid */}
+      <div className="flex-1 overflow-y-auto min-h-0">
         {productsLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[...Array(10)].map((_, i) => (
-              <Skeleton key={i} className="h-56" />
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="rounded-lg border bg-card overflow-hidden">
+                <Skeleton className="aspect-square" />
+                <div className="p-3 space-y-2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              </div>
             ))}
           </div>
         ) : products.length === 0 ? (

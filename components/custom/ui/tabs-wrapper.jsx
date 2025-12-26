@@ -192,6 +192,7 @@ export const DynamicTabs = memo(function DynamicTabs({
         layout === "flex" || layout === "sidebar",
         [layout]
     );
+    const useSheetDefaults = isFlexLayout && scrollable;
 
     const gridTemplateColumns = useMemo(() => 
         `repeat(${Math.max(tabs.length, 1)}, minmax(0, 1fr))`,
@@ -202,16 +203,21 @@ export const DynamicTabs = memo(function DynamicTabs({
     const computedClasses = useMemo(() => ({
         root: cn(
             "w-full",
-            isFlexLayout && "flex-1 flex flex-col",
+            isFlexLayout && "flex-1 flex flex-col min-h-0",
             className
         ),
-        listWrapper: cn("w-full px-6", listWrapperClassName),
+        listWrapper: cn(
+            "w-full",
+            useSheetDefaults ? "px-0" : "px-6",
+            listWrapperClassName
+        ),
         flexList: cn(
             "flex flex-wrap items-center justify-center gap-1 h-auto",
             variant === "underline"
                 ? "rounded-none border-b border-border/60 bg-transparent p-0 shadow-none gap-6"
                 : "rounded-md p-1 shadow-sm backdrop-blur-sm",
             LIST_VARIANTS[variant] ?? LIST_VARIANTS.default,
+            useSheetDefaults && "mb-4 gap-0.5",
             listClassName
         ),
         standardList: cn(
@@ -221,11 +227,18 @@ export const DynamicTabs = memo(function DynamicTabs({
             listClassName
         ),
         contentWrapper: cn(
-            isFlexLayout && scrollable && "flex-1 overflow-hidden"
+            isFlexLayout && "flex-1 min-h-0 overflow-hidden"
         ),
-        flexContent: cn("mt-0 h-full", contentClassName),
-        standardContent: cn("space-y-4 mt-6", contentClassName),
-    }), [isFlexLayout, className, listWrapperClassName, listClassName, variant, scrollable, contentClassName]);
+        flexContent: cn(
+            "mt-0 h-full",
+            useSheetDefaults && "px-1",
+            contentClassName
+        ),
+        standardContent: cn(
+            isFlexLayout ? "h-full" : "space-y-4 mt-6",
+            contentClassName
+        ),
+    }), [isFlexLayout, useSheetDefaults, className, listWrapperClassName, listClassName, variant, contentClassName]);
     
     return (
         <Tabs

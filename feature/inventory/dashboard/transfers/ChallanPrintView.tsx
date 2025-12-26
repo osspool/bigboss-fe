@@ -72,6 +72,10 @@ export function ChallanPrintView({
   const receiver = getBranchInfo(transfer.receiverBranch);
   const items = transfer.items || [];
   const totalQty = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+  const hasCarton = items.some((item) => {
+    const record = item as unknown as Record<string, unknown>;
+    return typeof record.cartonNumber === "string" && record.cartonNumber.trim().length > 0;
+  });
 
   const handlePrint = () => {
     if (!printRef.current) return;
@@ -128,6 +132,7 @@ export function ChallanPrintView({
                 <thead className="bg-muted">
                   <tr>
                     <th className="text-left p-2">Item</th>
+                    {hasCarton && <th className="text-left p-2 w-20">Carton</th>}
                     <th className="text-right p-2 w-16">Qty</th>
                   </tr>
                 </thead>
@@ -136,12 +141,16 @@ export function ChallanPrintView({
                     const record = item as unknown as Record<string, unknown>;
                     const name = (record.productName as string) || (record.productId as string) || "Item";
                     const variant = (record.variantSku as string) || "";
+                    const carton = (record.cartonNumber as string) || "";
                     return (
                       <tr key={idx} className="border-t">
                         <td className="p-2">
                           <div className="font-medium">{name}</div>
                           {variant && <div className="text-muted-foreground">{variant}</div>}
                         </td>
+                        {hasCarton && (
+                          <td className="p-2 text-xs">{carton || "-"}</td>
+                        )}
                         <td className="p-2 text-right font-mono">{item.quantity}</td>
                       </tr>
                     );
@@ -255,6 +264,7 @@ export function ChallanPrintView({
               <thead>
                 <tr style={{ borderBottom: "1px solid #000" }}>
                   <th style={{ textAlign: "left", padding: "4px 0" }}>Item</th>
+                  {hasCarton && <th style={{ textAlign: "left", padding: "4px 0", width: "60px" }}>Carton</th>}
                   <th style={{ textAlign: "right", padding: "4px 0", width: "40px" }}>Qty</th>
                 </tr>
               </thead>
@@ -263,12 +273,16 @@ export function ChallanPrintView({
                   const record = item as unknown as Record<string, unknown>;
                   const name = (record.productName as string) || (record.productId as string) || "Item";
                   const variant = (record.variantSku as string) || "";
+                  const carton = (record.cartonNumber as string) || "";
                   return (
                     <tr key={idx} style={{ borderBottom: "1px dotted #ccc" }}>
                       <td style={{ padding: "4px 0" }}>
                         <div style={{ fontWeight: 500 }}>{name}</div>
                         {variant && <div style={{ fontSize: "10px", color: "#666" }}>{variant}</div>}
                       </td>
+                      {hasCarton && (
+                        <td style={{ padding: "4px 0" }}>{carton || "-"}</td>
+                      )}
                       <td style={{ textAlign: "right", padding: "4px 0", fontFamily: "monospace" }}>
                         {item.quantity}
                       </td>

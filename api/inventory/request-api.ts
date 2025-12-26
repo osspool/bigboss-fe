@@ -142,15 +142,23 @@ class RequestApi extends BaseApi<StockRequest, CreateStockRequestPayload> {
     id,
     items,
     reviewNotes,
+    notes,
     options = {},
   }: {
     token: string;
     id: string;
     items?: { productId: string; variantSku?: string; quantityApproved: number }[];
     reviewNotes?: string;
+    notes?: string;
     options?: FetchOptions;
   }): Promise<ApiResponse<StockRequest>> {
-    return this.action({ token, id, action: 'approve', data: { items, reviewNotes }, options });
+    return this.action({
+      token,
+      id,
+      action: 'approve',
+      data: { items, reviewNotes: reviewNotes ?? notes },
+      options,
+    });
   }
 
   /**
@@ -178,15 +186,23 @@ class RequestApi extends BaseApi<StockRequest, CreateStockRequestPayload> {
     id,
     remarks,
     documentType,
+    items,
     options = {},
   }: {
     token: string;
     id: string;
     remarks?: string;
     documentType?: string;
+    items?: { productId: string; variantSku?: string; quantity: number }[];
     options?: FetchOptions;
   }): Promise<ApiResponse<StockRequest>> {
-    return this.action({ token, id, action: 'fulfill', data: { remarks, documentType }, options });
+    return this.action({
+      token,
+      id,
+      action: 'fulfill',
+      data: { remarks, documentType, items },
+      options,
+    });
   }
 
   /**

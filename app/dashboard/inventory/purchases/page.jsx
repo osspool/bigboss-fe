@@ -20,10 +20,8 @@ export default async function PurchasesPage() {
   return (
     <div className="flex flex-1 flex-col gap-2">
       <PageHeader items={breadcrumbItems} />
-      <div className="px-4">
-        <InventoryNav />
-      </div>
-      <div className="flex-1 px-4">
+      <InventoryNav />
+      <div className="flex-1">
         <PurchasesClient token={token} />
       </div>
     </div>

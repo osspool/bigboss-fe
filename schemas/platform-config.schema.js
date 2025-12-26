@@ -99,11 +99,16 @@ const vatConfigSchema = z.object({
   isRegistered: z.boolean().default(false),
   bin: z.string().optional().or(z.literal("")),
   registeredName: z.string().optional().or(z.literal("")),
+  vatCircle: z.string().optional().or(z.literal("")),
   defaultRate: vatRateNumber,
   pricesIncludeVat: z.boolean().default(true),
   invoice: z.object({
     prefix: z.string().optional().or(z.literal("")),
     showVatBreakdown: z.boolean().default(true),
+  }).optional(),
+  supplementaryDuty: z.object({
+    enabled: z.boolean().default(false),
+    defaultRate: vatRateNumber,
   }).optional(),
 });
 
@@ -116,6 +121,35 @@ const policiesSchema = z.object({
   shippingPolicy: z.string().optional().or(z.literal("")),
 });
 
+// ==================== Membership ====================
+
+const membershipTierSchema = z.object({
+  name: z.string().min(1, "Tier name is required"),
+  minPoints: z.coerce.number().min(0).default(0),
+  pointsMultiplier: z.coerce.number().min(0).default(1),
+  discountPercent: z.coerce.number().min(0).max(100).default(0),
+  color: z.string().optional().or(z.literal("")),
+});
+
+const membershipRedemptionSchema = z.object({
+  enabled: z.boolean().default(false),
+  minRedeemPoints: z.coerce.number().min(0).default(0),
+  minOrderAmount: z.coerce.number().min(0).default(0),
+  maxRedeemPercent: z.coerce.number().min(0).max(100).default(50),
+  pointsPerBdt: z.coerce.number().min(1).default(10),
+});
+
+const membershipSchema = z.object({
+  enabled: z.boolean().default(false),
+  pointsPerAmount: z.coerce.number().min(0).default(1),
+  amountPerPoint: z.coerce.number().min(1).default(100),
+  roundingMode: z.enum(["floor", "round", "ceil"]).default("floor"),
+  tiers: z.array(membershipTierSchema).default([]),
+  cardPrefix: z.string().min(1).default("MBR"),
+  cardDigits: z.coerce.number().min(4).max(12).default(8),
+  redemption: membershipRedemptionSchema.optional(),
+});
+
 // ==================== Main Platform Config Schema ====================
 
 export const platformConfigSchema = z.object({
@@ -124,6 +158,7 @@ export const platformConfigSchema = z.object({
   checkout: checkoutSettingsSchema.partial().optional(),
   logistics: logisticsSettingsSchema.partial().optional(),
   vat: vatConfigSchema.partial().optional(),
+  membership: membershipSchema.partial().optional(),
   policies: policiesSchema.optional(),
 });
 

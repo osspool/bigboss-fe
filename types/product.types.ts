@@ -158,7 +158,7 @@ export interface Product {
    */
   parentCategory?: string | null;
   
-  style?: ('casual' | 'street' | 'urban' | 'desi' | 'formal' | 'sport' | 'ethnic' | 'party')[];
+  style?: string[];
   
   // Variant product fields
   variationAttributes?: VariationAttribute[];

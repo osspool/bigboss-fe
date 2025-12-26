@@ -27,13 +27,13 @@ export function mapPlatformMethodToPosMethod(
     case "mfs": {
       // For MFS, use provider name directly per POS API spec
       const provider = (method.provider || "").toLowerCase();
-      if (provider === "bkash" || provider === "nagad") {
+      if (provider === "bkash" || provider === "nagad" || provider === "rocket" || provider === "upay") {
         return provider as PosPaymentMethod;
       }
       return null;
     }
     case "bank_transfer":
-      return null;
+      return "bank_transfer";
     case "card":
       return "card";
     default:

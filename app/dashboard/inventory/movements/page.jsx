@@ -20,10 +20,8 @@ export default async function MovementsPage() {
   return (
     <div className="flex flex-1 flex-col gap-2">
       <PageHeader items={breadcrumbItems} />
-      <div className="px-4">
         <InventoryNav />
-      </div>
-      <div className="flex-1 px-4">
+      <div className="flex-1">
         <MovementsClient token={token} />
       </div>
     </div>

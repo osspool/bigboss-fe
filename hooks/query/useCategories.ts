@@ -1,7 +1,9 @@
 import { categoryApi } from '@/api/platform/category-api';
 import { createCrudHooks } from '@/hooks/factories';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import type { Category, CategoryTreeNode, CategoryTreeResponse } from '@/types/category.types';
+import type { ApiResponse } from '@/api/api-factory';
 
 // Create standard CRUD hooks
 const { KEYS, useList, useDetail, useActions, useNavigation } = createCrudHooks({
@@ -23,12 +25,15 @@ const { KEYS, useList, useDetail, useActions, useNavigation } = createCrudHooks(
  * Hook to get category tree (nested structure)
  * FE should cache this and derive everything else from it
  *
- * @param {string} token - Auth token (optional for public access)
- * @param {object} options - React Query options
- * @returns {object} Query result with tree data
+ * @param token - Auth token (optional for public access)
+ * @param options - React Query options
+ * @returns Query result with tree data
  */
-export function useCategoryTree(token, options = {}) {
-  return useQuery({
+export function useCategoryTree(
+  token?: string | null,
+  options: Omit<UseQueryOptions<CategoryTreeResponse>, 'queryKey' | 'queryFn'> = {}
+) {
+  return useQuery<CategoryTreeResponse>({
     queryKey: [...KEYS.all, 'tree'],
     queryFn: () => categoryApi.getTree({ token }),
     staleTime: 30 * 60 * 1000, // 30 minutes (categories rarely change)
@@ -40,13 +45,17 @@ export function useCategoryTree(token, options = {}) {
 /**
  * Hook to get category by slug
  *
- * @param {string} token - Auth token (optional for public access)
- * @param {string} slug - Category slug
- * @param {object} options - React Query options
- * @returns {object} Query result with category data
+ * @param token - Auth token (optional for public access)
+ * @param slug - Category slug
+ * @param options - React Query options
+ * @returns Query result with category data
  */
-export function useCategoryBySlug(token, slug, options = {}) {
-  return useQuery({
+export function useCategoryBySlug(
+  token: string | null | undefined,
+  slug: string,
+  options: Omit<UseQueryOptions<ApiResponse<Category>>, 'queryKey' | 'queryFn'> = {}
+) {
+  return useQuery<ApiResponse<Category>>({
     queryKey: [...KEYS.all, 'slug', slug],
     queryFn: () => categoryApi.getBySlug({ token, slug }),
     enabled: !!slug,
@@ -61,10 +70,10 @@ export function useCategoryBySlug(token, slug, options = {}) {
  *
  * Use when manual data fixes or migrations may have desynced counts.
  *
- * @param {string} token - Auth token (admin or inventory staff required)
- * @returns {object} Mutation result with sync function
+ * @param token - Auth token (admin or inventory staff required)
+ * @returns Mutation result with sync function
  */
-export function useCategorySyncProductCount(token) {
+export function useCategorySyncProductCount(token: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -75,7 +84,7 @@ export function useCategorySyncProductCount(token) {
       // Invalidate category queries to refresh counts
       queryClient.invalidateQueries({ queryKey: KEYS.all });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to sync product counts');
     },
   });
@@ -83,8 +92,17 @@ export function useCategorySyncProductCount(token) {
 
 // === Helper functions for form selects ===
 
+interface FlattenedNode extends CategoryTreeNode {
+  depth: number;
+  displayName: string;
+}
+
 /** Flatten tree with depth indicator (internal use) */
-function flattenTree(nodes, depth = 0, result = []) {
+function flattenTree(
+  nodes: CategoryTreeNode[] | undefined,
+  depth = 0,
+  result: FlattenedNode[] = []
+): FlattenedNode[] {
   for (const node of nodes || []) {
     result.push({
       ...node,
@@ -98,12 +116,17 @@ function flattenTree(nodes, depth = 0, result = []) {
   return result;
 }
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
 /**
  * Build parent category options for select (root categories only)
- * @param {Array} tree - Category tree from useCategoryTree
- * @returns {Array} Options array with value/label
+ * @param tree - Category tree from useCategoryTree
+ * @returns Options array with value/label
  */
-export function getParentCategoryOptions(tree) {
+export function getParentCategoryOptions(tree: CategoryTreeNode[] | undefined): SelectOption[] {
   return (tree || []).map(node => ({
     value: node.slug,
     label: node.name,
@@ -112,10 +135,10 @@ export function getParentCategoryOptions(tree) {
 
 /**
  * Build all category options for select (flattened with hierarchy)
- * @param {Array} tree - Category tree from useCategoryTree
- * @returns {Array} Options array with value/label
+ * @param tree - Category tree from useCategoryTree
+ * @returns Options array with value/label
  */
-export function getAllCategoryOptions(tree) {
+export function getAllCategoryOptions(tree: CategoryTreeNode[] | undefined): SelectOption[] {
   return flattenTree(tree).map(node => ({
     value: node.slug,
     label: node.displayName,
