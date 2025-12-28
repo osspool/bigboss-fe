@@ -14,6 +14,7 @@ import {
   ShoppingCart,
   TicketPercent,
   ArrowLeftRight,
+  Ruler,
 } from "lucide-react";
 
 import { UserRole } from "@/api/user-data";
@@ -140,6 +141,12 @@ export const data = {
           title: "Categories",
           url: "/dashboard/categories",
           icon: Tag,
+          roles: [ UserRole.STORE_MANAGER,"admin","superadmin"],
+        },
+        {
+          title: "Size Guides",
+          url: "/dashboard/size-guides",
+          icon: Ruler,
           roles: [ UserRole.STORE_MANAGER,"admin","superadmin"],
         },
         {

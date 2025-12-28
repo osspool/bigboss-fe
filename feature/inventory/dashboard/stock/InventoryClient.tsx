@@ -405,6 +405,7 @@ export function InventoryClient({
         open={detailOpen}
         onOpenChange={handleDetailChange}
         product={detailProduct}
+        token={token}
       />
     </div>
   );

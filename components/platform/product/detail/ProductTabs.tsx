@@ -7,6 +7,8 @@ import { ReviewCard } from "@/components/platform/product/ReviewCard";
 import { MarkdownPreview } from "@/components/form/lite-editor/MarkdownPreview";
 import { SizeTable } from "@/feature/size-guide";
 import { SIZE_GUIDE } from "@/data/constants";
+import { useProductSizeGuide } from "@/contexts/SizeGuideContext";
+import { Spinner } from "@/components/ui/spinner";
 import type { Review } from "@/types";
 
 type ProductProperties = Record<string, unknown>;
@@ -17,6 +19,9 @@ interface ProductTabsProps {
   reviews: Review[];
   averageRating?: number;
   reviewCount?: number;
+  /** Size guide ID from product (if assigned) */
+  sizeGuideId?: string | null;
+  /** Whether to show size guide tab (default: true) */
   showSizeGuide?: boolean;
 }
 
@@ -26,6 +31,7 @@ export function ProductTabs({
   reviews,
   averageRating,
   reviewCount,
+  sizeGuideId,
   showSizeGuide = true,
 }: ProductTabsProps) {
   const hasProperties = properties && Object.keys(properties).length > 0;
@@ -63,7 +69,7 @@ export function ProductTabs({
 
       {showSizeGuide && (
         <TabsContent value="size-guide" className="pt-8">
-          <SizeGuideTab />
+          <SizeGuideTab sizeGuideId={sizeGuideId} />
         </TabsContent>
       )}
 
@@ -160,7 +166,46 @@ function PropertiesTab({ properties }: { properties?: ProductProperties }) {
   );
 }
 
-function SizeGuideTab() {
+function SizeGuideTab({ sizeGuideId }: { sizeGuideId?: string | null }) {
+  // Try to get product-specific size guide from context
+  let productSizeGuide = null;
+  let tableData = null;
+  let isLoading = false;
+
+  try {
+    const result = useProductSizeGuide(sizeGuideId);
+    productSizeGuide = result.sizeGuide;
+    tableData = result.tableData;
+    isLoading = result.isLoading;
+  } catch {
+    // Context not available, will fallback to static data
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl flex items-center justify-center py-12">
+        <Spinner className="h-6 w-6" />
+      </div>
+    );
+  }
+
+  // If product has a specific size guide from DB, show it
+  if (productSizeGuide && tableData) {
+    return (
+      <div className="max-w-4xl">
+        <SizeTable tables={[tableData]} variant="compact" />
+        {productSizeGuide.note && (
+          <div className="mt-8 p-4 bg-muted/50 rounded-lg">
+            <h4 className="font-medium mb-3">Sizing Tips</h4>
+            <p className="text-sm text-muted-foreground">{productSizeGuide.note}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback to static SIZE_GUIDE data
   return (
     <div className="max-w-4xl">
       <SizeTable tables={[...SIZE_GUIDE.sizeTables]} variant="compact" />

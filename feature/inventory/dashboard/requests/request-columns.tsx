@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ function StatusBadge({ status }: { status?: StockRequest["status"] | string }) {
 export function requestColumns({
   currentBranchId,
   isHeadOffice,
+  onView,
   onApprove,
   onReject,
   onFulfill,
@@ -43,6 +45,7 @@ export function requestColumns({
 }: {
   currentBranchId?: string;
   isHeadOffice: boolean;
+  onView: (r: StockRequest) => void;
   onApprove: (r: StockRequest) => void | Promise<void>;
   onReject: (r: StockRequest) => void | Promise<void>;
   onFulfill: (r: StockRequest) => void | Promise<void>;
@@ -107,25 +110,22 @@ export function requestColumns({
       const branch = getBranchInfo(r.requestingBranch, "Branch");
       const isRequestingBranch = currentBranchId && branch.id === currentBranchId;
       const canApprove = isHeadOffice && r.status === "pending";
-      const canReject = isHeadOffice && r.status === "pending";
       const canFulfill = isHeadOffice && r.status === "approved";
       const canCancel = !isHeadOffice && isRequestingBranch && r.status === "pending";
 
       return (
         <div className="flex justify-end gap-2">
+          <Button size="sm" variant="ghost" onClick={() => onView(r)} title="View Details">
+            <Eye className="h-4 w-4" />
+          </Button>
           {canApprove && (
-            <Button size="sm" variant="outline" onClick={() => onApprove(r)}>
-              Approve
-            </Button>
-          )}
-          {canReject && (
-            <Button size="sm" variant="destructive" onClick={() => onReject(r)}>
-              Reject
+            <Button size="sm" variant="outline" onClick={() => onView(r)}>
+              Review
             </Button>
           )}
           {canFulfill && (
             <Button size="sm" variant="outline" onClick={() => onFulfill(r)}>
-              Fulfill → Transfer
+              Fulfill
             </Button>
           )}
           {canCancel && (

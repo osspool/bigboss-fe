@@ -162,6 +162,9 @@ export const productCreateSchema = z.object({
   discount: discountSchema,
 
   isActive: z.boolean().default(true),
+
+  // Size Guide reference (ObjectId or null)
+  sizeGuide: z.string().optional().nullable().or(z.literal("")),
 });
 
 /**
@@ -242,6 +245,9 @@ export const productUpdateSchema = z.object({
   discount: discountSchema,
 
   isActive: z.boolean().optional(),
+
+  // Size Guide reference (ObjectId or null to remove)
+  sizeGuide: z.string().optional().nullable().or(z.literal("")),
 });
 
 // ==================== Product Type ====================
@@ -328,6 +334,9 @@ export const productViewSchema = z.object({
 
   // Properties (key-value)
   properties: z.record(z.unknown()).optional(),
+
+  // Size Guide reference
+  sizeGuide: z.string().optional().nullable(),
 
   // Discount info
   discount: z.object({

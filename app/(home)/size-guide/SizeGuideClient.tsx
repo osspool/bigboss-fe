@@ -4,9 +4,31 @@ import { Section } from "@/components/layout/Section";
 import { Container } from "@/components/layout/Container";
 import { SizeTable } from "@/feature/size-guide";
 import { SIZE_GUIDE } from "@/data/constants";
+import { useSizeGuideContext } from "@/contexts/SizeGuideContext";
+import { Spinner } from "@/components/ui/spinner";
 
 export function SizeGuideClient() {
-  const { sizeTables, fitTypes, tips } = SIZE_GUIDE;
+  const { sizeTables: staticSizeTables, fitTypes, tips } = SIZE_GUIDE;
+
+  // Try to get dynamic size guides from context
+  let dynamicTables = null;
+  let isLoading = false;
+  let hasApiData = false;
+
+  try {
+    const context = useSizeGuideContext();
+    isLoading = context.isLoading;
+
+    if (context.sizeGuides.length > 0) {
+      dynamicTables = context.toTableDataArray(context.sizeGuides);
+      hasApiData = true;
+    }
+  } catch {
+    // Context not available, will use static data
+  }
+
+  // Use API data if available, otherwise fallback to static data
+  const sizeTables = hasApiData && dynamicTables ? dynamicTables : staticSizeTables;
 
   return (
     <>
@@ -16,7 +38,13 @@ export function SizeGuideClient() {
           <h2 className="font-display text-2xl md:text-3xl mb-8 text-center">
             Size Charts
           </h2>
-          <SizeTable tables={[...sizeTables]} />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner className="h-8 w-8" />
+            </div>
+          ) : (
+            <SizeTable tables={[...sizeTables]} />
+          )}
         </Container>
       </Section>
 

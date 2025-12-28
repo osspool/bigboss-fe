@@ -12,6 +12,8 @@ import { useTransferStats } from "@/hooks/query/useTransferStats";
 import { TransferCreateDialog } from "./transfer-create-dialog";
 import { TransferStatsCards } from "./TransferStatsCards";
 import { ChallanPrintView } from "./ChallanPrintView";
+import { CartonLabelPrintView } from "./CartonLabelPrintView";
+import { TransferDetailSheet } from "./transfer-detail-sheet";
 import { ConfirmDialog } from "@/components/custom/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import type { Transfer } from "@/types/inventory.types";
@@ -31,6 +33,8 @@ export function TransfersClient({ token }: TransfersClientProps) {
   const [cancelDialog, setCancelDialog] = useState<TransferDialogState>({ open: false, transfer: null });
   const [cancelReason, setCancelReason] = useState("");
   const [printDialog, setPrintDialog] = useState<TransferDialogState>({ open: false, transfer: null });
+  const [cartonLabelDialog, setCartonLabelDialog] = useState<TransferDialogState>({ open: false, transfer: null });
+  const [detailSheet, setDetailSheet] = useState<TransferDialogState>({ open: false, transfer: null });
 
   const transferParams = useMemo(() => {
     if (!branchId) return undefined;
@@ -95,18 +99,28 @@ export function TransfersClient({ token }: TransfersClientProps) {
     setPrintDialog({ open: true, transfer: t });
   }, []);
 
+  const onPrintCartonLabels = useCallback((t: Transfer) => {
+    setCartonLabelDialog({ open: true, transfer: t });
+  }, []);
+
+  const onView = useCallback((t: Transfer) => {
+    setDetailSheet({ open: true, transfer: t });
+  }, []);
+
   const cols = useMemo(
     () =>
       transferColumns({
         currentBranchId: branchId,
+        onView,
         onApprove,
         onDispatch,
         onMarkInTransit,
         onReceive,
         onCancel,
         onPrint,
+        onPrintCartonLabels,
       }),
-    [branchId, onApprove, onDispatch, onMarkInTransit, onReceive, onCancel, onPrint]
+    [branchId, onView, onApprove, onDispatch, onMarkInTransit, onReceive, onCancel, onPrint, onPrintCartonLabels]
   );
 
   const createDisabled = !selectedBranch || selectedBranch.role !== "head_office";
@@ -212,6 +226,18 @@ export function TransfersClient({ token }: TransfersClientProps) {
         transfer={printDialog.transfer}
         open={printDialog.open}
         onOpenChange={(open) => setPrintDialog((s) => ({ ...s, open }))}
+      />
+
+      <CartonLabelPrintView
+        transfer={cartonLabelDialog.transfer}
+        open={cartonLabelDialog.open}
+        onOpenChange={(open) => setCartonLabelDialog((s) => ({ ...s, open }))}
+      />
+
+      <TransferDetailSheet
+        transfer={detailSheet.transfer}
+        open={detailSheet.open}
+        onOpenChange={(open) => setDetailSheet((s) => ({ ...s, open }))}
       />
     </div>
   );

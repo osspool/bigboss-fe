@@ -180,6 +180,7 @@ class RequestApi extends BaseApi<StockRequest, CreateStockRequestPayload> {
 
   /**
    * Fulfill a stock request (creates a transfer)
+   * Head office assigns carton numbers here for label printing
    */
   async fulfill({
     token,
@@ -187,20 +188,22 @@ class RequestApi extends BaseApi<StockRequest, CreateStockRequestPayload> {
     remarks,
     documentType,
     items,
+    transport,
     options = {},
   }: {
     token: string;
     id: string;
     remarks?: string;
     documentType?: string;
-    items?: { productId: string; variantSku?: string; quantity: number }[];
+    items?: { productId: string; variantSku?: string; quantity: number; cartonNumber?: string }[];
+    transport?: { vehicleNumber?: string; driverName?: string; driverPhone?: string };
     options?: FetchOptions;
   }): Promise<ApiResponse<StockRequest>> {
     return this.action({
       token,
       id,
       action: 'fulfill',
-      data: { remarks, documentType, items },
+      data: { remarks, documentType, items, transport },
       options,
     });
   }

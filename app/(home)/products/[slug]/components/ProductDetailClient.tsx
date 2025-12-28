@@ -267,6 +267,7 @@ export function ProductDetailPage({ product, recommendations = [], token }: Prod
             reviews={[]}
             averageRating={product.averageRating}
             reviewCount={product.numReviews}
+            sizeGuideId={product.sizeGuide}
           />
         </Container>
       </Section>

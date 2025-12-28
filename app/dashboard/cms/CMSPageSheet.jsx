@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormGenerator } from "@/components/form/form-system";
+import { DynamicTabs } from "@/components/custom/ui/tabs-wrapper";
 import { useCMSPage, useCMSUpdate } from "@/hooks/query/useCMS";
 import { getDefaultPageContent } from "@/constants/cms-pages";
 import { getFormSchemaForPage } from "./forms";
@@ -18,13 +19,29 @@ import { toast } from "sonner";
 
 /**
  * Flatten nested object for form (dot notation keys)
+ * Handles arrays by flattening with index notation (e.g., items.0, items.1)
  */
 function flattenObject(obj, prefix = "") {
   const flattened = {};
   for (const key in obj) {
     const value = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
-    if (value && typeof value === "object" && !Array.isArray(value) && !(value instanceof Date)) {
+
+    if (value === null || value === undefined) {
+      // Keep null/undefined as-is
+      flattened[newKey] = value;
+    } else if (Array.isArray(value)) {
+      // Flatten arrays with index notation
+      value.forEach((item, index) => {
+        const arrayKey = `${newKey}.${index}`;
+        if (item && typeof item === "object" && !(item instanceof Date)) {
+          Object.assign(flattened, flattenObject(item, arrayKey));
+        } else {
+          flattened[arrayKey] = item;
+        }
+      });
+    } else if (typeof value === "object" && !(value instanceof Date)) {
+      // Recursively flatten objects
       Object.assign(flattened, flattenObject(value, newKey));
     } else {
       flattened[newKey] = value;
@@ -55,7 +72,8 @@ function unflattenObject(flat) {
 
 export function CMSPageSheet({ token, open, onOpenChange, pageConfig }) {
   const slug = pageConfig?.slug;
-  
+  const [activeTab, setActiveTab] = useState("hero");
+
   // Fetch existing page data
   const { data: existingPage, isLoading } = useCMSPage(slug, {
     enabled: !!slug,
@@ -105,7 +123,7 @@ export function CMSPageSheet({ token, open, onOpenChange, pageConfig }) {
     try {
       const { status, metadata, ...flatContent } = values;
       const content = unflattenObject(flatContent);
-      
+
       // Single update call - backend handles create-if-missing
       await updateMutation.mutateAsync({
         slug,
@@ -117,11 +135,46 @@ export function CMSPageSheet({ token, open, onOpenChange, pageConfig }) {
         },
       });
 
-      onOpenChange(false);
+      toast.success("Page saved successfully!");
+      // Don't close the sheet - allow user to continue editing
     } catch (error) {
       toast.error("Failed to save: " + error.message);
     }
   };
+
+  // Build tabs content from schema (if schema has tabs)
+  const tabsContent = useMemo(() => {
+    if (!formSchema?.tabs || !formSchema?.sections) return null;
+
+    return formSchema.tabs.map((tab) => ({
+      value: tab.id,
+      label: tab.label,
+      icon: tab.icon,
+      content: (
+        <div className="space-y-6">
+          {formSchema.sections[tab.id]?.map((section, index) => {
+            // If section has a render function, use it
+            if (section.render) {
+              return (
+                <div key={section.id || index}>
+                  {section.render({ control: form.control, disabled: updateMutation.isPending })}
+                </div>
+              );
+            }
+            // Otherwise use FormGenerator for the section
+            return (
+              <FormGenerator
+                key={section.id || index}
+                schema={{ sections: [section] }}
+                control={form.control}
+                disabled={updateMutation.isPending}
+              />
+            );
+          })}
+        </div>
+      ),
+    }));
+  }, [formSchema, form.control, updateMutation.isPending]);
 
   if (!pageConfig) return null;
 
@@ -184,15 +237,23 @@ export function CMSPageSheet({ token, open, onOpenChange, pageConfig }) {
             )}
           />
 
-          {/* Dynamic Form Content */}
-          {formSchema && (
+          {/* Dynamic Form Content - Tabs or Regular */}
+          {tabsContent ? (
+            <DynamicTabs
+              tabs={tabsContent}
+              value={activeTab}
+              onValueChange={setActiveTab}
+              variant="default"
+              scrollable
+            />
+          ) : formSchema ? (
             <FormGenerator schema={formSchema} control={form.control} disabled={updateMutation.isPending} />
-          )}
+          ) : null}
 
           {/* SEO Metadata */}
           <div className="space-y-4 pt-6 border-t">
             <h3 className="text-base font-semibold">SEO Metadata</h3>
-            
+
             <FormField
               control={form.control}
               name="metadata.title"

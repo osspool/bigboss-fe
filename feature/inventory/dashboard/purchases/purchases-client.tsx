@@ -1,17 +1,23 @@
 "use client";
 
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ClipboardList, ShoppingBag, Filter } from "lucide-react";
+import { ClipboardList, ShoppingBag, Filter, Printer } from "lucide-react";
 import { toast } from "sonner";
 import HeaderSection from "@/components/custom/dashboard/header-section";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
 import { DataTable } from "@/components/custom/ui/data-table";
 import { useBranch } from "@/contexts/BranchContext";
 import { PurchaseCreateDialog } from "./purchase-create-dialog";
+import { PurchaseDetailSheet } from "./purchase-detail-sheet";
 import { usePurchases, usePurchaseActions } from "@/hooks/query/usePurchases";
+import { useSuppliers } from "@/hooks/query/useSuppliers";
 import { purchaseColumns } from "./purchase-columns";
+import { printDocument } from "@/lib/utils/print-utils";
+import { formatPrice } from "@/lib/constants";
+import { getSupplierInfo } from "@/lib/commerce-utils";
 import type { Purchase } from "@/types/inventory.types";
+import type { Supplier } from "@/types/supplier.types";
 import SelectInput from "@/components/form/form-utils/select-input";
 import {
   Dialog,
@@ -28,8 +34,11 @@ interface PurchasesClientProps {
   token: string;
 }
 
+// Use __all__ as placeholder since Radix Select reserves "" for clearing
+const ALL_VALUE = "__all__";
+
 const STATUS_OPTIONS = [
-  { value: "", label: "All Status" },
+  { value: ALL_VALUE, label: "All Status" },
   { value: "draft", label: "Draft" },
   { value: "approved", label: "Approved" },
   { value: "received", label: "Received" },
@@ -37,17 +46,43 @@ const STATUS_OPTIONS = [
 ];
 
 const PAYMENT_STATUS_OPTIONS = [
-  { value: "", label: "All Payment" },
+  { value: ALL_VALUE, label: "All Payment" },
   { value: "unpaid", label: "Unpaid" },
   { value: "partial", label: "Partial" },
   { value: "paid", label: "Paid" },
 ];
+
+const formatDate = (value?: string | null) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "-"
+    : date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+};
+
+const statusLabels: Record<string, string> = {
+  draft: "Draft",
+  approved: "Approved",
+  received: "Received",
+  cancelled: "Cancelled",
+};
+
+const paymentLabels: Record<string, string> = {
+  unpaid: "Unpaid",
+  partial: "Partial",
+  paid: "Paid",
+};
 
 export function PurchasesClient({ token }: PurchasesClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectedBranch } = useBranch();
   const isHeadOffice = selectedBranch?.role === "head_office";
+  const printRef = useRef<HTMLDivElement>(null);
 
   // Filter states from URL
   const status = searchParams.get("status") || "";
@@ -70,7 +105,16 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
     apiParams
   );
 
+  // Fetch suppliers for detail sheet (reuses same query as PurchaseCreateDialog)
+  const { items: suppliers = [] } = useSuppliers(token, { isActive: true, limit: 100 });
+
   const { receive, pay, cancel, isReceiving, isPaying, isCancelling } = usePurchaseActions(token);
+
+  // Detail sheet state
+  const [detailSheet, setDetailSheet] = useState<{ open: boolean; purchase: Purchase | null }>({
+    open: false,
+    purchase: null,
+  });
 
   // Payment dialog state
   const [payDialog, setPayDialog] = useState<{ open: boolean; purchase: Purchase | null }>({
@@ -81,12 +125,13 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
   const [payMethod, setPayMethod] = useState("cash");
   const [payReference, setPayReference] = useState("");
 
-  // Update URL with filters
+  // Update URL with filters (convert __all__ to empty/delete)
   const updateFilters = useCallback(
     (key: string, value: string) => {
       const params = new URLSearchParams(searchParams);
-      if (value) {
-        params.set(key, value);
+      const actualValue = value === ALL_VALUE ? "" : value;
+      if (actualValue) {
+        params.set(key, actualValue);
       } else {
         params.delete(key);
       }
@@ -104,6 +149,11 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
     },
     [router, searchParams]
   );
+
+  // View handler
+  const handleView = useCallback((purchase: Purchase) => {
+    setDetailSheet({ open: true, purchase });
+  }, []);
 
   // Action handlers
   const handleReceive = useCallback(
@@ -161,14 +211,22 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
   const columns = useMemo(
     () =>
       purchaseColumns({
+        onView: handleView,
         onReceive: isHeadOffice ? handleReceive : undefined,
         onPay: isHeadOffice ? handlePayClick : undefined,
         onCancel: isHeadOffice ? handleCancel : undefined,
       }),
-    [isHeadOffice, handleReceive, handlePayClick, handleCancel]
+    [isHeadOffice, handleView, handleReceive, handlePayClick, handleCancel]
   );
 
   const isActioning = isReceiving || isPaying || isCancelling;
+
+  // Print table handler
+  const handlePrintTable = useCallback(() => {
+    if (printRef.current && purchases.length > 0) {
+      printDocument(printRef.current, "Purchases Report");
+    }
+  }, [purchases]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -178,6 +236,14 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
         variant="compact"
         description="Supplier invoices and stock entry (Head Office)"
         actions={[
+          {
+            icon: Printer,
+            text: "Print",
+            variant: "outline",
+            size: "sm",
+            onClick: handlePrintTable,
+            disabled: purchases.length === 0,
+          },
           {
             icon: ClipboardList,
             text: isFetching ? "Refreshing..." : "Refresh",
@@ -198,7 +264,7 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
           name="status"
           label=""
           items={STATUS_OPTIONS}
-          value={status}
+          value={status || ALL_VALUE}
           onValueChange={(v) => updateFilters("status", v)}
           placeholder="Status"
           className="w-[140px]"
@@ -207,7 +273,7 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
           name="paymentStatus"
           label=""
           items={PAYMENT_STATUS_OPTIONS}
-          value={paymentStatus}
+          value={paymentStatus || ALL_VALUE}
           onValueChange={(v) => updateFilters("paymentStatus", v)}
           placeholder="Payment"
           className="w-[140px]"
@@ -297,6 +363,97 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Purchase Detail Sheet */}
+      <PurchaseDetailSheet
+        open={detailSheet.open}
+        onOpenChange={(open) => setDetailSheet({ open, purchase: open ? detailSheet.purchase : null })}
+        purchase={detailSheet.purchase}
+        suppliers={suppliers as Supplier[]}
+        isHeadOffice={isHeadOffice}
+        onReceive={handleReceive}
+        onPay={handlePayClick}
+        onCancel={handleCancel}
+        isReceiving={isReceiving}
+        isPaying={isPaying}
+        isCancelling={isCancelling}
+      />
+
+      {/* Hidden Print Content */}
+      <div className="sr-only">
+        <div ref={printRef}>
+          <div className="print-header">
+            <h1>Purchases Report</h1>
+            <div className="subtitle">
+              {status && `Status: ${statusLabels[status] || status}`}
+              {status && paymentStatus && " | "}
+              {paymentStatus && `Payment: ${paymentLabels[paymentStatus] || paymentStatus}`}
+              {!status && !paymentStatus && "All Purchases"}
+            </div>
+          </div>
+
+          <div className="print-meta">
+            <div>Total: {pagination?.total || purchases.length} purchases</div>
+            <div>Page {pagination?.page || 1} of {pagination?.pages || 1}</div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>PO #</th>
+                <th>Supplier</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th className="text-right">Total</th>
+                <th className="text-right">Paid</th>
+                <th className="text-right">Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              {purchases.map((p) => {
+                const supplierInfo = getSupplierInfo(p.supplier, suppliers as Supplier[]);
+                return (
+                  <tr key={p._id}>
+                    <td className="font-mono">{p.invoiceNumber}</td>
+                    <td className="font-mono">{p.purchaseOrderNumber || "-"}</td>
+                    <td>{supplierInfo.name}</td>
+                    <td>{formatDate(p.invoiceDate || p.createdAt)}</td>
+                    <td>
+                      <span className={`badge badge-${p.status === "received" ? "success" : p.status === "cancelled" ? "danger" : "default"}`}>
+                        {statusLabels[p.status] || p.status}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge badge-${p.paymentStatus === "paid" ? "success" : p.paymentStatus === "unpaid" ? "warning" : "default"}`}>
+                        {paymentLabels[p.paymentStatus] || p.paymentStatus}
+                      </span>
+                    </td>
+                    <td className="text-right font-mono">{formatPrice(p.grandTotal)}</td>
+                    <td className="text-right font-mono text-success">{formatPrice(p.paidAmount || 0)}</td>
+                    <td className="text-right font-mono text-warning font-bold">{formatPrice(p.dueAmount || 0)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={6} className="text-right font-bold">Page Totals:</td>
+                <td className="text-right font-mono font-bold">
+                  {formatPrice(purchases.reduce((sum, p) => sum + (p.grandTotal || 0), 0))}
+                </td>
+                <td className="text-right font-mono text-success font-bold">
+                  {formatPrice(purchases.reduce((sum, p) => sum + (p.paidAmount || 0), 0))}
+                </td>
+                <td className="text-right font-mono text-warning font-bold">
+                  {formatPrice(purchases.reduce((sum, p) => sum + (p.dueAmount || 0), 0))}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

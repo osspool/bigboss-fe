@@ -11,6 +11,7 @@ import { useProductActions } from "@/hooks/query/useProducts";
 import { DynamicTabs } from "@/components/custom/ui/tabs-wrapper";
 import { revalidateProduct } from "@/lib/revalidation";
 import { useCategoryTree, getParentCategoryOptions, getAllCategoryOptions } from "@/hooks/query/useCategories";
+import { useSizeGuides, getSizeGuideOptions } from "@/hooks/query/useSizeGuides";
 import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 const normalizeStyleValue = (value = "") =>
@@ -38,6 +39,10 @@ export function ProductForm({
   // Build category options from tree
   const parentCategoryOptions = useMemo(() => getParentCategoryOptions(categoryTree), [categoryTree]);
   const categoryOptions = useMemo(() => getAllCategoryOptions(categoryTree), [categoryTree]);
+
+  // Fetch size guides for product size guide selection
+  const { items: sizeGuidesList = [] } = useSizeGuides(token, { limit: 100, isActive: true }, { public: false });
+  const sizeGuideOptions = useMemo(() => getSizeGuideOptions(sizeGuidesList), [sizeGuidesList]);
 
   const defaultValues = useMemo(
     () => ({
@@ -77,6 +82,7 @@ export function ProductForm({
         description: product?.discount?.description || "",
       },
       isActive: product?.isActive ?? true,
+      sizeGuide: product?.sizeGuide || "",
     }),
     [product]
   );
@@ -102,8 +108,9 @@ export function ProductForm({
       product,
       parentCategoryOptions,
       categoryOptions,
+      sizeGuideOptions,
     }),
-    [isEdit, product, parentCategoryOptions, categoryOptions]
+    [isEdit, product, parentCategoryOptions, categoryOptions, sizeGuideOptions]
   );
 
   const handleSubmitForm = useCallback(
@@ -198,6 +205,14 @@ export function ProductForm({
           if (cleanedVariants.length > 0) {
             cleanData.variants = cleanedVariants;
           }
+        }
+
+        // Handle sizeGuide - send null to remove, or ObjectId to set
+        if (data.sizeGuide) {
+          cleanData.sizeGuide = data.sizeGuide;
+        } else if (isEdit) {
+          // Explicitly set null to remove size guide reference
+          cleanData.sizeGuide = null;
         }
 
         // Clean up discount object - only include if type is set

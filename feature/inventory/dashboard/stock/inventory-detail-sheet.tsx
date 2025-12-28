@@ -1,12 +1,15 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
 import { formatPrice } from "@/lib/constants";
 import { formatVariantAttributes } from "@/lib/commerce-utils";
 import { cn } from "@/lib/utils";
 import type { PosProduct, VariantStock } from "@/types/pos.types";
+import { CrossBranchStockLookup } from "../requests/cross-branch-stock-lookup";
 
 const LOW_STOCK_THRESHOLD = 10;
 
@@ -125,11 +128,14 @@ export function InventoryDetailSheet({
   open,
   onOpenChange,
   product,
+  token,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: InventoryDetail | null;
+  token?: string;
 }) {
+  const [stockLookup, setStockLookup] = useState<{ code: string; variantSku?: string } | null>(null);
   const image = product?.images?.[0]?.variants?.thumbnail || product?.images?.[0]?.url;
   const productType = product?.productType || (product?.variants?.length ? "variant" : "simple");
   const branchStock = product?.branchStock;
@@ -162,26 +168,38 @@ export function InventoryDetailSheet({
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative w-16 h-16 rounded-xl bg-muted overflow-hidden ring-1 ring-border/20 shrink-0">
-              {image ? (
-                <img src={image} alt={product.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                  No image
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="relative w-16 h-16 rounded-xl bg-muted overflow-hidden ring-1 ring-border/20 shrink-0">
+                {image ? (
+                  <img src={image} alt={product.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                    No image
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-semibold truncate">{product.name || "-"}</p>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span className="font-mono">{product._id || product.id || "-"}</span>
+                  <Badge variant="outline" className="capitalize">
+                    {productType}
+                  </Badge>
+                  {getStockBadge(totalQuantity, branchStock?.lowStock, branchStock?.inStock)}
                 </div>
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="text-lg font-semibold truncate">{product.name || "-"}</p>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span className="font-mono">{product._id || product.id || "-"}</span>
-                <Badge variant="outline" className="capitalize">
-                  {productType}
-                </Badge>
-                {getStockBadge(totalQuantity, branchStock?.lowStock, branchStock?.inStock)}
               </div>
             </div>
+            {token && (product.sku || product.barcode) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setStockLookup({ code: product.sku || product.barcode || "" })}
+              >
+                <Layers className="h-4 w-4 mr-2" />
+                All Branches
+              </Button>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -216,11 +234,27 @@ export function InventoryDetailSheet({
                           {formatVariantAttributes(variant.attributes) || "No attributes"}
                         </p>
                       </div>
-                      {typeof variant.isActive === "boolean" && (
-                        <Badge variant={variant.isActive ? "secondary" : "outline"}>
-                          {variant.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {token && variant.sku && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => setStockLookup({
+                              code: product.sku || product.barcode || "",
+                              variantSku: variant.sku,
+                            })}
+                          >
+                            <Layers className="h-3 w-3 mr-1" />
+                            All
+                          </Button>
+                        )}
+                        {typeof variant.isActive === "boolean" && (
+                          <Badge variant={variant.isActive ? "secondary" : "outline"}>
+                            {variant.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 text-xs text-muted-foreground">
                       <div>
@@ -250,6 +284,17 @@ export function InventoryDetailSheet({
             <div className="text-sm text-muted-foreground">No variants available.</div>
           )}
         </div>
+      )}
+
+      {/* Cross-Branch Stock Lookup */}
+      {token && (
+        <CrossBranchStockLookup
+          open={!!stockLookup}
+          onOpenChange={(isOpen) => !isOpen && setStockLookup(null)}
+          code={stockLookup?.code}
+          variantSku={stockLookup?.variantSku}
+          token={token}
+        />
       )}
     </SheetWrapper>
   );

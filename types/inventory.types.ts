@@ -123,32 +123,56 @@ export interface PurchaseItem {
 
 // Purchase item (response shape - populated)
 export interface PurchaseItemDoc {
+  _id?: string;
   product: string | { _id: string; name: string };
   productName: string;
   variantSku?: string;
   quantity: number;
   costPrice: number;
+  discount?: number;
+  taxRate?: number;
+  lineTotal?: number;
+  taxableAmount?: number;
+  taxAmount?: number;
+}
+
+// Purchase status history entry
+export interface PurchaseStatusHistoryEntry {
+  status: PurchaseStatus;
+  timestamp: string;
+  actor?: string | { _id: string; name: string };
+  notes?: string;
 }
 
 // Purchase document (API response)
 export interface Purchase {
   _id: string;
   invoiceNumber: string;
+  purchaseOrderNumber?: string;
   supplier?: string | { _id: string; name: string; code?: string };
-  branch: string | { _id: string; name: string };
-  status: PurchaseStatus;
-  paymentStatus: PurchasePaymentStatus;
+  branch: string | { _id: string; name: string; code?: string };
+  invoiceDate?: string;
   paymentTerms: PurchasePaymentTerms;
   creditDays?: number;
+  dueDate?: string;
+  status: PurchaseStatus;
+  paymentStatus: PurchasePaymentStatus;
   items: PurchaseItemDoc[];
+  subTotal?: number;
+  discountTotal?: number;
+  taxTotal?: number;
   grandTotal: number;
   paidAmount: number;
   dueAmount: number;
+  transactionIds?: string[];
+  statusHistory?: PurchaseStatusHistoryEntry[];
   notes?: string;
-  purchaseOrderNumber?: string;
   createdAt: string;
   updatedAt: string;
   createdBy?: string | { _id: string; name: string };
+  updatedBy?: string | { _id: string; name: string };
+  approvedAt?: string;
+  approvedBy?: string | { _id: string; name: string };
   receivedAt?: string;
   receivedBy?: string | { _id: string; name: string };
 }

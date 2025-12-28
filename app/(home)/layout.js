@@ -1,5 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import Providers from "@/components/providers/Providers";
+import { SizeGuideProvider } from "@/contexts/SizeGuideContext";
 import { auth } from "../(auth)/auth";
 
 export const metadata = {
@@ -31,9 +32,11 @@ export default async function HomeLayout({ children }) {
 
     return (
         <Providers>
-            <Layout user={user} token={token}>
-                {children}
-            </Layout>
+            <SizeGuideProvider token={token}>
+                <Layout user={user} token={token}>
+                    {children}
+                </Layout>
+            </SizeGuideProvider>
         </Providers>
     );
 }

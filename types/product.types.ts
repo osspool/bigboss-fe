@@ -179,6 +179,13 @@ export interface Product {
   stockProjection?: StockProjection;
 
   discount?: ProductDiscount;
+
+  /**
+   * Size guide reference (ObjectId of SizeGuide document)
+   * Optional - only for products with sizing information
+   */
+  sizeGuide?: string | null;
+
   isActive: boolean;
   
   deletedAt?: string | null;
@@ -230,5 +237,9 @@ export interface ProductPayload {
   tags?: string[];
 
   discount?: ProductDiscount;
+
+  // Size guide reference (ObjectId or null to remove)
+  sizeGuide?: string | null;
+
   isActive?: boolean;
 }

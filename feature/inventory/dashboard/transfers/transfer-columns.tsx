@@ -1,8 +1,25 @@
 "use client";
 
-import { Printer } from "lucide-react";
+import {
+  MoreHorizontal,
+  Eye,
+  Printer,
+  Package,
+  CheckCircle,
+  Truck,
+  PackageCheck,
+  XCircle,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Transfer } from "@/types/inventory.types";
@@ -36,142 +53,212 @@ function StatusBadge({ status }: { status?: Transfer["status"] | string }) {
 
 export interface TransferColumnsActions {
   currentBranchId: string | undefined;
+  onView: (t: Transfer) => void;
   onApprove: (t: Transfer) => void;
   onDispatch: (t: Transfer) => void;
   onMarkInTransit: (t: Transfer) => void;
   onReceive: (t: Transfer) => void;
   onCancel: (t: Transfer) => void;
   onPrint: (t: Transfer) => void;
+  onPrintCartonLabels: (t: Transfer) => void;
 }
 
 export function transferColumns({
   currentBranchId,
+  onView,
   onApprove,
   onDispatch,
   onMarkInTransit,
   onReceive,
   onCancel,
   onPrint,
+  onPrintCartonLabels,
 }: TransferColumnsActions): ColumnDef<Transfer, unknown>[] {
   return [
-  {
-    id: "challanNumber",
-    header: "Transfer No.",
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">{row.original.challanNumber || "-"}</span>
-    ),
-  },
-  {
-    id: "route",
-    header: "Route",
-    cell: ({ row }) => {
-      const t = row.original;
-      const sender = getBranchInfo(t.senderBranch, "Sender");
-      const receiver = getBranchInfo(t.receiverBranch, "Receiver");
-      const senderLabel = sender.code || sender.name;
-      const receiverLabel = receiver.code || receiver.name;
-      return (
-        <div className="text-sm">
-          <div className="font-medium">
-            {senderLabel} → {receiverLabel}
+    {
+      id: "challanNumber",
+      header: "Challan No.",
+      cell: ({ row }) => {
+        const t = row.original;
+        return (
+          <button
+            onClick={() => onView(t)}
+            className="font-mono text-xs hover:underline text-left"
+          >
+            {t.challanNumber || "-"}
+          </button>
+        );
+      },
+    },
+    {
+      id: "route",
+      header: "Route",
+      cell: ({ row }) => {
+        const t = row.original;
+        const sender = getBranchInfo(t.senderBranch, "Sender");
+        const receiver = getBranchInfo(t.receiverBranch, "Receiver");
+        const senderLabel = sender.code || sender.name;
+        const receiverLabel = receiver.code || receiver.name;
+        return (
+          <div className="text-sm">
+            <div className="font-medium">
+              {senderLabel} → {receiverLabel}
+            </div>
+            <div className="text-xs text-muted-foreground capitalize">
+              {t.documentType?.replace(/_/g, " ")}
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground">{t.documentType?.replace(/_/g, " ")}</div>
-        </div>
-      );
+        );
+      },
     },
-  },
-  {
-    id: "status",
-    header: "Status",
-    cell: ({ row }) => <StatusBadge status={row.original.status} />,
-  },
-  {
-    id: "items",
-    header: "Items",
-    cell: ({ row }) => {
-      const t = row.original;
-      // Use API-provided totals if available, otherwise compute
-      const itemCount = t.totalItems ?? t.items?.length ?? 0;
-      const qty = t.totalQuantity ?? t.items?.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0) ?? 0;
-      return (
-        <div className="text-sm">
-          <div className="font-medium">{itemCount}</div>
-          <div className="text-xs text-muted-foreground">Qty {qty}</div>
-        </div>
-      );
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
-  },
-  {
-    id: "totalValue",
-    header: "Value",
-    cell: ({ row }) => {
-      const value = row.original.totalValue;
-      if (value == null) return <span className="text-muted-foreground">-</span>;
-      return (
-        <span className="font-mono text-sm">
-          ৳{value.toLocaleString()}
-        </span>
-      );
+    {
+      id: "items",
+      header: "Items",
+      cell: ({ row }) => {
+        const t = row.original;
+        const itemCount = t.totalItems ?? t.items?.length ?? 0;
+        const qty = t.totalQuantity ?? t.items?.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0) ?? 0;
+        const hasCartons = t.items?.some((item) => item.cartonNumber?.trim());
+        return (
+          <div className="text-sm">
+            <div className="font-medium flex items-center gap-1">
+              {itemCount}
+              {hasCartons && <Package className="h-3 w-3 text-muted-foreground" />}
+            </div>
+            <div className="text-xs text-muted-foreground">Qty {qty}</div>
+          </div>
+        );
+      },
     },
-  },
-  {
-    id: "createdAt",
-    header: "Created",
-    cell: ({ row }) => {
-      const d = row.original.createdAt ? new Date(row.original.createdAt) : null;
-      return <span className="text-sm text-muted-foreground">{d ? d.toLocaleString("en-GB") : "-"}</span>;
+    {
+      id: "totalValue",
+      header: "Value",
+      cell: ({ row }) => {
+        const value = row.original.totalValue;
+        if (value == null) return <span className="text-muted-foreground">-</span>;
+        return (
+          <span className="font-mono text-sm">
+            ৳{value.toLocaleString()}
+          </span>
+        );
+      },
     },
-  },
-  {
-    id: "actions",
-    header: () => <div className="text-right">Actions</div>,
-    cell: ({ row }) => {
-      const t = row.original;
-      const sender = getBranchInfo(t.senderBranch, "Sender");
-      const receiver = getBranchInfo(t.receiverBranch, "Receiver");
-      const isSender = currentBranchId && sender.id === currentBranchId;
-      const isReceiver = currentBranchId && receiver.id === currentBranchId;
+    {
+      id: "createdAt",
+      header: "Created",
+      cell: ({ row }) => {
+        const d = row.original.createdAt ? new Date(row.original.createdAt) : null;
+        if (!d) return <span className="text-muted-foreground">-</span>;
+        return (
+          <div className="text-sm text-muted-foreground">
+            <div>{d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</div>
+            <div className="text-xs">{d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</div>
+          </div>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Actions</div>,
+      cell: ({ row }) => {
+        const t = row.original;
+        const sender = getBranchInfo(t.senderBranch, "Sender");
+        const receiver = getBranchInfo(t.receiverBranch, "Receiver");
+        const isSender = currentBranchId && sender.id === currentBranchId;
+        const isReceiver = currentBranchId && receiver.id === currentBranchId;
 
-      // Use API virtual fields if available, otherwise fallback to local computation
-      const canApprove = t.canApprove ?? (isSender && t.status === "draft");
-      const canDispatch = t.canDispatch ?? (isSender && t.status === "approved");
-      const canInTransit = isSender && t.status === "dispatched";
-      const canReceive = t.canReceive ?? (isReceiver && (t.status === "in_transit" || t.status === "dispatched"));
-      const canCancel = t.canCancel ?? (isSender && (t.status === "draft" || t.status === "approved"));
+        // Use API virtual fields if available, otherwise fallback to local computation
+        const canApprove = t.canApprove ?? (isSender && t.status === "draft");
+        const canDispatch = t.canDispatch ?? (isSender && t.status === "approved");
+        const canInTransit = isSender && t.status === "dispatched";
+        const canReceive = t.canReceive ?? (isReceiver && (t.status === "in_transit" || t.status === "dispatched"));
+        const canCancel = t.canCancel ?? (isSender && (t.status === "draft" || t.status === "approved"));
+        const hasCartons = t.items?.some((item) => item.cartonNumber?.trim());
 
-      return (
-        <div className="flex justify-end gap-2">
-          <Button size="sm" variant="ghost" onClick={() => onPrint(t)} title="Print Challan">
-            <Printer className="h-4 w-4" />
-          </Button>
-          {canApprove && (
-            <Button size="sm" variant="outline" onClick={() => onApprove(t)}>
-              Approve
-            </Button>
-          )}
-          {canDispatch && (
-            <Button size="sm" variant="outline" onClick={() => onDispatch(t)}>
-              Dispatch
-            </Button>
-          )}
-          {canInTransit && (
-            <Button size="sm" variant="outline" onClick={() => onMarkInTransit(t)}>
-              In-Transit
-            </Button>
-          )}
-          {canReceive && (
-            <Button size="sm" variant="outline" onClick={() => onReceive(t)}>
-              Receive
-            </Button>
-          )}
-          {canCancel && (
-            <Button size="sm" variant="destructive" onClick={() => onCancel(t)}>
-              Cancel
-            </Button>
-          )}
-        </div>
-      );
+        const hasActions = canApprove || canDispatch || canInTransit || canReceive || canCancel;
+
+        return (
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+
+                {/* View Action */}
+                <DropdownMenuItem onClick={() => onView(t)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Details
+                </DropdownMenuItem>
+
+                {/* Print Actions */}
+                <DropdownMenuItem onClick={() => onPrint(t)}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print Challan
+                </DropdownMenuItem>
+                {hasCartons && (
+                  <DropdownMenuItem onClick={() => onPrintCartonLabels(t)}>
+                    <Package className="mr-2 h-4 w-4" />
+                    Print Carton Labels
+                  </DropdownMenuItem>
+                )}
+
+                {/* State Transition Actions */}
+                {hasActions && <DropdownMenuSeparator />}
+
+                {canApprove && (
+                  <DropdownMenuItem onClick={() => onApprove(t)}>
+                    <CheckCircle className="mr-2 h-4 w-4 text-primary" />
+                    Approve
+                  </DropdownMenuItem>
+                )}
+                {canDispatch && (
+                  <DropdownMenuItem onClick={() => onDispatch(t)}>
+                    <Truck className="mr-2 h-4 w-4 text-warning" />
+                    Dispatch
+                  </DropdownMenuItem>
+                )}
+                {canInTransit && (
+                  <DropdownMenuItem onClick={() => onMarkInTransit(t)}>
+                    <Truck className="mr-2 h-4 w-4 text-warning" />
+                    Mark In-Transit
+                  </DropdownMenuItem>
+                )}
+                {canReceive && (
+                  <DropdownMenuItem onClick={() => onReceive(t)}>
+                    <PackageCheck className="mr-2 h-4 w-4 text-success" />
+                    Receive
+                  </DropdownMenuItem>
+                )}
+
+                {/* Cancel Action */}
+                {canCancel && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onCancel(t)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Cancel Transfer
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
     },
-  },
-];
+  ];
 }

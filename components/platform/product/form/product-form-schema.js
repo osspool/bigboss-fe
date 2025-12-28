@@ -1,7 +1,7 @@
 import { PRODUCT_STYLES } from "@/data/constants";
 import { TAG_OPTIONS } from "@/lib/constants";
-import { Info, Package, DollarSign, Tags, ImageIcon, Settings, FileText, BarChart3, Layers, Barcode, Box, Grid3X3 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info, Package, DollarSign, Tags, ImageIcon, Settings, BarChart3, Layers, Barcode, Box, Grid3X3, Ruler } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { field, section } from "@/components/form/form-system";
 import { format } from "date-fns";
@@ -38,6 +38,7 @@ const DISCOUNT_TYPE_OPTIONS = [
  * @param {Object} options.product - Existing product (for edit mode)
  * @param {Array} options.parentCategoryOptions - Parent category options for select
  * @param {Array} options.categoryOptions - All category options (flattened tree)
+ * @param {Array} options.sizeGuideOptions - Size guide options for select
  * @returns {Object} Form schema with tabs structure
  */
 export const createProductFormSchema = ({
@@ -45,6 +46,7 @@ export const createProductFormSchema = ({
   product = null,
   parentCategoryOptions = [],
   categoryOptions = [],
+  sizeGuideOptions = [],
 }) => {
   return {
     // Define tabs for the form (compact labels for sheet context)
@@ -198,6 +200,22 @@ export const createProductFormSchema = ({
             }),
           ],
           { cols: 1 }
+        ),
+
+        // Size Guide
+        section(
+          "size-guide-section",
+          "Size Guide",
+          [
+            field.select("sizeGuide", "Size Guide", [
+              { value: "", label: "None" },
+              ...sizeGuideOptions,
+            ], {
+              placeholder: "Select a size guide",
+              description: "Optional size guide to display on product page",
+            }),
+          ],
+          { cols: 1, icon: <Ruler className="h-4 w-4" /> }
         ),
       ],
 

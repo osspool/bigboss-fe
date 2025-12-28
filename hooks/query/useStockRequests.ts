@@ -93,21 +93,25 @@ export function useStockRequestActions(token: string) {
   });
 
   // Fulfill creates a transfer (challan) - invalidate both requests and transfers
+  // Head office assigns carton numbers here for label printing
   const fulfill = useMutation({
     mutationFn: ({
       id,
       remarks,
       items,
+      transport,
     }: {
       id: string;
       remarks?: string;
-      items?: { productId: string; variantSku?: string; quantity: number }[];
+      items?: { productId: string; variantSku?: string; quantity: number; cartonNumber?: string }[];
+      transport?: { vehicleNumber?: string; driverName?: string; driverPhone?: string };
     }) =>
       requestApi.fulfill({
         token,
         id,
         remarks,
         items,
+        transport,
         documentType: "delivery_challan",
       }),
     onSuccess: () => {

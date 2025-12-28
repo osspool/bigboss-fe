@@ -176,9 +176,11 @@ export default function SelectInput({
       onValueChange?.(newValue);
     };
 
-    // Helper to get value from item
+    // Helper to get value from item (explicitly check null/undefined to allow empty string "")
     const getItemValue = (item: SelectOption, fallback: string): string => {
-      return item.value?.toString() || fallback;
+      return item.value !== undefined && item.value !== null
+        ? item.value.toString()
+        : fallback;
     };
 
     // Helper to get label from item

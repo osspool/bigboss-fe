@@ -143,10 +143,13 @@ export function purchaseColumns({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {onView && (
-                  <DropdownMenuItem onClick={() => onView(purchase)}>
-                    <Eye className="mr-2 h-4 w-4" />
-                    View Details
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem onClick={() => onView(purchase)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
                 )}
                 {onReceive && canReceive && (
                   <DropdownMenuItem onClick={() => onReceive(purchase)}>
@@ -160,7 +163,7 @@ export function purchaseColumns({
                     Record Payment
                   </DropdownMenuItem>
                 )}
-                {(onReceive || onPay) && canCancel && <DropdownMenuSeparator />}
+                {onCancel && canCancel && ((onReceive && canReceive) || (onPay && canPay)) && <DropdownMenuSeparator />}
                 {onCancel && canCancel && (
                   <DropdownMenuItem
                     onClick={() => onCancel(purchase)}

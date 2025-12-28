@@ -1,4 +1,158 @@
 import type { CartItem, ProductDiscount, Product } from "@/types";
+import type { Supplier } from "@/types/supplier.types";
+
+// ==================== Entity Resolution Utilities ====================
+
+/**
+ * Generic entity reference type - can be an ID string or a populated object
+ */
+type EntityRef<T> = string | T | null | undefined;
+
+/**
+ * Resolve an entity reference to its full data
+ * Works with both populated objects and ID strings
+ *
+ * @param ref - Entity reference (ID string or populated object)
+ * @param entities - Array of full entity objects to search
+ * @param idField - Field name for the ID (default: '_id')
+ * @returns The full entity object or null if not found
+ *
+ * @example
+ * const supplier = resolveEntityRef(purchase.supplier, suppliers);
+ * // Returns full supplier object whether purchase.supplier is an ID or populated
+ */
+export function resolveEntityRef<T extends Record<string, unknown>>(
+  ref: EntityRef<T>,
+  entities: T[],
+  idField: keyof T = "_id" as keyof T
+): T | null {
+  if (!ref) return null;
+
+  // If it's already a populated object, return it
+  if (typeof ref === "object" && ref !== null) {
+    return ref as T;
+  }
+
+  // It's an ID string, find in entities array
+  return entities.find((e) => e[idField] === ref) || null;
+}
+
+/**
+ * Resolve supplier reference to full supplier data
+ */
+export function resolveSupplier(
+  ref: EntityRef<Supplier>,
+  suppliers: Supplier[]
+): Supplier | null {
+  return resolveEntityRef(ref, suppliers);
+}
+
+/**
+ * Get supplier display info from a reference
+ * Returns a consistent format whether ref is an ID or populated object
+ */
+export function getSupplierInfo(
+  ref: EntityRef<{ _id: string; name: string; code?: string }>,
+  suppliers?: Array<{ _id: string; name: string; code?: string }>
+): { id: string; name: string; code: string } {
+  if (!ref) {
+    return { id: "", name: "-", code: "" };
+  }
+
+  // If it's a populated object
+  if (typeof ref === "object" && ref !== null) {
+    return {
+      id: ref._id || "",
+      name: ref.name || "-",
+      code: ref.code || "",
+    };
+  }
+
+  // It's an ID string, try to find in suppliers array
+  if (suppliers) {
+    const found = suppliers.find((s) => s._id === ref);
+    if (found) {
+      return {
+        id: found._id,
+        name: found.name || "-",
+        code: found.code || "",
+      };
+    }
+  }
+
+  // Return ID as fallback
+  return { id: ref, name: "-", code: "" };
+}
+
+/**
+ * Get branch display info from a reference
+ */
+export function getBranchInfo(
+  ref: EntityRef<{ _id: string; name: string; code?: string }>,
+  branches?: Array<{ _id: string; name: string; code?: string }>
+): { id: string; name: string; code: string } {
+  if (!ref) {
+    return { id: "", name: "-", code: "" };
+  }
+
+  // If it's a populated object
+  if (typeof ref === "object" && ref !== null) {
+    return {
+      id: ref._id || "",
+      name: ref.name || "-",
+      code: ref.code || "",
+    };
+  }
+
+  // It's an ID string, try to find in branches array
+  if (branches) {
+    const found = branches.find((b) => b._id === ref);
+    if (found) {
+      return {
+        id: found._id,
+        name: found.name || "-",
+        code: found.code || "",
+      };
+    }
+  }
+
+  // Return ID as fallback
+  return { id: ref, name: "-", code: "" };
+}
+
+/**
+ * Get user display info from a reference
+ */
+export function getUserInfo(
+  ref: EntityRef<{ _id: string; name: string }>,
+  users?: Array<{ _id: string; name: string }>
+): { id: string; name: string } {
+  if (!ref) {
+    return { id: "", name: "-" };
+  }
+
+  // If it's a populated object
+  if (typeof ref === "object" && ref !== null) {
+    return {
+      id: ref._id || "",
+      name: ref.name || "-",
+    };
+  }
+
+  // It's an ID string, try to find in users array
+  if (users) {
+    const found = users.find((u) => u._id === ref);
+    if (found) {
+      return {
+        id: found._id,
+        name: found.name || "-",
+      };
+    }
+  }
+
+  // Return ID as fallback
+  return { id: ref, name: "-" };
+}
 
 /**
  * Check if a discount is currently active
