@@ -208,7 +208,7 @@ export const createProductFormSchema = ({
           "Size Guide",
           [
             field.select("sizeGuide", "Size Guide", [
-              { value: "", label: "None" },
+              { value: "none", label: "None" },
               ...sizeGuideOptions,
             ], {
               placeholder: "Select a size guide",

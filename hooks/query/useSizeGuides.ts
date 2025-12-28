@@ -55,10 +55,12 @@ interface SelectOption {
  * @returns Options array with value (ObjectId) and label
  */
 export function getSizeGuideOptions(sizeGuides: SizeGuide[] | undefined): SelectOption[] {
-  return (sizeGuides || []).map(guide => ({
-    value: guide._id, // Use ObjectId as value for API
-    label: guide.name,
-  }));
+  return (sizeGuides || [])
+    .filter(guide => guide._id && guide._id.trim() !== '') // Filter out empty IDs
+    .map(guide => ({
+      value: guide._id, // Use ObjectId as value for API
+      label: guide.name,
+    }));
 }
 
 // Export standard hooks

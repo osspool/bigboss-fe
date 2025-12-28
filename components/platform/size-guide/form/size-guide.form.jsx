@@ -26,6 +26,7 @@ export function SizeGuideForm({
       description: sizeGuide?.description || "",
       measurementUnit: sizeGuide?.measurementUnit || "inches",
       measurementLabels: sizeGuide?.measurementLabels || [],
+      sizes: sizeGuide?.sizes || [],
       note: sizeGuide?.note || "",
       displayOrder: sizeGuide?.displayOrder ?? 0,
       isActive: sizeGuide?.isActive ?? true,
@@ -76,9 +77,17 @@ export function SizeGuideForm({
           cleanData.measurementLabels = [];
         }
 
-        // Keep existing sizes on update (sizes are managed separately)
-        if (isEdit && sizeGuide?.sizes) {
-          cleanData.sizes = sizeGuide.sizes;
+        // Handle sizes array
+        if (data.sizes && data.sizes.length > 0) {
+          // Clean up sizes - filter out empty entries and ensure measurements exist
+          cleanData.sizes = data.sizes
+            .filter((size) => size.name && size.name.trim())
+            .map((size) => ({
+              name: size.name.trim(),
+              measurements: size.measurements || {},
+            }));
+        } else {
+          cleanData.sizes = [];
         }
 
         if (isEdit) {
@@ -92,7 +101,7 @@ export function SizeGuideForm({
         // Toast is handled by the mutation factory
       }
     },
-    [isEdit, updateSizeGuide, createSizeGuide, token, sizeGuide?._id, sizeGuide?.sizes, onSuccess]
+    [isEdit, updateSizeGuide, createSizeGuide, token, sizeGuide?._id, onSuccess]
   );
 
   const handleFormError = useCallback(() => {

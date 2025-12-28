@@ -2,6 +2,7 @@ import { Info, Ruler, FileText, Calendar } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { field, section } from "@/components/form/form-system";
 import { format } from "date-fns";
+import { SizesField } from "./SizesField";
 
 /**
  * Create size guide form schema
@@ -80,6 +81,14 @@ export const createSizeGuideFormSchema = ({
         ],
         { cols: 1, icon: <Ruler className="h-4 w-4" /> }
       ),
+
+      // Sizes Section (render pattern for array fields)
+      {
+        id: "sizes-section",
+        render: ({ control, disabled }) => (
+          <SizesField control={control} disabled={disabled} />
+        ),
+      },
 
       // Note Section
       section(

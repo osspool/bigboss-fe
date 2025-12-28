@@ -148,11 +148,11 @@ export const DateRangeInput = ({
             <FormItem className={cn("w-full", className)}>
               {label && (
                 <div className="flex items-center gap-2 mb-2">
-                  <FormLabel className={cn("flex-grow", labelClassName)}>
+                  <FormLabel className={cn("grow", labelClassName)}>
                     {label}
                     {required && <span className="text-red-500 ml-1">*</span>}
                   </FormLabel>
-                  {Icon && <span className="text-gray-500 flex-shrink-0"><Icon className="h-4 w-4" /></span>}
+                  {Icon && <span className="text-gray-500 shrink-0"><Icon className="h-4 w-4" /></span>}
                 </div>
               )}
               

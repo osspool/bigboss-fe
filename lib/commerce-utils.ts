@@ -21,7 +21,7 @@ type EntityRef<T> = string | T | null | undefined;
  * const supplier = resolveEntityRef(purchase.supplier, suppliers);
  * // Returns full supplier object whether purchase.supplier is an ID or populated
  */
-export function resolveEntityRef<T extends Record<string, unknown>>(
+export function resolveEntityRef<T extends { _id: string }>(
   ref: EntityRef<T>,
   entities: T[],
   idField: keyof T = "_id" as keyof T
@@ -44,7 +44,7 @@ export function resolveSupplier(
   ref: EntityRef<Supplier>,
   suppliers: Supplier[]
 ): Supplier | null {
-  return resolveEntityRef(ref, suppliers);
+  return resolveEntityRef<Supplier>(ref, suppliers);
 }
 
 /**

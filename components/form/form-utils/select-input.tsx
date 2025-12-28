@@ -142,7 +142,21 @@ export default function SelectInput({
   const descriptionText = description || helperText;
 
   // Create a new array with the "All" option if provided
-  const displayItems = allOption ? [allOption, ...items] : items;
+  // Filter out items with empty string values (Radix Select doesn't support them)
+  const filteredItems = items.filter(item => {
+    const val = item.value;
+    return val !== undefined && val !== null && val !== "";
+  });
+  const displayItems = allOption ? [allOption, ...filteredItems] : filteredItems;
+
+  // Filter groups to remove items with empty values
+  const filteredGroups = groups.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      const val = item.value;
+      return val !== undefined && val !== null && val !== "";
+    }),
+  })).filter(group => group.items.length > 0); // Remove empty groups
 
   // For direct usage without React Hook Form
   const [localValue, setLocalValue] = useState<string>(propValue?.toString() || "");
@@ -176,11 +190,13 @@ export default function SelectInput({
       onValueChange?.(newValue);
     };
 
-    // Helper to get value from item (explicitly check null/undefined to allow empty string "")
+    // Helper to get value from item (filter out empty strings for Radix Select compatibility)
     const getItemValue = (item: SelectOption, fallback: string): string => {
-      return item.value !== undefined && item.value !== null
+      const val = item.value !== undefined && item.value !== null
         ? item.value.toString()
         : fallback;
+      // Radix Select doesn't allow empty strings, use fallback if empty
+      return val === "" ? fallback : val;
     };
 
     // Helper to get label from item
@@ -203,9 +219,9 @@ export default function SelectInput({
 
     // Render grouped options
     const renderGroupedContent = () => {
-      if (groups.length === 0) return null;
+      if (filteredGroups.length === 0) return null;
 
-      return groups.map((group, groupIdx) => {
+      return filteredGroups.map((group, groupIdx) => {
         const seenKeys = new Map<string, number>();
 
         return (
@@ -276,7 +292,7 @@ export default function SelectInput({
           sideOffset={sideOffset}
           style={{ maxHeight }}
         >
-          {groups.length > 0 ? renderGroupedContent() : renderFlatContent()}
+          {filteredGroups.length > 0 ? renderGroupedContent() : renderFlatContent()}
         </SelectContent>
       </Select>
     );

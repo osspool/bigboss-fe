@@ -82,7 +82,7 @@ export function ProductForm({
         description: product?.discount?.description || "",
       },
       isActive: product?.isActive ?? true,
-      sizeGuide: product?.sizeGuide || "",
+      sizeGuide: product?.sizeGuide || "none",
     }),
     [product]
   );
@@ -208,7 +208,7 @@ export function ProductForm({
         }
 
         // Handle sizeGuide - send null to remove, or ObjectId to set
-        if (data.sizeGuide) {
+        if (data.sizeGuide && data.sizeGuide !== "none") {
           cleanData.sizeGuide = data.sizeGuide;
         } else if (isEdit) {
           // Explicitly set null to remove size guide reference
