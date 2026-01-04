@@ -2,14 +2,14 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import type { PosProduct } from "@/types/pos.types";
+import type { PosProduct } from "@/types";
 import type { PosCartItem } from "../dashboard/pos.types";
 import {
   calculateVariantPrice,
   formatVariantLabel,
   getVariantStock,
   getPosProductImage,
-} from "@/hooks/query/usePos";
+} from "@/hooks/query";
 import { calculateCartTotals } from "../utils";
 
 export interface UsePosCartReturn {

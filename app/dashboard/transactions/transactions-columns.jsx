@@ -1,11 +1,11 @@
 "use client";
 import React from "react";
-import { Calendar, CreditCard, ArrowDownCircle, ArrowUpCircle, Pencil, Trash2 } from "lucide-react";
-import { ActionDropdown } from "@/components/custom/ui/dropdown-wrapper";
+import { Calendar, CreditCard, ArrowDownCircle, ArrowUpCircle, Pencil, Trash2, Globe, Monitor, Server } from "lucide-react";
+import { ActionDropdown } from "@classytic/clarity";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const DateCell = React.memo(({ item }) => {
-  const dateStr = item.date || item.createdAt;
+  const dateStr = item.transactionDate || item.date || item.createdAt;
   const display = dateStr ? new Date(dateStr).toLocaleDateString('en-GB') : "-";
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -16,19 +16,61 @@ const DateCell = React.memo(({ item }) => {
 });
 DateCell.displayName = "DateCell";
 
-const TypeCell = React.memo(({ item }) => {
-  const isIncome = item.type === 'income';
-  const Icon = isIncome ? ArrowUpCircle : ArrowDownCircle;
-  const color = isIncome ? 'text-emerald-600' : 'text-rose-600';
-  const bg = isIncome ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100';
+/**
+ * Flow Cell - Shows inflow/outflow direction
+ * Uses the 'flow' field from backend (not derived from type)
+ */
+const FlowCell = React.memo(({ item }) => {
+  const flow = item.flow || 'inflow';
+  const isInflow = flow === 'inflow';
+  const Icon = isInflow ? ArrowUpCircle : ArrowDownCircle;
+  const color = isInflow ? 'text-emerald-600' : 'text-rose-600';
+  const bg = isInflow ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100';
+  const label = isInflow ? 'Inflow' : 'Outflow';
   return (
     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs border ${bg}`}>
       <Icon className={`h-3.5 w-3.5 ${color}`} />
-      <span className={`capitalize ${color}`}>{item.type}</span>
+      <span className={`${color}`}>{label}</span>
+    </span>
+  );
+});
+FlowCell.displayName = "FlowCell";
+
+/**
+ * Type/Category Cell - Shows the transaction category
+ * Uses the 'type' field which contains categories like order_purchase, inventory_purchase, etc.
+ */
+const TypeCell = React.memo(({ item }) => {
+  // Display category (type field) - format underscore to readable
+  const displayLabel = item.type?.replace(/_/g, ' ') || 'unknown';
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs border bg-gray-50 border-gray-200 text-gray-700 capitalize">
+      {displayLabel}
     </span>
   );
 });
 TypeCell.displayName = "TypeCell";
+
+/**
+ * Source Cell - Shows where the transaction originated (web, pos, api)
+ */
+const SourceCell = React.memo(({ item }) => {
+  const source = item.source || 'web';
+  const sourceConfig = {
+    web: { icon: Globe, label: 'Web', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100' },
+    pos: { icon: Monitor, label: 'POS', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-100' },
+    api: { icon: Server, label: 'API', color: 'text-gray-600', bg: 'bg-gray-50 border-gray-100' },
+  };
+  const config = sourceConfig[source] || sourceConfig.web;
+  const Icon = config.icon;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs border ${config.bg}`}>
+      <Icon className={`h-3.5 w-3.5 ${config.color}`} />
+      <span className={config.color}>{config.label}</span>
+    </span>
+  );
+});
+SourceCell.displayName = "SourceCell";
 
 const MethodCell = React.memo(({ item }) => {
   const method = item.method;
@@ -52,17 +94,52 @@ const MethodCell = React.memo(({ item }) => {
 });
 MethodCell.displayName = "MethodCell";
 
+/**
+ * Amount Cell - Shows gross amount with flow-based coloring
+ * Uses flow to determine color (inflow = green, outflow = red)
+ */
 const AmountCell = React.memo(({ item }) => {
-  const isIncome = item.type === 'income';
+  const isInflow = item.flow === 'inflow';
   const value = Number(item.amount) || 0;
   const amountBdt = value / 100;
-  const sign = isIncome ? '' : '-';
-  const color = isIncome ? 'text-emerald-600' : 'text-rose-600';
+  const sign = isInflow ? '+' : '-';
+  const color = isInflow ? 'text-emerald-600' : 'text-rose-600';
   return (
     <div className={`text-sm font-medium ${color}`}>{sign}৳{amountBdt.toLocaleString()}</div>
   );
 });
 AmountCell.displayName = "AmountCell";
+
+/**
+ * Net Amount Cell - Shows net amount (amount - fee)
+ * Useful for seeing actual received/paid amount after fees
+ */
+const NetAmountCell = React.memo(({ item }) => {
+  const isInflow = item.flow === 'inflow';
+  // Use net if available, otherwise calculate from amount - fee
+  const netValue = item.net ?? (Number(item.amount) - Number(item.fee || 0));
+  const netBdt = netValue / 100;
+  const color = isInflow ? 'text-emerald-700' : 'text-rose-700';
+  const fee = Number(item.fee || 0) / 100;
+  const tax = Number(item.tax || 0) / 100;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className={`text-sm font-medium ${color} cursor-help`}>৳{netBdt.toLocaleString()}</div>
+      </TooltipTrigger>
+      <TooltipContent>
+        <div className="text-xs space-y-1">
+          <div>Gross: ৳{(Number(item.amount) / 100).toLocaleString()}</div>
+          {fee > 0 && <div>Fee: ৳{fee.toLocaleString()}</div>}
+          {tax > 0 && <div>Tax: ৳{tax.toLocaleString()}</div>}
+          <div className="font-medium">Net: ৳{netBdt.toLocaleString()}</div>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  );
+});
+NetAmountCell.displayName = "NetAmountCell";
 
 const StatusCell = React.memo(({ item }) => {
   const status = item.status || 'pending';
@@ -114,9 +191,21 @@ export const transactionsColumns = (onEdit, onDelete) => [
     enableSorting: false,
   },
   {
+    id: 'flow',
+    header: 'Flow',
+    cell: ({ row }) => <FlowCell item={row.original} />,
+    enableSorting: true,
+  },
+  {
     id: 'type',
     header: 'Type',
     cell: ({ row }) => <TypeCell item={row.original} />,
+    enableSorting: true,
+  },
+  {
+    id: 'source',
+    header: 'Source',
+    cell: ({ row }) => <SourceCell item={row.original} />,
     enableSorting: true,
   },
   {
@@ -133,8 +222,14 @@ export const transactionsColumns = (onEdit, onDelete) => [
   },
   {
     id: 'amount',
-    header: 'Amount',
+    header: 'Gross',
     cell: ({ row }) => <AmountCell item={row.original} />,
+    enableSorting: true,
+  },
+  {
+    id: 'net',
+    header: 'Net',
+    cell: ({ row }) => <NetAmountCell item={row.original} />,
     enableSorting: true,
   },
   {

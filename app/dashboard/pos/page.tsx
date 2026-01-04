@@ -1,6 +1,7 @@
 import { auth } from "@/app/(auth)/auth";
-import { PageHeader } from "@/components/custom/dashboard/page-header";
 import { PosClient } from "@/feature/pos";
+import { PageHeader } from "@classytic/clarity/dashboard";
+import { ModeToggle } from "@classytic/clarity";
 
 export const metadata = {
   title: "POS | Dashboard",
@@ -20,7 +21,7 @@ export default async function PosPage() {
     <div className="absolute inset-0 flex flex-col gap-2">
       <div className="mx-4">
         
-      <PageHeader items={breadcrumbItems} />
+      <PageHeader items={breadcrumbItems} actions={<ModeToggle />} />
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">
         <PosClient token={token} />

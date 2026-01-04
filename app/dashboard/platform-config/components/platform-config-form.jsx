@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { usePlatformConfig, useUpdatePlatformConfig } from "@/hooks/query/usePlatformConfig";
+import { usePlatformConfig, useUpdatePlatformConfig } from "@/hooks/query";
 import { platformConfigSchema } from "@/schemas/platform-config.schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

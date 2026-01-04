@@ -1,7 +1,7 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { Container } from "@/components/layout/Container";
+import { Container } from "@classytic/clarity/layout";
 
 export function CheckoutSkeleton() {
   return (

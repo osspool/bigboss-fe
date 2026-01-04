@@ -21,7 +21,7 @@ export function ProductSort({ value, onChange }: ProductSortProps) {
   const selectedLabel = selectedOption?.label || "Sort";
 
   return (
-    <Select value={value} onValueChange={(val) => onChange(val as SortValue)}>
+    <Select value={value} onValueChange={(val: string) => onChange(val as SortValue)}>
       <SelectTrigger className="w-[180px] h-9 text-sm">
         <SelectValue placeholder="Sort by">{selectedLabel}</SelectValue>
       </SelectTrigger>

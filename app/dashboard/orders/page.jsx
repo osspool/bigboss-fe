@@ -1,6 +1,7 @@
 import { auth } from "@/app/(auth)/auth";
 import { OrdersClient } from "./OrdersClient";
-import { PageHeader } from "@/components/custom/dashboard/page-header";
+import { PageHeader } from "@classytic/clarity/dashboard";
+import { ModeToggle } from "@classytic/clarity";
 
 export const metadata = {
   title: "Orders | Dashboard",
@@ -21,7 +22,7 @@ export default async function OrdersPage({ searchParams }) {
 
   return (
     <div className="flex flex-1 flex-col gap-2">
-      <PageHeader items={breadcrumbItems} />
+      <PageHeader items={breadcrumbItems} actions={<ModeToggle />} />
       <div className="flex-1">
         <OrdersClient
           token={accessToken}

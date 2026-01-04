@@ -1,8 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { handleApiRequest } from "@/api/api-handler";
-import { forgetPassApi, resetPassApi } from "@/api/user-data";
+import { handleApiRequest, forgetPassApi, resetPassApi } from "@/lib/sdk";
 import { signIn } from "./auth";
 
 const authLoginSchema = z.object({

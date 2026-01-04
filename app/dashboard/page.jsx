@@ -1,7 +1,8 @@
 // app/dashboard/page.jsx
 import { auth } from "@/app/(auth)/auth";
-import { PageHeader } from "@/components/custom/dashboard/page-header";
 import { DashboardUi } from "./components/DashboardUi";
+import { PageHeader } from "@classytic/clarity/dashboard";
+import { ModeToggle } from "@classytic/clarity";
 
 /**
  * Dashboard Page
@@ -20,7 +21,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader items={breadcrumbItems} />
+      <PageHeader items={breadcrumbItems} actions={<ModeToggle />} />
       <div className="container px-4 py-6">
         <DashboardUi token={accessToken} />
       </div>

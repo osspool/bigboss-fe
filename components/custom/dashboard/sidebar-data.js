@@ -17,7 +17,7 @@ import {
   Ruler,
 } from "lucide-react";
 
-import { UserRole } from "@/api/user-data";
+import { UserRole } from "@classytic/commerce-sdk/auth";
 
 
 
@@ -55,7 +55,6 @@ export const data = {
           title: "Dashboard",
           url: "/dashboard",
           icon: LayoutDashboard,
-          isActive: true,
           items: [],
           roles: ["admin", "superadmin", "store-manager", "finance-admin", "finance-manager", "warehouse-admin", "warehouse-staff"],
         },
@@ -63,7 +62,6 @@ export const data = {
           title: "Media Library",
           url: "/dashboard/media",
           icon: ImagesIcon,
-          isActive: true,
           items: [],
           roles: ["admin", "superadmin", "store-manager", "warehouse-admin", "warehouse-staff"],
         },

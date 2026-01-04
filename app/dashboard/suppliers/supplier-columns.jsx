@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Building2, Phone, Mail, Calendar, Pencil, CreditCard, User, Hash } from "lucide-react";
-import { ActionDropdown } from "@/components/custom/ui/dropdown-wrapper";
+import { ActionDropdown } from "@classytic/clarity";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const CodeCell = React.memo(({ item }) => {

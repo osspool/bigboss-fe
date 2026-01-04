@@ -2,11 +2,10 @@
 
 import { useState, useMemo, memo } from "react";
 import { format } from "date-fns";
-import { useTransactionsByReference } from "@/hooks/query/useTransactions";
+import { useTransactionsByReference } from "@/hooks/query";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
 import { Receipt, Eye, CreditCard, Loader2, Wallet, Building2, User } from "lucide-react";
-import { CardWrapper } from "@/components/custom/ui/card-wrapper";
-import { DialogWrapper } from "@/components/custom/ui/dialog-wrapper";
+import { CardWrapper, DialogWrapper } from "@classytic/clarity";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";

@@ -4,11 +4,11 @@ import { useState, type ReactNode } from "react";
 import { Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
+import { SheetWrapper } from "@classytic/clarity";
 import { formatPrice } from "@/lib/constants";
 import { formatVariantAttributes } from "@/lib/commerce-utils";
 import { cn } from "@/lib/utils";
-import type { PosProduct, VariantStock } from "@/types/pos.types";
+import type { PosProduct, VariantStock } from "@/types";
 import { CrossBranchStockLookup } from "../requests/cross-branch-stock-lookup";
 
 const LOW_STOCK_THRESHOLD = 10;

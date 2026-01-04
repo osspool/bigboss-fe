@@ -5,14 +5,13 @@ import { useForm } from "react-hook-form";
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FormSheet } from "@/components/custom/ui/sheet-wrapper";
+import { FormSheet, DynamicTabs } from "@classytic/clarity";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormGenerator } from "@/components/form/form-system";
-import { DynamicTabs } from "@/components/custom/ui/tabs-wrapper";
-import { useCMSPage, useCMSUpdate } from "@/hooks/query/useCMS";
+import { useCMSPage, useCMSUpdate } from "@/hooks/query";
 import { getDefaultPageContent } from "@/constants/cms-pages";
 import { getFormSchemaForPage } from "./forms";
 import { toast } from "sonner";
@@ -75,12 +74,12 @@ export function CMSPageSheet({ token, open, onOpenChange, pageConfig }) {
   const [activeTab, setActiveTab] = useState("hero");
 
   // Fetch existing page data
-  const { data: existingPage, isLoading } = useCMSPage(slug, {
+  const { page: existingPage, isLoading } = useCMSPage(slug, {
     enabled: !!slug,
   });
 
   // Update mutation - backend auto-creates if missing
-  const updateMutation = useCMSUpdate(token);
+  const { updatePage, isUpdating } = useCMSUpdate(token);
 
   const formSchema = useMemo(() => {
     if (!slug) return null;
@@ -125,7 +124,7 @@ export function CMSPageSheet({ token, open, onOpenChange, pageConfig }) {
       const content = unflattenObject(flatContent);
 
       // Single update call - backend handles create-if-missing
-      await updateMutation.mutateAsync({
+      await updatePage({
         slug,
         data: {
           name: pageConfig.name,
@@ -157,7 +156,7 @@ export function CMSPageSheet({ token, open, onOpenChange, pageConfig }) {
             if (section.render) {
               return (
                 <div key={section.id || index}>
-                  {section.render({ control: form.control, disabled: updateMutation.isPending })}
+                  {section.render({ control: form.control, disabled: isUpdating })}
                 </div>
               );
             }
@@ -167,14 +166,14 @@ export function CMSPageSheet({ token, open, onOpenChange, pageConfig }) {
                 key={section.id || index}
                 schema={{ sections: [section] }}
                 control={form.control}
-                disabled={updateMutation.isPending}
+                disabled={isUpdating}
               />
             );
           })}
         </div>
       ),
     }));
-  }, [formSchema, form.control, updateMutation.isPending]);
+  }, [formSchema, form.control, isUpdating]);
 
   if (!pageConfig) return null;
 
@@ -187,8 +186,8 @@ export function CMSPageSheet({ token, open, onOpenChange, pageConfig }) {
       size="xl"
       formId="cms-page-form"
       submitLabel="Save Page"
-      submitDisabled={updateMutation.isPending}
-      submitLoading={updateMutation.isPending}
+      submitDisabled={isUpdating}
+      submitLoading={isUpdating}
     >
       <Form {...form}>
         <form id="cms-page-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -247,7 +246,7 @@ export function CMSPageSheet({ token, open, onOpenChange, pageConfig }) {
               scrollable
             />
           ) : formSchema ? (
-            <FormGenerator schema={formSchema} control={form.control} disabled={updateMutation.isPending} />
+            <FormGenerator schema={formSchema} control={form.control} disabled={isUpdating} />
           ) : null}
 
           {/* SEO Metadata */}

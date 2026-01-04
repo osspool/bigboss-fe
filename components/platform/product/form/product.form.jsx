@@ -5,13 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { productCreateSchema, productUpdateSchema } from "@/schemas/product.schema";
 import { FormGenerator } from "@/components/form/form-system";
-import { FormErrorSummary } from "@/components/form/form-utils/FormErrorSummary";
+import { FormErrorSummary } from "@classytic/clarity";
 import { createProductFormSchema } from "./product-form-schema";
-import { useProductActions } from "@/hooks/query/useProducts";
-import { DynamicTabs } from "@/components/custom/ui/tabs-wrapper";
+import { useProductActions } from "@/hooks/query";
+import { DynamicTabs } from "@classytic/clarity";
 import { revalidateProduct } from "@/lib/revalidation";
-import { useCategoryTree, getParentCategoryOptions, getAllCategoryOptions } from "@/hooks/query/useCategories";
-import { useSizeGuides, getSizeGuideOptions } from "@/hooks/query/useSizeGuides";
+import { useCategoryTree, getParentCategoryOptions, getAllCategoryOptions } from "@/hooks/query";
+import { useSizeGuides, getSizeGuideOptions } from "@/hooks/query";
 import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 const normalizeStyleValue = (value = "") =>
@@ -109,8 +109,9 @@ export function ProductForm({
       parentCategoryOptions,
       categoryOptions,
       sizeGuideOptions,
+      token,
     }),
-    [isEdit, product, parentCategoryOptions, categoryOptions, sizeGuideOptions]
+    [isEdit, product, parentCategoryOptions, categoryOptions, sizeGuideOptions, token]
   );
 
   const handleSubmitForm = useCallback(

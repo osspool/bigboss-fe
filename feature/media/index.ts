@@ -1,5 +1,5 @@
 // Media Feature
-// BE types: import from '@/types/media.types'
+// BE types: import from '@/types'
 // Platform API: import from '@/api/platform/media-api'
 
 // Feature-specific exports only
@@ -23,3 +23,6 @@ export { MediaGrid } from './components/MediaGrid';
 export { MediaUploader } from './components/MediaUploader';
 export { MediaDetailPanel } from './components/MediaDetailPanel';
 export { FolderSidebar } from './components/FolderSidebar';
+export { MediaPickerDialog } from './components/MediaPickerDialog';
+export { MediaLibraryPicker } from './components/MediaLibraryPicker';
+export type { MediaPickerValue } from './components/MediaPickerDialog';

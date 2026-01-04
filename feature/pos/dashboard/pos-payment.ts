@@ -1,4 +1,4 @@
-import type { PaymentMethodConfig } from "@/types/common.types";
+import type { PaymentMethodConfig } from "@/types";
 import type { PosPaymentMethod } from "./pos.types";
 
 /**

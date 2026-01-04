@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Filter, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
+import { SheetWrapper } from "@classytic/clarity";
 import { ProductFilters } from "./ProductFilters";
 import { Badge } from "@/components/ui/badge";
 import type { PriceRange, ProductFilterState } from "@/types";

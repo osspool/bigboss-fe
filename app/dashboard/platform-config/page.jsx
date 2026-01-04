@@ -1,8 +1,9 @@
 import { auth } from "@/app/(auth)/auth";
-import { PageHeader } from "@/components/custom/dashboard/page-header";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PlatformConfigForm } from "./components/platform-config-form";
+import { PageHeader } from "@classytic/clarity/dashboard";
+import { ModeToggle } from "@classytic/clarity";
 
 export const metadata = {
   title: "Platform Configuration",
@@ -24,7 +25,7 @@ export default async function PlatformConfigPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-2">
-      <PageHeader items={breadcrumbItems} />
+      <PageHeader items={breadcrumbItems} actions={<ModeToggle />} />
       <div className="flex-1 p-6">
         <div className="mx-auto max-w-5xl">
           <div className="mb-6 space-y-1">

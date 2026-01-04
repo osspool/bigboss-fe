@@ -1,9 +1,8 @@
 "use client";
 
-import * as Search from "@/components/shared/search";
+import { Search, SelectInput } from "@classytic/clarity";
 import { useCategorySearch } from "@/hooks/filter/use-category-search";
-import SelectInput from "@/components/form/form-utils/select-input";
-import { useCategoryTree, getParentCategoryOptions } from "@/hooks/query/useCategories";
+import { useCategoryTree, getParentCategoryOptions } from "@/hooks/query";
 
 const SEARCH_TYPE_OPTIONS = [
   { value: "name", label: "Name" },

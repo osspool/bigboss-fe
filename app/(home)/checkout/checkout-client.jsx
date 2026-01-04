@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, ShoppingCart, Gift } from "lucide-react";
-import { Container } from "@/components/layout/Container";
+import { Container } from "@classytic/clarity/layout";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -14,10 +14,10 @@ import {
   PaymentMethods,
 } from "@/components/platform/checkout";
 import { AddressSection } from "@/components/platform/checkout/AddressSection";
-import { useCart } from "@/hooks/query/useCart";
-import { useOrderActions } from "@/hooks/query/useOrders";
-import { usePlatformConfig } from "@/hooks/query/usePlatformConfig";
-import { useDeliveryCharge } from "@/hooks/query/useLogistics";
+import { useCart } from "@/hooks/query";
+import { useCustomerOrderActions } from "@/hooks/query";
+import { usePlatformConfig } from "@/hooks/query";
+import { useDeliveryCharge } from "@/hooks/query";
 import { formatPrice } from "@/lib/constants";
 import { getZoneName, getArea } from "@/lib/logistics-utils";
 import { toast } from "sonner";
@@ -36,7 +36,7 @@ export default function CheckoutClient({ token, userId }) {
   // Data hooks
   const { items, subtotal, clearCart, getItemPrice, isLoading: isCartLoading } = useCart(token);
   const { config, isLoading: isConfigLoading } = usePlatformConfig(null);
-  const { createOrder, isCreating } = useOrderActions(token);
+  const { checkout, isCheckingOut } = useCustomerOrderActions(token);
 
   // Selected address state (includes areaId, zoneId, providerAreaIds for shipping)
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -272,11 +272,11 @@ export default function CheckoutClient({ token, userId }) {
 
       try {
         const payload = buildOrderPayload();
-        const result = await createOrder(payload);
+        const result = await checkout(payload);
 
         // Navigate to success page
-        if (result?.data?._id) {
-          router.push(`/checkout/success?orderId=${result.data._id}`);
+        if (result?._id) {
+          router.push(`/checkout/success?orderId=${result._id}`);
         } else {
           router.push("/profile/my-orders");
         }
@@ -284,7 +284,7 @@ export default function CheckoutClient({ token, userId }) {
         console.error("Order creation failed:", error);
       }
     },
-    [validateForm, validatePaymentData, buildOrderPayload, createOrder, router]
+    [validateForm, validatePaymentData, buildOrderPayload, checkout, router]
   );
 
   // ==================== Loading & Empty States ====================
@@ -404,9 +404,9 @@ export default function CheckoutClient({ token, userId }) {
               type="submit"
               size="lg"
               className="w-full h-14 text-base"
-              disabled={isCreating || !selectedAddress?.areaId || isChargeLoading}
+              disabled={isCheckingOut || !selectedAddress?.areaId || isChargeLoading}
             >
-              {isCreating ? (
+              {isCheckingOut ? (
                 "Processing..."
               ) : isChargeLoading ? (
                 "Calculating delivery..."

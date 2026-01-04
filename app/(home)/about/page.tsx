@@ -1,9 +1,8 @@
 import { Gem, Heart, Leaf, Users, LucideIcon } from "lucide-react";
-import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/layout/Container";
-import { getCmsPage } from "@/api/platform/cms-api";
+import { Section, Container } from "@classytic/clarity/layout";
+import { getCmsPage } from "@/lib/sdk";
 import { cmsPages } from "@/lib/cms-data";
-import type { AboutPageContent } from "@/types/cms.types";
+import type { AboutPageContent } from "@/types";
 
 export const revalidate = 3600;
 

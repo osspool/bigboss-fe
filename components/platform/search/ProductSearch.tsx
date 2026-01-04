@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/constants";
-import { useProducts } from "@/hooks/query/useProducts";
+import { useProducts } from "@/hooks/query";
 import type { Product } from "@/types";
 
 interface ProductSearchProps {

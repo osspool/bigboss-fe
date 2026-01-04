@@ -1,4 +1,4 @@
-import type { Branch } from "@/types/branch.types";
+import type { Branch } from "@/types";
 
 // ============================================
 // ROLE NORMALIZATION & BASIC CHECKS

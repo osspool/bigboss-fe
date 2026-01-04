@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { FinanceByDay } from "@/types/finance.types";
+import type { FinanceByDay } from "@/types";
 
 interface DailyBreakdownProps {
   data: FinanceByDay[];

@@ -39,15 +39,36 @@ export const TRANSACTION_STATUS_VALUES = Object.values(TRANSACTION_STATUS);
 // Auto-generate options from values using utility function
 export const TRANSACTION_STATUS_OPTIONS = mapToOptions(TRANSACTION_STATUS_VALUES);
 
-// ============ TRANSACTION TYPE ============
+// ============ TRANSACTION FLOW ============
+/**
+ * Transaction Flow - Direction of money movement
+ * Backend uses 'flow' field with inflow/outflow values
+ * - inflow: Money coming in (sales, income)
+ * - outflow: Money going out (expenses, refunds)
+ */
+export const TRANSACTION_FLOW = {
+  INFLOW: 'inflow',
+  OUTFLOW: 'outflow',
+};
+
+export const TRANSACTION_FLOW_VALUES = Object.values(TRANSACTION_FLOW);
+
+// Auto-generate options from values using utility function
+export const TRANSACTION_FLOW_OPTIONS = mapToOptions(TRANSACTION_FLOW_VALUES);
+
+/**
+ * @deprecated Use TRANSACTION_FLOW instead.
+ * Backend uses flow (inflow/outflow), not type (income/expense).
+ */
 export const TRANSACTION_TYPES = {
   INCOME: 'income',
   EXPENSE: 'expense',
 };
 
+/** @deprecated Use TRANSACTION_FLOW_VALUES instead */
 export const TRANSACTION_TYPE_VALUES = Object.values(TRANSACTION_TYPES);
 
-// Auto-generate options from values using utility function
+/** @deprecated Use TRANSACTION_FLOW_OPTIONS instead */
 export const TRANSACTION_TYPE_OPTIONS = mapToOptions(TRANSACTION_TYPE_VALUES);
 
 // ============ TRANSACTION CATEGORIES ============
@@ -118,10 +139,15 @@ export const LIBRARY_CATEGORY_VALUES = [
 ];
 
 /**
- * Helper to categorize transaction categories by type
+ * Helper to categorize transaction categories by flow direction
  * Useful for P&L reports and accounting views
+ *
+ * Note: Backend uses `flow` field (inflow/outflow) for direction.
+ * These helpers map category (type field) to expected flow.
  */
-export const INCOME_CATEGORIES = [
+
+/** Categories that typically have flow: 'inflow' (money coming in) */
+export const INFLOW_CATEGORIES = [
   TRANSACTION_CATEGORIES.ORDER_PURCHASE,
   TRANSACTION_CATEGORIES.ORDER_SUBSCRIPTION,
   TRANSACTION_CATEGORIES.WHOLESALE_SALE,
@@ -136,7 +162,8 @@ export const INCOME_CATEGORIES = [
   TRANSACTION_CATEGORIES.OTHER_INCOME,
 ];
 
-export const EXPENSE_CATEGORIES = [
+/** Categories that typically have flow: 'outflow' (money going out) */
+export const OUTFLOW_CATEGORIES = [
   TRANSACTION_CATEGORIES.INVENTORY_PURCHASE,
   TRANSACTION_CATEGORIES.INVENTORY_LOSS,
   TRANSACTION_CATEGORIES.INVENTORY_ADJUSTMENT,
@@ -148,7 +175,14 @@ export const EXPENSE_CATEGORIES = [
   TRANSACTION_CATEGORIES.MAINTENANCE,
   TRANSACTION_CATEGORIES.MARKETING,
   TRANSACTION_CATEGORIES.OTHER_EXPENSE,
+  'refund', // Refunds are outflows
 ];
+
+/** @deprecated Use INFLOW_CATEGORIES instead */
+export const INCOME_CATEGORIES = INFLOW_CATEGORIES;
+
+/** @deprecated Use OUTFLOW_CATEGORIES instead */
+export const EXPENSE_CATEGORIES = OUTFLOW_CATEGORIES;
 
 // Manual income/expense categories (for form filtering)
 export const MANUAL_INCOME_CATEGORIES = [
@@ -212,6 +246,7 @@ export const PAYMENT_METHOD = {
   CARD: 'card',
   ONLINE: 'online',
   MANUAL: 'manual',
+  SPLIT: 'split',
 };
 
 export const PAYMENT_METHOD_VALUES = Object.values(PAYMENT_METHOD);
@@ -229,6 +264,7 @@ export const PAYMENT_METHOD_OPTIONS = createOptionsFromEnum(PAYMENT_METHOD, {
   card: 'Card',
   online: 'Online',
   manual: 'Manual',
+  split: 'Split Payment',
 });
 
 // ============ PAYMENT GATEWAY TYPES ============
@@ -371,9 +407,14 @@ export default {
   TRANSACTION_STATUS,
   TRANSACTION_STATUS_VALUES,
   TRANSACTION_STATUS_OPTIONS,
-  TRANSACTION_TYPES,
-  TRANSACTION_TYPE_VALUES,
-  TRANSACTION_TYPE_OPTIONS,
+  // Flow (direction of money)
+  TRANSACTION_FLOW,
+  TRANSACTION_FLOW_VALUES,
+  TRANSACTION_FLOW_OPTIONS,
+  // Type/Category
+  TRANSACTION_TYPES, // deprecated
+  TRANSACTION_TYPE_VALUES, // deprecated
+  TRANSACTION_TYPE_OPTIONS, // deprecated
   TRANSACTION_CATEGORIES,
   TRANSACTION_CATEGORIES_VALUES,
   TRANSACTION_CATEGORY_OPTIONS,
@@ -385,8 +426,11 @@ export default {
   TRANSACTION_TARGET_MODELS,
   TRANSACTION_TARGET_MODEL_VALUES,
   TRANSACTION_TARGET_MODEL_OPTIONS,
-  INCOME_CATEGORIES,
-  EXPENSE_CATEGORIES,
+  // Flow-based category groupings
+  INFLOW_CATEGORIES,
+  OUTFLOW_CATEGORIES,
+  INCOME_CATEGORIES, // deprecated
+  EXPENSE_CATEGORIES, // deprecated
   MANUAL_INCOME_CATEGORIES,
   MANUAL_EXPENSE_CATEGORIES,
   // Payment

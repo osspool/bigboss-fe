@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useBranches } from "@/hooks/query/useBranches";
+import { useBranches } from "@/hooks/query";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
-import { financeApi } from "@/api/platform/finance-api";
+import { financeApi } from "@classytic/commerce-sdk/finance";
 import {
   FinanceSummaryCard,
   FinanceExportButton,
@@ -19,7 +19,7 @@ import type {
   FinanceByMethod,
   FinanceByDay,
   FinanceTotals,
-} from "@/types/finance.types";
+} from "@/types";
 
 interface FinanceClientProps {
   token: string;

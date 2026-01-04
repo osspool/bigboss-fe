@@ -5,9 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { supplierCreateSchema, supplierUpdateSchema } from "@/schemas/supplier.schema";
 import { FormGenerator } from "@/components/form/form-system";
-import { FormErrorSummary } from "@/components/form/form-utils/FormErrorSummary";
+import { FormErrorSummary } from "@classytic/clarity";
 import { createSupplierFormSchema } from "./supplier-form-schema";
-import { useSupplierActions } from "@/hooks/query/useSuppliers";
+import { useSupplierActions } from "@/hooks/query";
 import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 export function SupplierForm({

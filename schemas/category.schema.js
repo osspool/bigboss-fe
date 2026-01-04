@@ -66,6 +66,12 @@ export const categoryUpdateSchema = z.object({
 
   // Note: slug cannot be changed after creation
 
+  // Parent category slug (can be changed to move category)
+  parent: z.string()
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+
   description: z.string()
     .max(500, "Description must be less than 500 characters")
     .optional()

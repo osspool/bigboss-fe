@@ -45,7 +45,7 @@ export function ScanAddControls({
           </InputGroupAddon>
           <InputGroupInput
             value={code}
-            onChange={(e) => onCodeChange(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onCodeChange(e.target.value)}
             placeholder="e.g. BARCODE123 or SKU"
           />
         </InputGroup>
@@ -60,7 +60,7 @@ export function ScanAddControls({
           </InputGroupAddon>
           <InputGroupInput
             value={quantity}
-            onChange={(e) => onQuantityChange(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onQuantityChange(e.target.value)}
             inputMode="numeric"
           />
         </InputGroup>

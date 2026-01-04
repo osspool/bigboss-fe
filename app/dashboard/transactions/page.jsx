@@ -1,6 +1,7 @@
 import { auth } from "@/app/(auth)/auth";
-import { PageHeader } from "@/components/custom/dashboard/page-header";
 import { TransactionsClient } from "./TransactionsClient";
+import { PageHeader } from "@classytic/clarity/dashboard";
+import { ModeToggle } from "@classytic/clarity";
 
 export default async function ParlourTransactionsPage() {
   const session = await auth();
@@ -14,7 +15,7 @@ export default async function ParlourTransactionsPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-2">
-      <PageHeader items={breadcrumbItems} />
+      <PageHeader items={breadcrumbItems} actions={<ModeToggle />} />
       <div className="flex-1">
         <TransactionsClient token={token} userRoles={userRoles} />
       </div>

@@ -39,6 +39,7 @@ const DISCOUNT_TYPE_OPTIONS = [
  * @param {Array} options.parentCategoryOptions - Parent category options for select
  * @param {Array} options.categoryOptions - All category options (flattened tree)
  * @param {Array} options.sizeGuideOptions - Size guide options for select
+ * @param {string} options.token - Auth token for media operations
  * @returns {Object} Form schema with tabs structure
  */
 export const createProductFormSchema = ({
@@ -47,6 +48,7 @@ export const createProductFormSchema = ({
   parentCategoryOptions = [],
   categoryOptions = [],
   sizeGuideOptions = [],
+  token = null,
 }) => {
   return {
     // Define tabs for the form (compact labels for sheet context)
@@ -224,7 +226,7 @@ export const createProductFormSchema = ({
         {
           id: "images-section",
           render: ({ control, disabled }) => (
-            <ImageManager control={control} disabled={disabled} />
+            <ImageManager control={control} disabled={disabled} token={token} />
           ),
         },
       ],

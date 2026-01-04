@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
+import { SheetWrapper } from "@classytic/clarity";
 import { cn } from "@/lib/utils";
-import type { StockRequest, StockRequestItem } from "@/types/inventory.types";
-import { useStockRequestActions } from "@/hooks/query/useStockRequests";
+import type { StockRequest, StockRequestItem } from "@/types";
+import { useStockRequestActions } from "@/hooks/query";
 
 interface FulfillRequestSheetProps {
   open: boolean;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAnalyticsDashboard } from "@/hooks/query/useAnalytics";
+import { useAnalyticsDashboard } from "@/hooks/query";
 import {
   Users,
   TrendingUp,
@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function DashboardUi({ token }) {
-  const { data, isLoading, error } = useAnalyticsDashboard({ token, period: '30d' });
+  const { data, isLoading, error } = useAnalyticsDashboard(token, { period: '30d' });
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -35,7 +35,8 @@ export function DashboardUi({ token }) {
     );
   }
 
-  const analytics = data?.data || {};
+  // Hook's select already unwraps response.data
+  const analytics = data || {};
   const { summary, today, revenue, period, orders } = analytics;
 
   // Helper to format currency (convert pence to pounds)

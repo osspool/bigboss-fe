@@ -1,8 +1,7 @@
 "use client";
 
-import * as Search from "@/components/shared/search";
+import { Search, SelectInput } from "@classytic/clarity";
 import { useCouponSearch } from "@/hooks/filter/use-coupon-search";
-import SelectInput from "@/components/form/form-utils/select-input";
 
 const SEARCH_TYPE_OPTIONS = [
   { value: "code", label: "Coupon Code" },

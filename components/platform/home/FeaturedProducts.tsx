@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/layout/Container";
+import { Section, Container } from "@classytic/clarity/layout";
 import { ProductGrid } from "@/components/platform/product/ProductGrid";
 import { Button } from "@/components/ui/button";
-import { useProducts } from "@/hooks/query/useProducts";
+import { useProducts } from "@/hooks/query";
 
 interface FeaturedProductsData {
   badge?: string;

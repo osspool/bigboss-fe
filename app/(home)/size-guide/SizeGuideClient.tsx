@@ -1,7 +1,6 @@
 "use client";
 
-import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/layout/Container";
+import { Section, Container } from "@classytic/clarity/layout";
 import { SizeTable } from "@/feature/size-guide";
 import { SIZE_GUIDE } from "@/data/constants";
 import { useSizeGuideContext } from "@/contexts/SizeGuideContext";

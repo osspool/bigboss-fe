@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, Loader2, ArrowRight } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useProducts } from "@/hooks/query/useProducts";
+import { useProducts } from "@/hooks/query";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";

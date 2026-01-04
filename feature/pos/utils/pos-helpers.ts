@@ -2,8 +2,8 @@
  * POS Helper Utilities
  */
 
-import type { MembershipConfig, MembershipTierConfig } from "@/types/platform.types";
-import type { Customer } from "@/types/customer.types";
+import type { MembershipConfig, MembershipTierConfig } from "@/types";
+import type { Customer } from "@/types";
 
 /**
  * Extract order ID from API response
@@ -270,7 +270,7 @@ export function isPhoneSearch(query: string): { exact: boolean; likely: boolean 
 export function transformOrderToReceipt(
   orderResponse: unknown,
   branchInfo: { name: string; phone?: string }
-): import("@/types/pos.types").PosReceiptData | null {
+): import("@/types").PosReceiptData | null {
   if (!orderResponse || typeof orderResponse !== "object") return null;
 
   const response = orderResponse as Record<string, unknown>;

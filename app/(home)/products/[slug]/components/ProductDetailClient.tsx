@@ -19,8 +19,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Container } from "@/components/layout/Container";
-import { Section } from "@/components/layout/Section";
+import { Section, Container } from "@classytic/clarity/layout";
 import {
   ProductGallery,
   ProductInfo,
@@ -32,7 +31,7 @@ import {
 } from "@/components/platform/product/detail";
 import { ProductGrid } from "@/components/platform/product/ProductGrid";
 import { MarkdownPreview } from "@/components/form/lite-editor/MarkdownPreview";
-import { useCart } from "@/hooks/query/useCart";
+import { useCart } from "@/hooks/query";
 import { formatPrice, getDiscountPercentage } from "@/lib/constants";
 import type { Product } from "@/types";
 

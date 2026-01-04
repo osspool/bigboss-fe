@@ -1,9 +1,16 @@
 /**
  * Common Types
  *
- * Shared types used across multiple modules in the application.
- * These types are foundational and imported by other type modules.
+ * App-specific shared types not available in @classytic/commerce-sdk.
+ * For SDK types, import from @/types (which re-exports from SDK).
+ *
+ * Types available in SDK (don't duplicate here):
+ * - ApiResponse, PaymentMethod, PaymentGatewayType → @classytic/commerce-sdk/transaction
+ * - PaymentStatus, ShippingProvider, ShippingStatus → @classytic/commerce-sdk/sales
+ * - PaymentMethodConfig → @classytic/commerce-sdk/platform
  */
+
+import type { PaymentGatewayType } from "@classytic/commerce-sdk/transaction";
 
 // ==================== API Response Types ====================
 
@@ -23,17 +30,6 @@ export interface PaginationInfo {
   hasNext: boolean;
   /** Whether there is a previous page available */
   hasPrev: boolean;
-}
-
-/**
- * Generic API response wrapper
- * @template T - The type of data being returned
- */
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-  error?: string;
 }
 
 /**
@@ -121,73 +117,10 @@ export interface Stats {
   viewCount?: number;
 }
 
-// ==================== Payment Shared Types ====================
+// ==================== Payment Detail Types ====================
 
 /**
- * Gateway type for payments
- */
-export type PaymentGatewayType = "manual" | "stripe" | "sslcommerz";
-
-/**
- * Supported payment methods for orders/transactions
- * Matches backend: common/revenue/enums.js PAYMENT_METHOD + 'manual'
- *
- * For MFS (Mobile Financial Services): bkash, nagad, rocket
- * These map directly to platform config's PaymentMethodConfig.provider field
- */
-export type PaymentMethod =
-  | "bkash"
-  | "nagad"
-  | "rocket"
-  | "bank_transfer"
-  | "card"
-  | "online"
-  | "cash"
-  | "manual";
-
-/**
- * Payment status lifecycle
- */
-export type PaymentStatus =
-  | "pending"
-  | "verified"
-  | "failed"
-  | "refunded"
-  | "partially_refunded"
-  | "cancelled";
-
-/**
- * Shipping provider types
- * Based on: order.md shipping providers
- */
-export type ShippingProvider =
-  | "redx"
-  | "pathao"
-  | "steadfast"
-  | "paperfly"
-  | "sundarban"
-  | "sa_paribahan"
-  | "dhl"
-  | "fedex"
-  | "other";
-
-/**
- * Shipping status lifecycle
- * Based on: order.md shipping status flow
- */
-export type ShippingStatus =
-  | "pending"
-  | "requested"
-  | "picked_up"
-  | "in_transit"
-  | "out_for_delivery"
-  | "delivered"
-  | "failed_attempt"
-  | "returned"
-  | "cancelled";
-
-/**
- * Payment detail payload
+ * Payment detail payload (for manual payment verification UI)
  */
 export interface PaymentDetails {
   provider?: string;
@@ -201,7 +134,7 @@ export interface PaymentDetails {
 }
 
 /**
- * Gateway metadata info
+ * Gateway metadata info (for payment gateway UI)
  */
 export interface GatewayInfo {
   type: PaymentGatewayType;
@@ -212,16 +145,7 @@ export interface GatewayInfo {
   expiresAt?: string;
 }
 
-// ==================== Platform Payment Method Types ====================
-
-/**
- * Payment method types
- * - cash: Cash on delivery / in-store
- * - mfs: Mobile Financial Services (bKash, Nagad, Rocket, Upay)
- * - bank_transfer: Bank account transfers
- * - card: Credit/Debit cards
- */
-export type PaymentMethodType = 'cash' | 'mfs' | 'bank_transfer' | 'card';
+// ==================== MFS & Card Types ====================
 
 /**
  * MFS (Mobile Financial Service) providers
@@ -232,40 +156,6 @@ export type MfsProvider = 'bkash' | 'nagad' | 'rocket' | 'upay';
  * Card types accepted
  */
 export type CardType = 'visa' | 'mastercard' | 'amex' | 'unionpay' | 'other';
-
-/**
- * Platform Payment Method
- * Flexible structure supporting multiple accounts per type
- */
-export interface PaymentMethodConfig {
-  _id?: string;
-  /** Payment type */
-  type: PaymentMethodType;
-  /** Display name (e.g., "bKash Personal", "City Bank Cards") */
-  name: string;
-  /** MFS provider (bkash, nagad, rocket, upay) - for type: 'mfs' */
-  provider?: MfsProvider;
-  /** MFS wallet number */
-  walletNumber?: string;
-  /** MFS wallet name */
-  walletName?: string;
-  /** Bank name - for type: 'bank_transfer' or 'card' */
-  bankName?: string;
-  /** Bank account number */
-  accountNumber?: string;
-  /** Bank account holder name */
-  accountName?: string;
-  /** Bank branch name */
-  branchName?: string;
-  /** Bank routing number */
-  routingNumber?: string;
-  /** Card types accepted - for type: 'card' */
-  cardTypes?: CardType[];
-  /** Additional notes */
-  note?: string;
-  /** Whether this method is active */
-  isActive?: boolean;
-}
 
 // ==================== VAT/Tax Configuration Types ====================
 
@@ -328,6 +218,3 @@ export interface PlatformVatConfig {
     defaultRate: number;
   };
 }
-
-// Full PlatformConfig shape (checkout/logistics/vat/policies) lives in:
-// `docs/.fe/types/platform.types.ts`

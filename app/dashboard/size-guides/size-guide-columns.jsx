@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Ruler, Hash, Calendar, Pencil, Check, X, Trash, FileText } from "lucide-react";
-import { ActionDropdown } from "@/components/custom/ui/dropdown-wrapper";
+import { ActionDropdown } from "@classytic/clarity";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 

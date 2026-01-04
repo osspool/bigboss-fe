@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AVAILABLE_VARIATIONS, SIZES, COLORS } from "@/data/constants";
-import type { Product } from "@/types/product.types";
+import type { Product } from "@/types";
 
 type VariationAttributeFormValue = {
   name: string;
@@ -438,7 +438,7 @@ function ExistingVariants({
                           step="0.01"
                           placeholder="0.00"
                           disabled={disabled}
-                          onChange={(e) =>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             rhfField.onChange(parseFloat(e.target.value) || 0)
                           }
                         />

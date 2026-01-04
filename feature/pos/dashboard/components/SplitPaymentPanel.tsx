@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatPrice } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import type { PaymentOption, SplitPaymentEntry } from "@/types/pos.types";
+import type { PaymentOption, SplitPaymentEntry } from "@/types";
 
 interface SplitPaymentPanelProps {
   options: PaymentOption[];
@@ -78,7 +78,7 @@ export function SplitPaymentPanel({
               <div className="flex gap-2 items-center">
                 <Select
                   value={entry.paymentKey}
-                  onValueChange={(value) => onUpdate(entry.id, { paymentKey: value })}
+                  onValueChange={(value: string) => onUpdate(entry.id, { paymentKey: value })}
                 >
                   <SelectTrigger className={cn("h-9 w-[140px]", hasError && "border-destructive")}>
                     <SelectValue placeholder="Method" />

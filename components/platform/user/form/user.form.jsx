@@ -5,9 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { userUpdateSchema } from "@/schemas/user.schema";
 import { FormGenerator } from "@/components/form/form-system";
-import { FormErrorSummary } from "@/components/form/form-utils/FormErrorSummary";
+import { FormErrorSummary } from "@classytic/clarity";
 import { createUserFormSchema } from "./user-form-schema";
-import { useUserActions } from "@/hooks/query/useUsers";
+import { useUserActions } from "@/hooks/query";
 import { BranchAssignmentManager } from "./BranchAssignmentManager";
 import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 

@@ -16,6 +16,7 @@ export interface InventoryFilters {
   parentCategory: string;
   category: string;
   stockStatus: StockStatus;
+  [key: string]: unknown;
 }
 
 export interface InventoryFilterParams {
@@ -29,6 +30,7 @@ export interface InventoryFilterParams {
   categoryFilter?: string;
   inStockOnly?: boolean;
   lowStockOnly?: boolean;
+  [key: string]: unknown;
 }
 
 export interface InventorySearchHook {
@@ -36,22 +38,24 @@ export interface InventorySearchHook {
   searchValue: string;
   setSearchValue: (v: string) => void;
   searchType: SearchType;
-  setSearchType: (v: SearchType) => void;
+  setSearchType: (v: string) => void;
 
   // Filter state
   filters: InventoryFilters;
+  setFilters: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
   parentCategory: string;
   setParentCategory: (v: string) => void;
   category: string;
   setCategory: (v: string) => void;
   stockStatus: StockStatus;
   setStockStatus: (v: string) => void;
-  updateFilter: (key: string, value: string) => void;
+  updateFilter: (key: string, value: unknown) => void;
 
   // Actions
   handleSearch: () => void;
   clearSearch: () => void;
   getFilterParams: () => InventoryFilterParams;
+  getSearchParams: () => Record<string, string>;
 
   // Status flags
   hasActiveFilters: boolean;
@@ -202,13 +206,13 @@ export function useInventorySearch(options: UseInventorySearchOptions = {}): Inv
   }, [onFilterChange]);
 
   // Update individual filter
-  const updateFilter = useCallback((key: string, value: string) => {
+  const updateFilter = useCallback((key: string, value: unknown) => {
     switch (key) {
       case "parentCategory":
-        setParentCategory(value);
+        setParentCategory(value as string);
         break;
       case "category":
-        setCategory(value);
+        setCategory(value as string);
         break;
       case "stockStatus":
         setStockStatus(value as StockStatus);
@@ -218,15 +222,26 @@ export function useInventorySearch(options: UseInventorySearchOptions = {}): Inv
     }
   }, []);
 
+  // Set multiple filters at once - compatible with React.Dispatch<SetStateAction<Record<string, unknown>>>
+  const setFilters: React.Dispatch<React.SetStateAction<Record<string, unknown>>> = useCallback((action) => {
+    const newFilters = typeof action === 'function'
+      ? action({ parentCategory, category, stockStatus })
+      : action;
+    if (newFilters.parentCategory !== undefined) setParentCategory(newFilters.parentCategory as string);
+    if (newFilters.category !== undefined) setCategory(newFilters.category as string);
+    if (newFilters.stockStatus !== undefined) setStockStatus(newFilters.stockStatus as StockStatus);
+  }, [parentCategory, category, stockStatus]);
+
   return {
     // Search state (for Search.Input)
     searchValue,
     setSearchValue,
     searchType,
-    setSearchType,
+    setSearchType: (v: string) => setSearchType(v as SearchType),
 
     // Filter state (for Search.Filters)
     filters,
+    setFilters,
     parentCategory,
     setParentCategory,
     category,
@@ -239,6 +254,15 @@ export function useInventorySearch(options: UseInventorySearchOptions = {}): Inv
     handleSearch,
     clearSearch,
     getFilterParams,
+    getSearchParams: (): Record<string, string> => {
+      const params: Record<string, string> = {};
+      if (searchValue.trim()) params.search = searchValue.trim();
+      if (searchType) params.searchType = searchType;
+      if (parentCategory !== "all") params.parentCategory = parentCategory;
+      if (category !== "all") params.category = category;
+      if (stockStatus !== "all") params.stockStatus = stockStatus;
+      return params;
+    },
 
     // Status flags
     hasActiveFilters,

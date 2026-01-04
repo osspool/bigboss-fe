@@ -96,7 +96,7 @@ export function ContactFormClient({ formConfig }: ContactFormClientProps) {
           <Label htmlFor="subject">Subject *</Label>
           <Select
             value={formData.subject}
-            onValueChange={(value) => setFormData({ ...formData, subject: value })}
+            onValueChange={(value: string) => setFormData({ ...formData, subject: value })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a subject" />

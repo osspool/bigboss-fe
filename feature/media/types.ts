@@ -1,7 +1,7 @@
 // Media Feature Types
-// BE types: import from '@/types/media.types'
+// BE types: import from '@/types'
 
-import type { Media, MediaFolder } from '@/types/media.types';
+import type { Media, MediaFolder } from '@/types';
 
 // Static folders for UI (matches BE MediaFolder type)
 export const MEDIA_FOLDERS = [

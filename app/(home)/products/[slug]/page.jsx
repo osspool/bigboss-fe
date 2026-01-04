@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { auth } from "@/app/(auth)/auth";
-import { productApi } from "@/api/platform/product-api";
+import { productApi } from "@/lib/sdk";
 import { ProductDetailPage } from "./components/ProductDetailClient";
 import { Spinner } from "@/components/ui/spinner";
 import "@/components/form/lite-editor/markdown-preview.css";
@@ -11,7 +11,7 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
 
   try {
-    const response = await productApi.getBySlug(slug);
+    const response = await productApi.getBySlug({ slug });
     const product = response?.data;
 
     if (!product) {
@@ -73,7 +73,7 @@ export default async function ProductSlugPage({ params }) {
     const session = await auth();
 
     // Fetch product by slug
-    const response = await productApi.getBySlug(slug);
+    const response = await productApi.getBySlug({ slug });
     const product = response?.data;
 
     if (!product) {
@@ -85,7 +85,7 @@ export default async function ProductSlugPage({ params }) {
     let recommendations = [];
 
     try {
-      const recsResponse = await productApi.getRecommendations(productId);
+      const recsResponse = await productApi.getRecommendations({ productId });
       recommendations = recsResponse?.data || [];
     } catch {
       // Silently fail - recommendations are not critical

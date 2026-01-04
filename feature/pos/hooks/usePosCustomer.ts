@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { useCustomers } from "@/hooks/query/useCustomers";
+import { useCustomers } from "@/hooks/query";
 import { buildFilterParams, getApiParams } from "@/lib/filter-utils";
 import { isPhoneSearch } from "../utils";
-import type { Customer } from "@/types/customer.types";
+import type { Customer } from "@/types";
 
 export interface UsePosCustomerReturn {
   // Selected customer state
@@ -95,7 +95,7 @@ export function usePosCustomer(token: string): UsePosCustomerReturn {
     isLoading: customersLoading,
     isFetching: customersFetching,
     refetch: refetchCustomers,
-  } = useCustomers(token, queryParams, {
+  } = useCustomers(token, queryParams as Record<string, unknown>, {
     enabled: !!token && normalizedSearch.length >= 2,
     refetchOnWindowFocus: false,
   });
@@ -129,7 +129,7 @@ export function usePosCustomer(token: string): UsePosCustomerReturn {
     isLoading: membershipLoading,
     isFetching: membershipFetching,
     refetch: refetchMembership,
-  } = useCustomers(token, membershipParams, {
+  } = useCustomers(token, membershipParams as Record<string, unknown>, {
     enabled: !!token && membershipSearchApplied.length >= 4,
     refetchOnWindowFocus: false,
   });

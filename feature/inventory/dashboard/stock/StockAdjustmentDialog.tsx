@@ -1,30 +1,22 @@
 "use client";
 import { useState, useCallback, useMemo, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { DialogWrapper } from "@classytic/clarity";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FormInput, SelectInput, FormTextarea } from "@classytic/clarity";
 import { Package, Edit2, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/constants";
 import { formatVariantAttributes } from "@/lib/commerce-utils";
 import type { StockAdjustmentCapability } from "@/lib/access-control";
-import type { AdjustStockPayload } from "@/types/inventory.types";
-import type { PosProduct } from "@/types/pos.types";
+import type { AdjustStockPayload } from "@/types";
+import type { PosProduct } from "@/types";
+
+const REASON_OPTIONS = [
+  { value: "damaged", label: "Damaged" },
+  { value: "lost", label: "Lost" },
+  { value: "recount", label: "Recount" },
+  { value: "correction", label: "Correction" },
+];
 
 /**
  * Stock Adjustment Dialog (Simplified)
@@ -79,12 +71,14 @@ export function StockAdjustmentDialog({
           (vs) => vs.sku === variant.sku
         );
 
+        const stockInfo = variantStock?.quantity || 0;
+        const priceInfo = variant.priceModifier && variant.priceModifier !== 0
+          ? ` • ${variant.priceModifier > 0 ? '+' : ''}${formatPrice(variant.priceModifier)}`
+          : '';
+
         return {
-          sku: variant.sku,
-          label,
-          priceModifier: variant.priceModifier || 0,
-          currentStock: variantStock?.quantity || 0,
-          attributes: variant.attributes,
+          value: variant.sku,
+          label: `${label} (Stock: ${stockInfo}${priceInfo})`,
         };
       });
   }, [product, hasVariants]);
@@ -141,171 +135,147 @@ export function StockAdjustmentDialog({
 
   if (!product) return null;
 
+  const footerContent = (
+    <>
+      <Button
+        variant="outline"
+        onClick={() => onOpenChange(false)}
+        disabled={isSubmitting}
+      >
+        Cancel
+      </Button>
+      <Button
+        onClick={handleSubmit}
+        disabled={!quantity || isSubmitting || (productType === "variant" && !selectedVariant)}
+      >
+        {isSubmitting ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : (
+          <Check className="w-4 h-4 mr-2" />
+        )}
+        Update Stock
+      </Button>
+    </>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Edit2 className="w-4 h-4" />
-            Set Stock Level
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Product Info */}
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 border border-border/50">
-            <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden ring-1 ring-border/20 shrink-0">
-              {product.images?.[0]?.variants?.thumbnail ||
-              product.images?.[0]?.url ? (
-                <img
-                  src={
-                    product.images[0]?.variants?.thumbnail ||
-                    product.images[0]?.url
-                  }
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Package className="w-6 h-6 text-muted-foreground" />
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold truncate">{product.name}</p>
-              <p className="text-sm text-muted-foreground">
-                SKU: {product.sku || "N/A"}
-              </p>
-              <p className="text-sm">
-                Current stock:{" "}
-                <span className="font-bold">{currentStock}</span> units
-              </p>
-            </div>
-          </div>
-
-          {/* Variant Selector (if applicable) */}
-          {productType === "variant" && variantOptions.length > 0 && (
-            <div className="space-y-2">
-              <Label>Variant</Label>
-              <Select value={selectedVariant} onValueChange={setSelectedVariant}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select variant" />
-                </SelectTrigger>
-                <SelectContent>
-                  {variantOptions.map((opt) => (
-                    <SelectItem key={opt.sku} value={opt.sku}>
-                      <div className="flex items-center justify-between w-full gap-2">
-                        <span>{opt.label}</span>
-                        <span className="text-xs text-muted-foreground">
-                          Stock: {opt.currentStock}
-                          {opt.priceModifier !== 0 && ` • ${opt.priceModifier > 0 ? '+' : ''}${formatPrice(opt.priceModifier)}`}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {!selectedVariant && (
-                <p className="text-xs text-muted-foreground">
-                  ⚠️ Please select a variant to adjust stock
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Quantity Input */}
-          <div className="space-y-2">
-            <Label htmlFor="quantity">New stock level</Label>
-            {capability?.mode === "set_decrease_only" && (
-              <p className="text-xs text-muted-foreground">
-                {capability.reason ||
-                  "Sub-branches can only decrease stock via adjustments (use transfers to increase)."}
-              </p>
-            )}
-            <Input
-              id="quantity"
-              type="number"
-              min="0"
-              max={capability?.mode === "set_decrease_only" ? String(currentStock) : undefined}
-              placeholder="Enter quantity"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              className="text-lg h-12"
-              autoFocus
-            />
-            {capability?.mode === "set_decrease_only" && (
-              <p className="text-xs text-muted-foreground">
-                Max allowed (current stock):{" "}
-                <span className="font-medium">{currentStock}</span>
-              </p>
+    <DialogWrapper
+      open={open}
+      onOpenChange={onOpenChange}
+      title={
+        <span className="flex items-center gap-2">
+          <Edit2 className="w-4 h-4" />
+          Set Stock Level
+        </span>
+      }
+      description={undefined}
+      trigger={undefined}
+      className={undefined}
+      headerClassName={undefined}
+      contentClassName={undefined}
+      footerClassName={undefined}
+      size="sm"
+      footer={footerContent}
+    >
+      <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+        {/* Product Info */}
+        <div className="flex items-center gap-3 p-3 sm:p-4 rounded-xl bg-muted/50 border border-border/50">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-muted overflow-hidden ring-1 ring-border/20 shrink-0">
+            {product.images?.[0]?.variants?.thumbnail ||
+            product.images?.[0]?.url ? (
+              <img
+                src={
+                  product.images[0]?.variants?.thumbnail ||
+                  product.images[0]?.url
+                }
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Package className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
+              </div>
             )}
           </div>
-
-          {/* Preview */}
-          {quantity && (
-            <div className="p-4 rounded-xl text-sm border bg-primary/10 border-primary/20 text-primary">
-              <span className="font-medium">New stock level: </span>
-              <span className="font-bold text-lg">{newStock}</span>
-              <span className="ml-1">units</span>
-              {currentStock !== newStock && (
-                <span className="ml-2 text-xs opacity-75">
-                  ({newStock > currentStock ? '+' : ''}{newStock - currentStock})
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label>Reason</Label>
-            <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select reason (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="damaged">Damaged</SelectItem>
-                <SelectItem value="lost">Lost</SelectItem>
-                <SelectItem value="recount">Recount</SelectItem>
-                <SelectItem value="correction">Correction</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Additional details (optional)"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className="resize-none"
-            />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold truncate text-sm sm:text-base">{product.name}</p>
+            <p className="text-sm text-muted-foreground">
+              SKU: {product.sku || "N/A"}
+            </p>
+            <p className="text-sm">
+              Current stock:{" "}
+              <span className="font-bold">{currentStock}</span> units
+            </p>
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!quantity || isSubmitting || (productType === "variant" && !selectedVariant)}
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Check className="w-4 h-4 mr-2" />
+        {/* Variant Selector (if applicable) */}
+        {productType === "variant" && variantOptions.length > 0 && (
+          <SelectInput
+            name="variant"
+            label="Variant"
+            placeholder="Select variant"
+            items={variantOptions}
+            value={selectedVariant}
+            onValueChange={setSelectedVariant}
+            helperText={!selectedVariant ? "Please select a variant to adjust stock" : undefined}
+          />
+        )}
+
+        {/* Quantity Input */}
+        <FormInput
+          name="quantity"
+          label="New stock level"
+          type="number"
+          min={0}
+          max={capability?.mode === "set_decrease_only" ? currentStock : undefined}
+          placeholder="Enter quantity"
+          value={quantity}
+          onChange={(val) => setQuantity(String(val))}
+          inputClassName="text-base sm:text-lg h-10 sm:h-12"
+          autoFocus
+          helperText={
+            capability?.mode === "set_decrease_only"
+              ? capability.reason || `Sub-branches can only decrease stock. Max: ${currentStock}`
+              : undefined
+          }
+        />
+
+        {/* Preview */}
+        {quantity && (
+          <div className="p-3 sm:p-4 rounded-xl text-sm border bg-primary/10 border-primary/20 text-primary">
+            <span className="font-medium">New stock level: </span>
+            <span className="font-bold text-base sm:text-lg">{newStock}</span>
+            <span className="ml-1">units</span>
+            {currentStock !== newStock && (
+              <span className="ml-2 text-xs opacity-75">
+                ({newStock > currentStock ? '+' : ''}{newStock - currentStock})
+              </span>
             )}
-            Update Stock
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </div>
+        )}
+
+        {/* Reason */}
+        <SelectInput
+          name="reason"
+          label="Reason"
+          placeholder="Select reason (optional)"
+          items={REASON_OPTIONS}
+          value={reason}
+          onValueChange={setReason}
+        />
+
+        {/* Notes */}
+        <FormTextarea
+          name="notes"
+          label="Notes (optional)"
+          placeholder="Additional details (optional)"
+          value={notes}
+          onChange={setNotes}
+          rows={2}
+          textareaClassName="resize-none"
+        />
+      </div>
+    </DialogWrapper>
   );
 }

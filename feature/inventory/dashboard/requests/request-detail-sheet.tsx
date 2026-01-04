@@ -4,11 +4,10 @@ import { useState, useMemo, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
-import FormInput from "@/components/form/form-utils/form-input";
+import { SheetWrapper, FormInput } from "@classytic/clarity";
 import { cn } from "@/lib/utils";
-import type { StockRequest, StockRequestItem } from "@/types/inventory.types";
-import { useStockRequestActions } from "@/hooks/query/useStockRequests";
+import type { StockRequest, StockRequestItem } from "@/types";
+import { useStockRequestActions } from "@/hooks/query";
 import { CrossBranchStockLookup } from "./cross-branch-stock-lookup";
 
 interface RequestDetailSheetProps {

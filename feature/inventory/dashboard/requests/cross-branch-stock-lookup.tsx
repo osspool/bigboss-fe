@@ -13,9 +13,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useBranches } from "@/hooks/query/useBranches";
-import { posApi } from "@/api/platform/pos-api";
-import type { Branch } from "@/types/branch.types";
+import { useBranches } from "@/hooks/query";
+import { posApi } from "@classytic/commerce-sdk/sales";
+import type { Branch } from "@/types";
 
 interface BranchStockResult {
   branchId: string;

@@ -4,8 +4,8 @@ import { memo } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/constants";
-import type { Customer } from "@/types/customer.types";
-import type { PosCartItem, PaymentOption, PaymentState, SplitPaymentEntry } from "@/types/pos.types";
+import type { Customer } from "@/types";
+import type { PosCartItem, PaymentOption, PaymentState, SplitPaymentEntry } from "@/types";
 import { CartItems, CartSummary, CustomerSection, DiscountSection, PaymentSection, PointsRedemptionSection } from "./cart";
 
 // ============= View Model Props =============

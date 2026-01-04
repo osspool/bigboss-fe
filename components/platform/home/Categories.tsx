@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/layout/Container";
+import { Section, Container } from "@classytic/clarity/layout";
 
 const categories = [
   {

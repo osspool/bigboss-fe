@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { Container } from "./Container";
 import { HeaderSearch } from "./HeaderSearch";
 import { MobileSearchOverlay } from "./MobileSearchOverlay";
-import { useCategoryTree } from "@/hooks/query/useCategories";
+import { useCategoryTree } from "@/hooks/query";
 import { Button } from "@/components/ui/button";
 import { CartBadge } from "@/components/platform/cart/CartBadge";
 import {
@@ -30,7 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { CategoryTreeNode } from "@/types/category.types";
+import type { CategoryTreeNode } from "@/types";
 
 interface HeaderProps {
   user?: {
@@ -479,7 +479,7 @@ export function Header({ user, token }: HeaderProps) {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="text-destructive cursor-pointer"
-                      onSelect={(e) => {
+                      onSelect={(e: Event) => {
                         e.preventDefault();
                         signOut({ callbackUrl: '/login' });
                       }}

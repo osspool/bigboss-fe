@@ -2,18 +2,17 @@
 
 import { useMemo, useCallback, useState } from "react";
 import { ClipboardList, Inbox } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable, ConfirmDialog } from "@classytic/clarity";
 import { useBranch } from "@/contexts/BranchContext";
 import { requestColumns } from "./request-columns";
-import { useStockRequests, useStockRequestActions } from "@/hooks/query/useStockRequests";
+import { useStockRequests, useStockRequestActions } from "@/hooks/query";
 import { RequestCreateDialog } from "./request-create-dialog";
 import { RequestDetailSheet } from "./request-detail-sheet";
 import { FulfillRequestSheet } from "./fulfill-request-sheet";
-import { ConfirmDialog } from "@/components/custom/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
-import type { StockRequest } from "@/types/inventory.types";
+import type { StockRequest } from "@/types";
 
 interface RequestsClientProps {
   token: string;

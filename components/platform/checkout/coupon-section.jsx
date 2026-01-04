@@ -3,10 +3,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { CardWrapper } from "@/components/custom/ui/card-wrapper";
+import { CardWrapper } from "@classytic/clarity";
 import { toast } from "sonner";
 import { Tag, Check } from "lucide-react";
-import { couponApi } from "@/api/platform/coupon-api";
+import { couponApi } from "@classytic/commerce-sdk/platform";
 
 const CouponSection = ({ onApplyCoupon, token, appliedCoupon, subtotal }) => {
   const [couponCode, setCouponCode] = useState("");

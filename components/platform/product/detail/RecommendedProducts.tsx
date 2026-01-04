@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/layout/Container";
+import { Section, Container } from "@classytic/clarity/layout";
 import { ProductGrid } from "@/components/platform/product/ProductGrid";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProductRecommendations } from "@/hooks/query/useProducts";
+import { useProductRecommendations } from "@/hooks/query";
 import type { Product } from "@/types";
 
 interface RecommendedProductsProps {

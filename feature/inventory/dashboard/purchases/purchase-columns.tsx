@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import type { Purchase, PurchaseStatus, PurchasePaymentStatus } from "@/types/inventory.types";
+import type { Purchase, PurchaseStatus, PurchasePaymentStatus } from "@/types";
 
 // Status badge variants
 const statusColors: Record<PurchaseStatus, string> = {

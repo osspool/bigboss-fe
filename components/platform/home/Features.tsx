@@ -1,5 +1,5 @@
 import { Truck, RefreshCw, Shield, Headphones, LucideIcon } from "lucide-react";
-import { Container } from "@/components/layout/Container";
+import { Container } from "@classytic/clarity/layout";
 import { getCMSSection } from "@/lib/cms-data";
 
 const iconMap: Record<string, LucideIcon> = {

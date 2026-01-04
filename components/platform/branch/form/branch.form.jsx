@@ -5,9 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { branchCreateSchema, branchUpdateSchema } from "@/schemas/branch.schema";
 import { FormGenerator } from "@/components/form/form-system";
-import { FormErrorSummary } from "@/components/form/form-utils/FormErrorSummary";
+import { FormErrorSummary } from "@classytic/clarity";
 import { createBranchFormSchema } from "./branch-form-schema";
-import { useBranchActions } from "@/hooks/query/useBranches";
+import { useBranchActions } from "@/hooks/query";
 import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 export function BranchForm({

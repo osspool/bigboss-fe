@@ -12,8 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import OrderDetailsDialog from "./order-details-dialog";
-import { ApiPagination } from "@/components/custom/ui/api-pagination";
-import { useMyOrders, useOrderActions } from "@/hooks/query/useOrders";
+import { ApiPagination } from "@classytic/clarity";
+import { useMyOrders, useOrderActions } from "@/hooks/query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { getStatusColor } from "@/lib/utils";
@@ -32,7 +32,15 @@ export default function OrdersList({ initialPage, token }) {
   // Get search params from the search hook
   const searchFilters = myOrderSearch.getSearchParams();
 
-  const { items: orders, pagination, isLoading, error } = useMyOrders(
+  const {
+    orders,
+    total,
+    page,
+    limit,
+    hasMore,
+    isLoading,
+    error,
+  } = useMyOrders(
     token,
     {
       page: currentPage,
@@ -40,6 +48,13 @@ export default function OrdersList({ initialPage, token }) {
       ...searchFilters,
     }
   );
+
+  const totalCount = total ?? orders?.length ?? 0;
+  const pageSize = limit || 10;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const resolvedPage = page || currentPage;
+  const hasNext = resolvedPage < totalPages || !!hasMore;
+  const hasPrev = resolvedPage > 1;
 
   // Customer order actions
   const { requestCancelOrder, isRequestingCancel } = useOrderActions(token);
@@ -202,14 +217,14 @@ export default function OrdersList({ initialPage, token }) {
         </div>
       )}
 
-      {pagination && pagination.total > 0 && (
+      {totalCount > 0 && (
         <ApiPagination
-          page={pagination.page}
-          pages={pagination.pages}
-          total={pagination.total}
-          limit={pagination.limit}
-          hasNext={pagination.hasNext}
-          hasPrev={pagination.hasPrev}
+          page={resolvedPage}
+          pages={totalPages}
+          total={totalCount}
+          limit={pageSize}
+          hasNext={hasNext}
+          hasPrev={hasPrev}
           onPageChange={handlePageChange}
         />
       )}

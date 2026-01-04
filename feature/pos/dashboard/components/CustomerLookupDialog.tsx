@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Customer } from "@/types/customer.types";
+import type { Customer } from "@/types";
 import { getReadableTextColor, getTierColor } from "@/lib/loyalty-utils";
 
 interface CustomerLookupDialogProps {

@@ -1,8 +1,9 @@
 import { auth } from "@/app/(auth)/auth";
-import { PageHeader } from "@/components/custom/dashboard/page-header";
 import { BranchesClient } from "./BranchesClient";
 import { AccessDenied } from "../components/AccessDenied";
 import { canManageBranches, normalizeRoles } from "@/lib/access-control";
+import { PageHeader } from "@classytic/clarity/dashboard";
+import { ModeToggle } from "@classytic/clarity";
 
 export default async function BranchesPage() {
   const session = await auth();
@@ -26,7 +27,7 @@ export default async function BranchesPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-2">
-      <PageHeader items={breadcrumbItems} />
+      <PageHeader items={breadcrumbItems} actions={<ModeToggle />} />
       <div className="flex-1">
         <BranchesClient token={token} />
       </div>

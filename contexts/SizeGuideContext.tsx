@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { useSizeGuides } from "@/hooks/query/useSizeGuides";
-import type { SizeGuide } from "@/types/size-guide.types";
+import { useSizeGuides } from "@/hooks/query";
+import type { SizeGuide } from "@/types";
 import type { SizeTableData } from "@/data/constants";
 
 interface SizeGuideContextValue {

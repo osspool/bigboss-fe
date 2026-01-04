@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { Transfer } from "@/types/inventory.types";
+import type { Transfer } from "@/types";
 
 type BranchRef = Transfer["senderBranch"];
 

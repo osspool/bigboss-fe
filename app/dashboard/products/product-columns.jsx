@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Package, Calendar, Pencil, Trash2, Star, Eye, ShoppingCart, RefreshCw, Grid3X3, Box } from "lucide-react";
-import { ActionDropdown } from "@/components/custom/ui/dropdown-wrapper";
+import { ActionDropdown } from "@classytic/clarity";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";

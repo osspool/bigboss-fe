@@ -5,7 +5,7 @@ import { Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { StockMovement, StockMovementType } from "@/types/inventory.types";
+import type { StockMovement, StockMovementType } from "@/types";
 
 export type MovementRow = StockMovement & { productName?: string };
 

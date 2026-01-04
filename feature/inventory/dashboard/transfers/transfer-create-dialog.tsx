@@ -5,15 +5,15 @@ import { useForm } from "react-hook-form";
 import { Loader2, PackageSearch, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useBranch } from "@/contexts/BranchContext";
-import { useTransferActions } from "@/hooks/query/useTransfers";
+import { useTransferActions } from "@/hooks/query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormGenerator, type InferSchemaValues } from "@/components/form/form-system";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
+import { SheetWrapper } from "@classytic/clarity";
 import { useScannedLineItems } from "@/feature/inventory/ui/useScannedLineItems";
 import { InventoryScanSection } from "@/feature/inventory/forms/inventory-scan-section";
 import { createTransferFormSchema } from "@/feature/inventory/forms/inventory-form-schemas";
-import type { Branch } from "@/types/branch.types";
+import type { Branch } from "@/types";
 
 interface TransferCreateDialogProps {
   token: string;
@@ -22,7 +22,7 @@ interface TransferCreateDialogProps {
 
 export function TransferCreateDialog({ token, disabled }: TransferCreateDialogProps) {
   const { selectedBranch, branches } = useBranch();
-  const { create, isCreating } = useTransferActions(token);
+  const { create, isCreating } = useTransferActions();
 
   const receiverOptions = useMemo(() => {
     if (!selectedBranch) return [];
@@ -102,16 +102,19 @@ export function TransferCreateDialog({ token, disabled }: TransferCreateDialogPr
     }
 
     await create({
-      receiverBranchId: data.receiverBranchId,
-      senderBranchId: selectedBranch._id,
-      documentType: "delivery_challan",
-      items: scan.items.map((i) => ({
-        productId: i.productId,
-        variantSku: i.variantSku,
-        quantity: i.quantity,
-        cartonNumber: i.cartonNumber?.trim() || undefined,
-      })),
-      remarks: data.remarks?.trim() || undefined,
+      token,
+      data: {
+        receiverBranchId: data.receiverBranchId,
+        senderBranchId: selectedBranch._id,
+        documentType: "delivery_challan",
+        items: scan.items.map((i) => ({
+          productId: i.productId,
+          variantSku: i.variantSku,
+          quantity: i.quantity,
+          cartonNumber: i.cartonNumber?.trim() || undefined,
+        })),
+        remarks: data.remarks?.trim() || undefined,
+      },
     });
 
     setOpen(false);

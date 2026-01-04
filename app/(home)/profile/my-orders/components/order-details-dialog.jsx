@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
+import { SheetWrapper } from "@classytic/clarity";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -18,7 +18,7 @@ import {
   XCircle,
   Clock,
 } from "lucide-react";
-import { useOrderActions } from "@/hooks/query/useOrders";
+import { useOrderActions } from "@/hooks/query";
 import { getStatusColor } from "@/lib/utils";
 import { formatPrice } from "@/lib/constants";
 import { formatVariantAttributes } from "@/lib/commerce-utils";
@@ -78,17 +78,7 @@ export default function OrderDetailsDialog({ order, onClose, token }) {
     order.status !== 'delivered'
   );
 
-  const getStatusVariant = (status) => {
-    const statusMap = {
-      pending: "secondary",
-      processing: "default",
-      shipped: "default",
-      delivered: "success",
-      cancelled: "destructive",
-    };
-    return statusMap[status.toLowerCase()] || "secondary";
-  };
-
+ 
   const getPaymentStatusIcon = (status) => {
     switch (status) {
       case 'verified':

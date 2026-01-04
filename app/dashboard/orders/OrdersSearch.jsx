@@ -1,8 +1,6 @@
 "use client";
 
-import * as Search from "@/components/shared/search";
-import { DateRangeFilter } from "@/components/form/form-utils/date-range-filter";
-import SelectInput from "@/components/form/form-utils/select-input";
+import { Search, DateRangeFilter, SelectInput } from "@classytic/clarity";
 import { ORDER_STATUS_OPTIONS, ORDER_SOURCE_OPTIONS, PAYMENT_STATUS_OPTIONS } from "@/constants/enums/monetization.enum";
 import { useOrderSearch } from "@/hooks/filter/use-order-search";
 

@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Truck, Package, Clock, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { TransferStats } from "@/types/inventory.types";
+import type { TransferStats } from "@/types";
 
 interface TransferStatsCardsProps {
   stats: TransferStats | undefined;

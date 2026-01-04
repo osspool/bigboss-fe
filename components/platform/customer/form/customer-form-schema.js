@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCustomerMembership } from "@/hooks/query/useCustomers";
+import { useCustomerMembership } from "@/hooks/query";
 
 /**
  * Create customer form schema
@@ -246,7 +246,7 @@ export const createCustomerFormSchema = ({
 
 function MembershipManager({ customer, token }) {
   const membership = customer?.membership || null;
-  const { mutateAsync, isLoading } = useCustomerMembership(token);
+  const { membershipAction, isPending } = useCustomerMembership(token);
 
   const [adjustPoints, setAdjustPoints] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
@@ -260,14 +260,14 @@ function MembershipManager({ customer, token }) {
 
   const handleAction = async (action) => {
     if (!customer?._id) return;
-    await mutateAsync({ id: customer._id, action });
+    await membershipAction({ id: customer._id, action });
   };
 
   const handleAdjust = async () => {
     if (!customer?._id) return;
     const points = Number(adjustPoints);
     if (!Number.isFinite(points) || points === 0) return;
-    await mutateAsync({
+    await membershipAction({
       id: customer._id,
       action: "adjust",
       points,
@@ -322,7 +322,7 @@ function MembershipManager({ customer, token }) {
               type="button"
               size="sm"
               onClick={() => handleAction("enroll")}
-              disabled={!token || isLoading}
+              disabled={!token || isPending}
             >
               Enroll Member
             </Button>
@@ -333,7 +333,7 @@ function MembershipManager({ customer, token }) {
               size="sm"
               variant="outline"
               onClick={() => handleAction("deactivate")}
-              disabled={!token || isLoading}
+              disabled={!token || isPending}
             >
               Deactivate
             </Button>
@@ -343,7 +343,7 @@ function MembershipManager({ customer, token }) {
               type="button"
               size="sm"
               onClick={() => handleAction("reactivate")}
-              disabled={!token || isLoading}
+              disabled={!token || isPending}
             >
               Reactivate
             </Button>
@@ -366,13 +366,13 @@ function MembershipManager({ customer, token }) {
                 value={adjustPoints}
                 onChange={(e) => setAdjustPoints(e.target.value)}
                 placeholder="e.g., 200 or -100"
-                disabled={isLoading}
+                disabled={isPending}
               />
             </div>
             <div className="space-y-2">
               <Label>Adjustment Type</Label>
               <Select value={adjustType} onValueChange={setAdjustType}>
-                <SelectTrigger disabled={isLoading}>
+                <SelectTrigger disabled={isPending}>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -392,7 +392,7 @@ function MembershipManager({ customer, token }) {
               value={adjustReason}
               onChange={(e) => setAdjustReason(e.target.value)}
               placeholder="Reason for adjustment"
-              disabled={isLoading}
+              disabled={isPending}
             />
           </div>
 
@@ -401,7 +401,7 @@ function MembershipManager({ customer, token }) {
             size="sm"
             variant="outline"
             onClick={handleAdjust}
-            disabled={!canAdjust || isLoading}
+            disabled={!canAdjust || isPending}
           >
             Apply Adjustment
           </Button>

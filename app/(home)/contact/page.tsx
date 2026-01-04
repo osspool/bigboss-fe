@@ -8,12 +8,11 @@ import {
   ArrowRight,
   LucideIcon,
 } from "lucide-react";
-import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/layout/Container";
-import { getCmsPage } from "@/api/platform/cms-api";
+import { Section, Container } from "@classytic/clarity/layout";
+import { getCmsPage } from "@/lib/sdk";
 import { cmsPages } from "@/lib/cms-data";
 import { ContactFormClient } from "./ContactFormClient";
-import type { ContactPageContent } from "@/types/cms.types";
+import type { ContactPageContent } from "@/types";
 
 export const revalidate = 1800;
 

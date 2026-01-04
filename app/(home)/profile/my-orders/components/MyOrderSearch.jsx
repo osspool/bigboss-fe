@@ -1,11 +1,12 @@
 "use client";
 
-import * as Search from "@/components/shared/search";
-import SelectInput from "@/components/form/form-utils/select-input";
+import { Search, SelectInput } from "@classytic/clarity";
 import { useMyOrderSearch } from "@/hooks/filter/use-my-order-search";
 
 const SEARCH_TYPE_OPTIONS = [
   { value: "orderId", label: "Order ID" },
+  { value: "customerPhone", label: "Phone" },
+  { value: "customerEmail", label: "Email" },
 ];
 
 const STATUS_OPTIONS = [

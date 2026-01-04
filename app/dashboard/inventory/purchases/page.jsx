@@ -1,6 +1,7 @@
 import { auth } from "@/app/(auth)/auth";
-import { PageHeader } from "@/components/custom/dashboard/page-header";
 import { InventoryNav, PurchasesClient } from "@/feature/inventory";
+import { PageHeader } from "@classytic/clarity/dashboard";
+import { ModeToggle } from "@classytic/clarity";
 
 export const metadata = {
   title: "Purchases | Inventory",
@@ -19,7 +20,7 @@ export default async function PurchasesPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-2">
-      <PageHeader items={breadcrumbItems} />
+      <PageHeader items={breadcrumbItems} actions={<ModeToggle />} />
       <InventoryNav />
       <div className="flex-1">
         <PurchasesClient token={token} />

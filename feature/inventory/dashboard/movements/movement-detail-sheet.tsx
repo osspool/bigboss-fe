@@ -2,10 +2,10 @@
 
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
+import { SheetWrapper } from "@classytic/clarity";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/constants";
-import type { StockMovement } from "@/types/inventory.types";
+import type { StockMovement } from "@/types";
 
 type MovementDetail = StockMovement & { productName?: string };
 
@@ -159,7 +159,6 @@ export function MovementDetailSheet({
             <DetailRow label="Previous Qty" value={formatMaybeNumber(previousQty)} monospace />
             <DetailRow label="New Qty" value={formatMaybeNumber(newQty)} monospace />
             <DetailRow label="Cost Per Unit" value={formatPriceMaybe(movement.costPerUnit)} />
-            <DetailRow label="Reference Type" value={movement.referenceType || "-"} />
             <DetailRow label="Reference Model" value={reference.model || "-"} />
             <DetailRow label="Reference ID" value={reference.id || reference.value || "-"} monospace />
             <DetailRow label="Stock Entry" value={movement.stockEntry || "-"} monospace />

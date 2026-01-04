@@ -1,15 +1,15 @@
 "use client";
 import { useMemo, useState, useCallback } from "react";
 import { TransactionSheet } from "./sheet/transaction-sheet";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TransactionSearch } from "./TransactionSearch";
 import { transactionsColumns } from "./transactions-columns";
 import { Wallet } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useTransactions, useTransactionActions } from "@/hooks/query/useTransactions";
-import { UserRole } from "@/api/user-data";
+import { useTransactions, useTransactionActions } from "@/hooks/query";
+import { UserRole } from "@classytic/commerce-sdk/auth";
 
 
 export function TransactionsClient({ token, userRoles = [] }) {

@@ -10,9 +10,9 @@ import {
   type ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useBranches, BRANCH_KEYS } from "@/hooks/query/useBranches";
+import { useBranches, BRANCH_KEYS } from "@/hooks/query";
 import { storage } from "@/lib/storage-utils";
-import type { Branch } from "@/types/branch.types";
+import type { Branch } from "@/types";
 
 // ============================================
 // CONSTANTS

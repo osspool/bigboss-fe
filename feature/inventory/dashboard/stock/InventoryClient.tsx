@@ -1,15 +1,15 @@
 "use client";
 import { useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { inventoryColumns } from "./inventory-columns";
 import { InventorySearch } from "./InventorySearch";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
 import { InventoryDetailSheet } from "./inventory-detail-sheet";
 import { Package, AlertTriangle, TrendingDown, Boxes } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useInventory, useInventoryLookup, useStockActions } from "@/hooks/query/useInventory";
+import { useInventory, useInventoryLookup, useStockActions } from "@/hooks/query";
 import { useBranch } from "@/contexts/BranchContext";
 import { useInventorySearch } from "@/hooks/filter/use-inventory-search";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getStockAdjustmentCapability, normalizeRoles } from "@/lib/access-control";
-import type { PosProduct } from "@/types/pos.types";
+import type { PosProduct } from "@/types";
 
 type SearchType = "lookup" | "name";
 type StockStatus = "all" | "ok" | "low" | "out";

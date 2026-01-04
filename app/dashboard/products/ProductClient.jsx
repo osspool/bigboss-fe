@@ -1,14 +1,14 @@
 "use client";
 import { useMemo, useState, useCallback } from "react";
 import { ProductSheet } from "@/components/platform/product/form/product-sheet";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProductSearch } from "./ProductSearch";
 import { productColumns } from "./product-columns";
 import { Plus, Package } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useProductActions, useProducts, useSyncProductStock } from "@/hooks/query/useProducts";
+import { useProductActions, useProducts, useSyncProductStock } from "@/hooks/query";
 import { revalidateProductsList } from "@/lib/revalidation";
 
 export function ProductsClient({ token, userRoles = [] }) {

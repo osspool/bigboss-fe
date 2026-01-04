@@ -3,7 +3,7 @@
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/constants";
-import type { PosCartItem } from "@/types/pos.types";
+import type { PosCartItem } from "@/types";
 
 interface CartItemsProps {
   items: PosCartItem[];

@@ -1,10 +1,9 @@
 import { Ruler, Mail, Phone } from "lucide-react";
-import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/layout/Container";
-import { getCmsPage } from "@/api/platform/cms-api";
+import { Section, Container } from "@classytic/clarity/layout";
+import { getCmsPage } from "@/lib/sdk";
 import { cmsPages } from "@/lib/cms-data";
 import { SizeGuideClient } from "./SizeGuideClient";
-import type { SizeGuidePageContent } from "@/types/cms.types";
+import type { SizeGuidePageContent } from "@/types";
 
 export const revalidate = 3600;
 

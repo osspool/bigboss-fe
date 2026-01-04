@@ -1,9 +1,8 @@
-import { getCmsPage } from "@/api/platform/cms-api";
+import { getCmsPage } from "@/lib/sdk";
 import { cmsPages } from "@/lib/cms-data";
-import { Container } from "@/components/layout/Container";
-import { Section } from "@/components/layout/Section";
+import { Section, Container } from "@classytic/clarity/layout";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import type { FAQPageContent } from "@/types/cms.types";
+import type { FAQPageContent } from "@/types";
 
 export const revalidate = 1800; // 30 minutes
 

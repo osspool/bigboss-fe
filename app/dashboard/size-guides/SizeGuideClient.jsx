@@ -1,13 +1,13 @@
 "use client";
 import { useMemo, useState, useCallback } from "react";
 import { SizeGuideSheet } from "@/components/platform/size-guide/size-guide-sheet";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { useRouter, useSearchParams } from "next/navigation";
 import { sizeGuideColumns } from "./size-guide-columns";
 import { Plus, Ruler } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useSizeGuides, useSizeGuideActions } from "@/hooks/query/useSizeGuides";
+import { useSizeGuides, useSizeGuideActions } from "@/hooks/query";
 
 
 export function SizeGuideClient({ token, userRoles = [] }) {

@@ -1,6 +1,6 @@
 import { formatPrice } from "@/lib/constants";
 import { CartItem } from "@/types";
-import type { PlatformVatConfig } from "@/types/common.types";
+import type { PlatformVatConfig } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCartItemVariant, formatVariantAttributes } from "@/lib/commerce-utils";
 

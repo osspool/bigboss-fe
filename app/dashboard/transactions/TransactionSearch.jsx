@@ -1,10 +1,7 @@
 "use client";
 
-import * as Search from "@/components/shared/search";
+import { Search, SelectInput, DateRangeFilter } from "@classytic/clarity";
 import { useTransactionSearch } from "@/hooks/filter/use-transaction-search";
-import SelectInput from "@/components/form/form-utils/select-input";
-
-import { DateRangeFilter } from "@/components/form/form-utils/date-range-filter";
 import { TRANSACTION_CATEGORY_OPTIONS, TRANSACTION_TYPE_OPTIONS } from "@/constants/enums/monetization.enum";
 
 export function TransactionSearch() {

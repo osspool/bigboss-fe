@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/constants";
-import type { PosProduct } from "@/types/pos.types";
+import type { PosProduct } from "@/types";
 
 const LOW_STOCK_THRESHOLD = 10;
 

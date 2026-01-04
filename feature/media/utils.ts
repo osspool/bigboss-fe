@@ -1,7 +1,7 @@
 // Media Feature Utilities
-// Uses BE-provided types from @/types/media.types.ts
+// Uses BE-provided types from @/types.ts
 
-import type { Media, VariantName } from '@/types/media.types';
+import type { Media, VariantName } from '@/types';
 
 /**
  * Get variant URL from media item

@@ -29,9 +29,8 @@ import {
   usePickupStores,
   useLogisticsActions,
   useTrackShipment,
-} from "@/hooks/query/useLogistics";
-import type { Order, OrderShipping } from "@/types/order.types";
-import type { ShippingStatus } from "@/types/common.types";
+} from "@/hooks/query";
+import type { Order, OrderShipping, ShippingStatus } from "@/types";
 
 // ==================== Status Helpers ====================
 

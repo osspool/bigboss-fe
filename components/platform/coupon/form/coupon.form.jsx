@@ -5,9 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { couponCreateSchema, couponUpdateSchema } from "@/schemas/coupon.schema";
 import { FormGenerator } from "@/components/form/form-system";
-import { FormErrorSummary } from "@/components/form/form-utils/FormErrorSummary";
+import { FormErrorSummary } from "@classytic/clarity";
 import { createCouponFormSchema } from "./coupon-form-schema";
-import { useCouponActions } from "@/hooks/query/useCoupons";
+import { useCouponActions } from "@/hooks/query";
 import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 export function CouponForm({

@@ -29,7 +29,7 @@ export function MediaItemActions({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+      <DropdownMenuTrigger asChild onClick={(e: React.MouseEvent) => e.stopPropagation()}>
         <Button
           variant={variant === 'grid' ? 'secondary' : 'ghost'}
           size="icon"

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { printReceipt } from "@/lib/utils/print-utils";
-import type { Transfer, TransferItem } from "@/types/inventory.types";
+import type { Transfer, TransferItem } from "@/types";
 
 interface CartonLabelPrintViewProps {
   transfer: Transfer | null;

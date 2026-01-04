@@ -1,14 +1,14 @@
 "use client";
 import { useMemo, useState, useCallback } from "react";
 import { SupplierSheet } from "@/components/inventory/supplier/supplier-sheet";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SupplierSearch } from "./SupplierSearch";
 import { suppliersColumns } from "./supplier-columns";
 import { Plus, Building2 } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useSupplierActions, useSuppliers } from "@/hooks/query/useSuppliers";
+import { useSupplierActions, useSuppliers } from "@/hooks/query";
 
 
 export function SuppliersClient({ token, userRoles = [] }) {

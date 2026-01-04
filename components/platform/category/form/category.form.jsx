@@ -5,9 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { categoryCreateSchema, categoryUpdateSchema } from "@/schemas/category.schema";
 import { FormGenerator } from "@/components/form/form-system";
-import { FormErrorSummary } from "@/components/form/form-utils/FormErrorSummary";
+import { FormErrorSummary } from "@classytic/clarity";
 import { createCategoryFormSchema } from "./category-form-schema";
-import { useCategoryActions, useCategoryTree, getParentCategoryOptions } from "@/hooks/query/useCategories";
+import { useCategoryActions, useCategoryTree, getParentCategoryOptions } from "@/hooks/query";
 import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 export function CategoryForm({

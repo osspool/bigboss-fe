@@ -4,17 +4,17 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ClipboardList } from "lucide-react";
 
-import HeaderSection from "@/components/custom/dashboard/header-section";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
 import { OrderSheet } from "@/components/platform/order/form/order-sheet";
 import { orderColumns } from "./order-columns";
 import { OrdersSearch } from "./OrdersSearch";
 import {
-  useOrdersList,
-  useAdminCrudActions,
+  useOrders,
+  useOrderActions,
   useAdminOrderActions,
-} from "@/hooks/query/useOrders";
+} from "@/hooks/query";
 
 export function OrdersClient({ token, initialLimit = 15 }) {
   const router = useRouter();
@@ -69,13 +69,13 @@ export function OrdersClient({ token, initialLimit = 15 }) {
   }, [currentPage, limit, searchParams]);
 
   // Data hooks
-  const { items: orders = [], pagination, isLoading } = useOrdersList(
+  const { items: orders = [], pagination, isLoading } = useOrders(
     token,
     apiParams,
     { public: false }
   );
 
-  const { remove: deleteOrder, isDeleting } = useAdminCrudActions();
+  const { remove: deleteOrder, isDeleting } = useOrderActions(token);
   const {
     updateStatus,
     isUpdatingStatus,
@@ -110,12 +110,12 @@ export function OrdersClient({ token, initialLimit = 15 }) {
       if (!confirmed) return;
 
       try {
-        await deleteOrder({ token, id: order._id });
+        await deleteOrder(order._id);
       } catch (error) {
         console.error(error);
       }
     },
-    [deleteOrder, token]
+    [deleteOrder]
   );
 
   const handleStatusChange = useCallback(

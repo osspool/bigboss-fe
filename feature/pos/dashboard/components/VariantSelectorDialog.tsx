@@ -17,8 +17,8 @@ import {
   getVariantStock,
   isInStock,
   getPosProductImage,
-} from "@/hooks/query/usePos";
-import type { PosProduct } from "@/types/pos.types";
+} from "@/hooks/query";
+import type { PosProduct } from "@/types";
 import { Check, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 

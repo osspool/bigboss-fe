@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ChevronRight, Check, LayoutGrid, Loader2 } from "lucide-react";
-import { useCategoryTree } from "@/hooks/query/useCategories";
+import { useCategoryTree } from "@/hooks/query";
 import { cn } from "@/lib/utils";
 
 interface CategoryFilterProps {

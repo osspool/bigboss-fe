@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { ApiPagination } from '@/components/custom/ui/api-pagination';
+import { ApiPagination } from '@classytic/clarity';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,7 +91,6 @@ export function MediaLibrary({
       <FolderSidebar
         selectedFolder={selectedFolder}
         onSelectFolder={selectFolder}
-        folderCounts={folderCounts}
       />
 
       {/* Main Content */}

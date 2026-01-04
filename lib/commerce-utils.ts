@@ -1,5 +1,5 @@
 import type { CartItem, ProductDiscount, Product } from "@/types";
-import type { Supplier } from "@/types/supplier.types";
+import type { Supplier } from "@/types";
 
 // ==================== Entity Resolution Utilities ====================
 

@@ -6,7 +6,7 @@ import { Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { StockRequest } from "@/types/inventory.types";
+import type { StockRequest } from "@/types";
 
 type BranchRef = StockRequest["requestingBranch"];
 

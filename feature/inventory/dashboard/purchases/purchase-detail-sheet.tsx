@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
+import { SheetWrapper } from "@classytic/clarity";
 import { formatPrice } from "@/lib/constants";
 import { printDocument } from "@/lib/utils/print-utils";
 import {
@@ -30,8 +30,8 @@ import type {
   PurchaseStatus,
   PurchasePaymentStatus,
   PurchaseStatusHistoryEntry,
-} from "@/types/inventory.types";
-import type { Supplier } from "@/types/supplier.types";
+} from "@/types";
+import type { Supplier } from "@/types";
 
 const formatDateTime = (value?: string | null) => {
   if (!value) return "-";

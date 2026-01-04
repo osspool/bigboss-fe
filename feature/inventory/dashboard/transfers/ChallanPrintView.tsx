@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatPrice } from "@/lib/constants";
 import { printReceipt } from "@/lib/utils/print-utils";
-import type { Transfer } from "@/types/inventory.types";
+import type { Transfer } from "@/types";
 
 interface ChallanPrintViewProps {
   transfer: Transfer | null;

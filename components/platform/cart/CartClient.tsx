@@ -3,10 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Minus, Plus, X, ShoppingBag, ArrowRight, Loader2 } from "lucide-react";
-import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/layout/Container";
+import { Section, Container } from "@classytic/clarity/layout";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/hooks/query/useCart";
+import { useCart } from "@/hooks/query";
 import { formatPrice } from "@/lib/constants";
 import { calculateItemPrice, getProductImage, getCartItemVariant, formatVariantAttributes } from "@/lib/commerce-utils";
 import type { CartItem } from "@/types";

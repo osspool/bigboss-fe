@@ -10,20 +10,20 @@ import {
   type SectionLayoutProps,
   type GridLayoutProps,
 } from "@classytic/formkit";
-import { cn } from "@/lib/utils";
-
-// Import existing Shadcn-based components
-import FormInput from "@/components/form/form-utils/form-input";
-import FormTextarea from "@/components/form/form-utils/form-textarea";
-import SelectInput from "@/components/form/form-utils/select-input";
-import ComboboxInput from "@/components/form/form-utils/combobox-input";
-import SwitchInput from "@/components/form/form-utils/switch-input";
-import CheckboxInput from "@/components/form/form-utils/checkbox-input";
-import RadioInput from "@/components/form/form-utils/radio-input";
-import DateInput from "@/components/form/form-utils/date-input";
-import TagInput from "@/components/form/form-utils/tag-input";
-import TagChoiceInput from "@/components/form/form-utils/tag-choice-input";
-import SlugField from "@/components/form/form-utils/slug-field";
+import {
+  FormInput,
+  FormTextarea,
+  SelectInput,
+  ComboboxInput,
+  SwitchInput,
+  CheckboxInput,
+  RadioInput,
+  DateInput,
+  TagInput,
+  TagChoiceInput,
+  SlugField,
+  cn,
+} from "@classytic/clarity";
 
 import { FormSection } from "@/components/form/form-system/components/FormSection";
 

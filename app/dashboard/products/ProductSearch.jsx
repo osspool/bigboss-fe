@@ -1,12 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import * as Search from "@/components/shared/search";
+import { Search, SelectInput } from "@classytic/clarity";
 import { useProductSearch } from "@/hooks/filter/use-product-search";
-import SelectInput from "@/components/form/form-utils/select-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCategoryTree, getParentCategoryOptions, getAllCategoryOptions } from "@/hooks/query/useCategories";
+import { useCategoryTree, getParentCategoryOptions, getAllCategoryOptions } from "@/hooks/query";
 
 const SEARCH_TYPE_OPTIONS = [
   { value: "name", label: "Search" },

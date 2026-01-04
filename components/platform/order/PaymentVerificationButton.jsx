@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useVerifyPayment, useRejectPayment } from "@/hooks/query/usePaymentVerification";
+import { usePaymentActions } from "@/hooks/query";
 
 /**
  * PaymentVerificationButton - Admin payment verification for pending transactions
@@ -28,8 +28,7 @@ export function PaymentVerificationButton({
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
-  const { verifyPayment, isVerifying } = useVerifyPayment(token);
-  const { rejectPayment, isRejecting } = useRejectPayment(token);
+  const { verifyPayment, isVerifying, rejectPayment, isRejecting } = usePaymentActions(token);
 
   const transactionId = transaction?.transactionId || transaction?._id;
 

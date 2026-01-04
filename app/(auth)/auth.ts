@@ -2,9 +2,9 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { handleApiRequest } from "@/api/api-handler";
+import { handleApiRequest } from "@/lib/sdk";
 import { authConfig } from "./auth.config";
-import type { AuthResponse, UserRoleType } from "@/api/user-data";
+import type { AuthResponse, UserRoleType } from "@classytic/commerce-sdk/auth";
 
 type JwtBranchClaim = {
   branchId: string;

@@ -1,6 +1,7 @@
 import { auth } from "@/app/(auth)/auth";
-import { PageHeader } from "@/components/custom/dashboard/page-header";
 import { CouponClient } from "./CouponClient";
+import { PageHeader } from "@classytic/clarity/dashboard";
+import { ModeToggle } from "@classytic/clarity";
 
 export default async function CouponsPage() {
   const session = await auth();
@@ -14,7 +15,7 @@ export default async function CouponsPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-2">
-      <PageHeader items={breadcrumbItems} />
+      <PageHeader items={breadcrumbItems} actions={<ModeToggle />} />
       <div className="flex-1">
         <CouponClient token={token} userRoles={userRoles} />
       </div>

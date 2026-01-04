@@ -9,7 +9,7 @@ import { Lookbook } from "@/components/platform/home/Lookbook";
 import { Testimonials } from "@/components/platform/home/Testimonials";
 import { InstagramFeed } from "@/components/platform/home/InstagramFeed";
 import { Newsletter } from "@/components/platform/home/Newsletter";
-import { getCmsPage } from "@/api/platform/cms-api";
+import { getCmsPage } from "@/lib/sdk";
 import { cmsPages } from "@/lib/cms-data";
 
 export const revalidate = 300; // 5 minutes

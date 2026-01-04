@@ -2,21 +2,20 @@
 
 import { useMemo, useCallback, useState } from "react";
 import { Truck, ClipboardList } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable, ConfirmDialog } from "@classytic/clarity";
 import { useBranch } from "@/contexts/BranchContext";
 import { transferColumns } from "./transfer-columns";
-import { useTransfers, useTransferActions } from "@/hooks/query/useTransfers";
-import { useTransferStats } from "@/hooks/query/useTransferStats";
+import { useTransfers, useTransferStateActions } from "@/hooks/query";
+import { useTransferStats } from "@/hooks/query";
 import { TransferCreateDialog } from "./transfer-create-dialog";
 import { TransferStatsCards } from "./TransferStatsCards";
 import { ChallanPrintView } from "./ChallanPrintView";
 import { CartonLabelPrintView } from "./CartonLabelPrintView";
 import { TransferDetailSheet } from "./transfer-detail-sheet";
-import { ConfirmDialog } from "@/components/custom/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
-import type { Transfer } from "@/types/inventory.types";
+import type { Transfer } from "@/types";
 
 interface TransfersClientProps {
   token: string;
@@ -44,7 +43,7 @@ export function TransfersClient({ token }: TransfersClientProps) {
     return { receiverBranch: branchId };
   }, [branchId, selectedBranch?.role]);
 
-  const { transfers, isLoading, isFetching, refetch } = useTransfers(
+  const { items: transfers, isLoading, isFetching, refetch } = useTransfers(
     token,
     transferParams,
     { enabled: !!branchId }
@@ -56,7 +55,7 @@ export function TransfersClient({ token }: TransfersClientProps) {
     { enabled: !!branchId }
   );
 
-  const actions = useTransferActions(token);
+  const actions = useTransferStateActions(token);
 
   const onApprove = useCallback(
     async (t: Transfer) => {

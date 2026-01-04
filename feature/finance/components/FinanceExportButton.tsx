@@ -4,8 +4,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { financeApi } from "@/api/platform/finance-api";
-import type { FinanceStatementParams } from "@/types/finance.types";
+import { financeApi } from "@classytic/commerce-sdk/finance";
+import type { FinanceStatementParams } from "@/types";
 import { toast } from "sonner";
 
 interface FinanceExportButtonProps {

@@ -2,12 +2,12 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useProducts } from "@/hooks/query/useProducts";
+import { useProducts } from "@/hooks/query";
 import { ProductGrid } from "./ProductGrid";
 import { ProductEmptyState } from "./ProductEmptyState";
 import { ProductSort, getApiSort, type SortValue } from "./list/ProductSort";
 import { FilterBar, MobileFilterSheet, ProductFilters } from "./list";
-import { ApiPagination } from "@/components/custom/ui/api-pagination";
+import { ApiPagination } from "@classytic/clarity";
 import { Spinner } from "@/components/ui/spinner";
 import { DEFAULT_PRICE_LIMIT, DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import type { PriceRange, ProductFilterState } from "@/types";

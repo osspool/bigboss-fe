@@ -1,5 +1,6 @@
 import { auth } from "@/app/(auth)/auth";
-import { PageHeader } from "@/components/custom/dashboard/page-header";
+import { PageHeader } from "@classytic/clarity/dashboard";
+import { ModeToggle } from "@classytic/clarity";
 import { CustomersClient } from "./CustomerClient";
 
 export default async function CustomersPage() {
@@ -14,7 +15,7 @@ export default async function CustomersPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-2">
-      <PageHeader items={breadcrumbItems} />
+      <PageHeader items={breadcrumbItems} actions={<ModeToggle />} />
       <div className="flex-1">
         <CustomersClient token={token} userRoles={userRoles} />
       </div>

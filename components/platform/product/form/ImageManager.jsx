@@ -9,12 +9,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, ImageIcon, X, GripVertical, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { MediaPickerDialog } from "@/feature/media/components/MediaPickerDialog";
 
 /**
  * ImageManager Component
  * Manages an array of images for a product
  */
-export function ImageManager({ control, disabled = false }) {
+export function ImageManager({ control, disabled = false, token }) {
   const { fields, append, remove, update, move } = useFieldArray({
     control,
     name: "images",
@@ -22,6 +23,7 @@ export function ImageManager({ control, disabled = false }) {
 
   const [editingIndex, setEditingIndex] = useState(null);
   const [draggedIndex, setDraggedIndex] = useState(null);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
   const defaultImage = {
     url: "",
@@ -34,22 +36,55 @@ export function ImageManager({ control, disabled = false }) {
     alt: "",
   };
 
+  // Open media picker instead of adding empty image
   const handleAddImage = () => {
+    setMediaPickerOpen(true);
+  };
+
+  // Handle media selection from picker
+  const handleMediaSelect = (selected) => {
+    // Handle both single and array selections
+    const mediaItems = Array.isArray(selected) ? selected : [selected];
+
+    mediaItems.forEach((media, index) => {
+      const newImage = {
+        url: media.url,
+        variants: {
+          thumbnail: media.variants?.thumbnail || "",
+          medium: media.variants?.medium || "",
+        },
+        order: fields.length + index,
+        isFeatured: fields.length === 0 && index === 0, // First image is featured if no images exist
+        alt: media.alt || "",
+      };
+      append(newImage);
+    });
+
+    setMediaPickerOpen(false);
+  };
+
+  // Add image manually (for URL input in edit mode)
+  const handleAddManualImage = () => {
     append(defaultImage);
     setEditingIndex(fields.length);
   };
 
   const handleRemoveImage = (index) => {
+    const wasFeaured = fields[index]?.isFeatured;
+
+    // If removing featured image and there are other images, set next one as featured first
+    if (wasFeaured && fields.length > 1) {
+      const newFeaturedIndex = index === 0 ? 1 : 0;
+      update(newFeaturedIndex, { ...fields[newFeaturedIndex], isFeatured: true });
+    }
+
     remove(index);
+
     if (editingIndex === index) {
       setEditingIndex(null);
-    }
-    // If removed image was featured, make first remaining image featured
-    if (fields[index]?.isFeatured && fields.length > 1) {
-      const newFeaturedIndex = index === 0 ? 0 : 0;
-      if (fields[newFeaturedIndex]) {
-        update(newFeaturedIndex, { ...fields[newFeaturedIndex], isFeatured: true });
-      }
+    } else if (editingIndex !== null && editingIndex > index) {
+      // Adjust editing index if it's after the removed item
+      setEditingIndex(editingIndex - 1);
     }
   };
 
@@ -319,8 +354,21 @@ export function ImageManager({ control, disabled = false }) {
 
       {fields.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          💡 Drag and drop to reorder images. The featured image will be shown as the main product image.
+          Drag and drop to reorder images. The featured image will be shown as the main product image.
         </p>
+      )}
+
+      {/* Media Picker Dialog */}
+      {token && (
+        <MediaPickerDialog
+          open={mediaPickerOpen}
+          onOpenChange={setMediaPickerOpen}
+          onSelect={handleMediaSelect}
+          token={token}
+          multiple={true}
+          folder="products"
+          title="Add Product Images"
+        />
       )}
     </div>
   );

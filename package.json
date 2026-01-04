@@ -6,10 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync:clarity": "powershell -Command \"Remove-Item -Path 'node_modules/@classytic/clarity' -Recurse -Force -ErrorAction SilentlyContinue; Copy-Item -Path '../../classytic/packages/clarity' -Destination 'node_modules/@classytic/clarity' -Recurse\"",
+    "sync:sdk": "powershell -Command \"Remove-Item -Path 'node_modules/@classytic/commerce-sdk' -Recurse -Force -ErrorAction SilentlyContinue; Copy-Item -Path 'D:/projects/ecom/commerce-bd-sdk/dist' -Destination 'node_modules/@classytic/commerce-sdk' -Recurse\""
   },
   "dependencies": {
     "@classytic/bd-areas": "^1.0.0",
+    "@classytic/clarity": "^0.1.1",
+    "@classytic/commerce-sdk": "^0.1.1",
     "@classytic/formkit": "^1.0.3",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",

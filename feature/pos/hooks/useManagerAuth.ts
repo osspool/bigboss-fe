@@ -2,8 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { verifyManagerAuth, DISCOUNT_ALLOWED_ROLES } from "@/api/user-data";
-import type { User, UserRoleType } from "@/api/user-data";
+import { verifyManagerAuth, DISCOUNT_ALLOWED_ROLES } from "@classytic/commerce-sdk/auth";
+import type { User, UserRoleType } from "@classytic/commerce-sdk/auth";
 
 export interface ManagerAuthState {
   isAuthorized: boolean;

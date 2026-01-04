@@ -1,14 +1,14 @@
 "use client";
 import { useMemo, useState, useCallback } from "react";
 import { CustomerSheet } from "@/components/platform/customer/customer-sheet";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CustomerSearch } from "./CustomerSearch";
 import { customersColumns } from "./customer-columns";
 import { Plus, Users } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useCustomerActions, useCustomers } from "@/hooks/query/useCustomers";
+import { useCustomerActions, useCustomers } from "@/hooks/query";
 
 
 export function CustomersClient({ token, userRoles = [] }) {

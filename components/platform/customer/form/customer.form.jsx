@@ -5,9 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { customerCreateSchema, customerUpdateSchema } from "@/schemas/customer.schema";
 import { FormGenerator } from "@/components/form/form-system";
-import { FormErrorSummary } from "@/components/form/form-utils/FormErrorSummary";
+import { FormErrorSummary } from "@classytic/clarity";
 import { createCustomerFormSchema } from "./customer-form-schema";
-import { useCustomerActions } from "@/hooks/query/useCustomers";
+import { useCustomerActions } from "@/hooks/query";
 import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 export function CustomerForm({

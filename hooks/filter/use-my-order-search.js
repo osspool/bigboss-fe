@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { useBaseSearch } from "./use-base-search";
+import { useBaseSearch } from "@classytic/clarity";
 import { clearSearchAndFilterParams } from "@/lib/filter-utils";
 
 /**
@@ -19,6 +19,8 @@ export function useMyOrderSearch() {
     basePath: "/profile/my-orders",
     searchFields: {
       orderId: "_id",
+      customerPhone: "customerPhone",
+      customerEmail: "customerEmail",
     },
     filterFields: {
       status: { paramName: "status", type: "string", defaultValue: "" },
@@ -70,5 +72,4 @@ export function useMyOrderSearch() {
     hasActiveFilters: !!status,
   };
 }
-
 

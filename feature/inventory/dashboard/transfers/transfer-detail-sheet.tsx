@@ -3,10 +3,10 @@
 import { type ReactNode } from "react";
 import { Truck, Package, User, Clock, MapPin, FileText, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
+import { SheetWrapper } from "@classytic/clarity";
 import { formatPrice } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import type { Transfer, TransferItem, TransferStatusHistoryEntry } from "@/types/inventory.types";
+import type { Transfer, TransferItem, TransferStatusHistoryEntry } from "@/types";
 
 type BranchRef = Transfer["senderBranch"];
 

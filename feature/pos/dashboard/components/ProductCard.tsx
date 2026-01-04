@@ -9,8 +9,8 @@ import {
   getPosProductImage,
   isVariantProduct,
   calculateVariantPrice,
-} from "@/hooks/query/usePos";
-import type { PosProduct } from "@/types/pos.types";
+} from "@/hooks/query";
+import type { PosProduct } from "@/types";
 
 interface ProductCardProps {
   product: PosProduct;

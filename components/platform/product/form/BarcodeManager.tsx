@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Product } from "@/types/product.types";
+import type { Product } from "@/types";
 import { toast } from "sonner";
 import { generateProductBarcode, validateEAN13 } from "@/lib/utils/barcode-utils";
 

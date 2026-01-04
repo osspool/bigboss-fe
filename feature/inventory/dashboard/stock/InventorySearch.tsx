@@ -1,7 +1,6 @@
 "use client";
 
-import * as Search from "@/components/shared/search";
-import SelectInput from "@/components/form/form-utils/select-input";
+import { Search, SelectInput } from "@classytic/clarity";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";

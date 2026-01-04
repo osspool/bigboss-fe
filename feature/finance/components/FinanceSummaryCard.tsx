@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { FinanceTotals } from "@/types/finance.types";
+import type { FinanceTotals } from "@/types";
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
 
 interface FinanceSummaryCardProps {

@@ -25,10 +25,9 @@ const iconMap = {
 interface FolderSidebarProps {
   selectedFolder: string;
   onSelectFolder: (folder: string) => void;
-  folderCounts: Record<string, number>;
 }
 
-export function FolderSidebar({ selectedFolder, onSelectFolder, folderCounts }: FolderSidebarProps) {
+export function FolderSidebar({ selectedFolder, onSelectFolder }: FolderSidebarProps) {
   return (
     <div className="w-44 border-r border-border bg-card/50 flex flex-col">
       <div className="py-2 px-3 border-b border-border">
@@ -40,11 +39,8 @@ export function FolderSidebar({ selectedFolder, onSelectFolder, folderCounts }: 
       <nav className="flex-1 p-2 space-y-0.5 overflow-auto">
         {FOLDER_CONFIG.map(folder => {
           const Icon = iconMap[folder.icon as keyof typeof iconMap] || Folder;
-          const count = folder.id === 'all' 
-            ? folderCounts.all || 0 
-            : folderCounts[folder.id] || 0;
           const isSelected = selectedFolder === folder.id;
-          
+
           return (
             <button
               key={folder.id}
@@ -61,14 +57,6 @@ export function FolderSidebar({ selectedFolder, onSelectFolder, folderCounts }: 
                 isSelected ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
               )} />
               <span className="flex-1 text-left truncate">{folder.name}</span>
-              <span className={cn(
-                "text-xs tabular-nums px-1.5 py-0.5 rounded",
-                isSelected 
-                  ? "bg-primary-foreground/20 text-primary-foreground" 
-                  : "bg-muted text-muted-foreground"
-              )}>
-                {count}
-              </span>
             </button>
           );
         })}

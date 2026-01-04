@@ -1,5 +1,5 @@
 "use client";
-import { FormSheet } from "@/components/custom/ui/sheet-wrapper";
+import { FormSheet } from "@classytic/clarity";
 import { CategoryForm } from "./form/category.form";
 import { useFormSubmitState } from "@/hooks/use-form-submit-state";
 

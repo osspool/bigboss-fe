@@ -1,14 +1,14 @@
 "use client";
 import { useMemo, useState, useCallback } from "react";
 import { CouponSheet } from "@/components/platform/coupon/coupon-sheet";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CouponSearch } from "./CouponSearch";
 import { couponsColumns } from "./coupons-columns";
 import { Plus, Tag } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useCouponActions, useCoupons } from "@/hooks/query/useCoupons";
+import { useCouponActions, useCoupons } from "@/hooks/query";
 
 
 export function CouponClient({ token, userRoles = [] }) {

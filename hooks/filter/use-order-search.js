@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { useBaseSearch } from "./use-base-search";
+import { useBaseSearch } from "@classytic/clarity";
 import { clearSearchAndFilterParams } from "@/lib/filter-utils";
 
 /**

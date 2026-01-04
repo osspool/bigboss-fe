@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { Plus, MapPin } from "lucide-react";
-import { useCurrentCustomer, useCustomerActions } from "@/hooks/query/useCustomers";
+import { useCurrentCustomer, useCustomerActions } from "@/hooks/query";
 import { AddressCard } from "@/components/platform/customer/address-card";
 import { AddressFormDialog } from "./AddressFormDialog";
 
@@ -26,7 +26,8 @@ export function AddressSection({
   const [editingAddress, setEditingAddress] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
 
-  const addresses = customer?.data?.addresses || [];
+  // useCurrentCustomer returns the customer directly (already unwrapped from response.data)
+  const addresses = customer?.addresses || [];
 
   // Auto-select default address or first address
   useEffect(() => {
@@ -63,7 +64,7 @@ export function AddressSection({
       const updatedAddresses = addresses.filter(addr => addr._id !== addressId);
       await updateCustomer({
         token,
-        id: customer.data._id,
+        id: customer._id,
         data: { addresses: updatedAddresses }
       });
       refetch();
@@ -96,7 +97,7 @@ export function AddressSection({
 
       await updateCustomer({
         token,
-        id: customer.data._id,
+        id: customer._id,
         data: { addresses: updatedAddresses }
       });
 

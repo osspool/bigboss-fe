@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { FinanceSummaryParams } from "@/types/finance.types";
+import type { FinanceSummaryParams } from "@/types";
 
 interface FinanceFiltersProps {
   filters: FinanceSummaryParams;
@@ -90,7 +90,7 @@ export function FinanceFilters({
             <Label htmlFor="source">Source</Label>
             <Select
               value={filters.source || "all"}
-              onValueChange={(value) =>
+              onValueChange={(value: string) =>
                 handleChange("source", value === "all" ? "" : value)
               }
             >
@@ -111,7 +111,7 @@ export function FinanceFilters({
               <Label htmlFor="branch">Branch</Label>
               <Select
                 value={filters.branchId || "all"}
-                onValueChange={(value) =>
+                onValueChange={(value: string) =>
                   handleChange("branchId", value === "all" ? "" : value)
                 }
               >

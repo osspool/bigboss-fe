@@ -1,30 +1,22 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { LayoutDashboard } from "lucide-react";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-
-import { NavMain } from "@/components/custom/dashboard/nav-main";
-import { NavSecondary } from "@/components/custom/dashboard/nav-secondary";
-import { NavUser } from "@/components/custom/dashboard/nav-user";
-import { BranchSwitcher } from "@/components/custom/dashboard/branch-switcher";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar";
+import { signOut } from "next-auth/react";
+import { useBranch } from "@/contexts/BranchContext";
+import { InsetSidebar } from "@classytic/clarity/dashboard";
 import { data } from "./sidebar-data";
-import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
 
+/**
+ * AppSidebar - Main dashboard sidebar using clarity's InsetSidebar.
+ * Handles role-based navigation filtering and branch switching.
+ */
 export function AppSidebar({ admin, user, userRoles = [], ...props }) {
-  const { isMobile, state } = useSidebar();
-  const isCollapsed = state === "collapsed";
+  const pathname = usePathname();
+  const { branches, selectedBranch, switchBranch, hasMultipleBranches, isLoading } = useBranch();
+
+  // Normalize user roles for comparison
   const normalizedUserRoles = React.useMemo(() => {
     if (Array.isArray(userRoles)) {
       return userRoles
@@ -38,84 +30,120 @@ export function AppSidebar({ admin, user, userRoles = [], ...props }) {
     return [];
   }, [userRoles]);
 
+  // Check if user has access to a nav item
   const hasAccess = (itemRoles) => {
-    if (!itemRoles || itemRoles.length === 0) {
-      return true;
-    }
+    if (!itemRoles || itemRoles.length === 0) return true;
     const normalizedItemRoles = itemRoles
       .filter((r) => r != null)
       .map((r) => (typeof r === "string" ? r : String(r)).trim().toLowerCase());
     return normalizedItemRoles.some((role) => normalizedUserRoles.includes(role));
   };
 
-  const filteredNavMain = data.navMain
-    .map((section) => ({
-      ...section,
-      items: section.items.filter((item) => hasAccess(item.roles)),
-    }))
-    .filter((section) => section.items.length > 0);
+  // Check if a URL is active
+  const isActiveUrl = (url) => pathname === url;
 
-  const filteredNavSecondary = data.navSecondary.filter((item) =>
-    hasAccess(item.roles)
-  );
+  // Transform navigation data to clarity format with role filtering and active state
+  const transformNavigation = (groups) => {
+    return groups
+      .map((group) => ({
+        title: group.title,
+        items: group.items
+          .filter((item) => hasAccess(item.roles))
+          .map((item) => ({
+            title: item.title,
+            url: item.url,
+            icon: item.icon,
+            isActive: isActiveUrl(item.url),
+            items: item.items?.map((sub) => ({
+              title: sub.title,
+              url: sub.url,
+            })),
+          })),
+      }))
+      .filter((group) => group.items.length > 0);
+  };
+
+  // Transform secondary navigation
+  const transformSecondaryNavigation = (items) => {
+    return [{
+      items: items
+        .filter((item) => hasAccess(item.roles))
+        .map((item) => ({
+          title: item.title,
+          url: item.url,
+          icon: item.icon,
+          isActive: isActiveUrl(item.url),
+        })),
+    }];
+  };
+
+  // Transform branches to ProjectSwitcher format
+  const branchItems = React.useMemo(() => {
+    return branches.map((branch) => ({
+      id: branch._id,
+      name: branch.name,
+      code: branch.code,
+      type: branch.type,
+      isDefault: branch.isDefault,
+      isActive: branch.isActive,
+      subtitle: branch.address?.city,
+    }));
+  }, [branches]);
+
+  const selectedBranchItem = selectedBranch ? {
+    id: selectedBranch._id,
+    name: selectedBranch.name,
+    code: selectedBranch.code,
+    type: selectedBranch.type,
+    isDefault: selectedBranch.isDefault,
+    isActive: selectedBranch.isActive,
+    subtitle: selectedBranch.address?.city,
+  } : undefined;
+
+  const handleBranchSelect = (project) => {
+    switchBranch(project.id);
+  };
+
+  // Navigation data
+  const navigation = admin
+    ? transformNavigation(data.adminMain)
+    : transformNavigation(data.navMain);
+
+  const secondaryNavigation = admin
+    ? undefined
+    : transformSecondaryNavigation(data.navSecondary);
+
+  // User menu configuration
+  const userConfig = user ? {
+    data: {
+      name: user.name || "User",
+      email: user.email || "",
+      avatar: user.avatar || user.image,
+    },
+    onLogout: () => signOut({ redirectTo: "/login" }),
+  } : undefined;
+
+  // Project/Branch switcher configuration
+  const projectConfig = hasMultipleBranches || selectedBranch ? {
+    items: branchItems,
+    selected: selectedBranchItem,
+    onSelect: handleBranchSelect,
+    isLoading,
+    label: "Switch Branch",
+  } : undefined;
 
   return (
-    <Sidebar variant="inset" collapsible="icon" {...props}>
-      {isMobile && (
-        <VisuallyHidden>
-          <SheetTitle>Navigation Menu</SheetTitle>
-          <SheetDescription className="sr-only">
-            Application navigation menu containing links to different sections
-            of the application
-          </SheetDescription>
-        </VisuallyHidden>
-      )}
-      <SidebarHeader className="gap-1">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              asChild
-              tooltip={isCollapsed ? "HRM" : undefined}
-            >
-              <a
-                href="/"
-                className={cn(
-                  "flex items-center text-sidebar-foreground",
-                  isCollapsed && !isMobile && "justify-center"
-                )}
-              >
-                <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
-                  <LayoutDashboard
-                    size={18}
-                    className="text-sidebar-primary-foreground"
-                  />
-                </div>
-                <span
-                  className={cn(
-                    "ml-2 font-semibold tracking-tight",
-                    !isMobile && isCollapsed && "hidden"
-                  )}
-                >
-                  Bigboss Admin
-                </span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <BranchSwitcher />
-      </SidebarHeader>
-      <SidebarContent>
-        {admin ? (
-          <NavMain items={data.adminMain} />
-        ) : (
-          <>
-            <NavMain items={filteredNavMain} />
-            <NavSecondary items={filteredNavSecondary} className="mt-auto" />
-          </>
-        )}
-      </SidebarContent>
-      <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter>
-    </Sidebar>
+    <InsetSidebar
+      brand={{
+        title: "Bigboss Admin",
+        icon: <LayoutDashboard size={18} />,
+        href: "/",
+      }}
+      navigation={navigation}
+      secondaryNavigation={secondaryNavigation}
+      project={projectConfig}
+      user={userConfig}
+      {...props}
+    />
   );
 }

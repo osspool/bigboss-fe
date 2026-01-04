@@ -2,11 +2,11 @@
 
 import { useCallback, useState } from "react";
 import { ClipboardList, ScrollText } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { useBranch } from "@/contexts/BranchContext";
-import { useMovements } from "@/hooks/query/useMovements";
+import { useMovements } from "@/hooks/query";
 import { movementColumns, type MovementRow } from "./movement-columns";
 import { MovementDetailSheet } from "./movement-detail-sheet";
 

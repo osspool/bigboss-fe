@@ -6,9 +6,19 @@ import {
   useMediaBulkDelete,
   useMediaMove,
   useMediaUpdate,
-} from '@/hooks/query/useMedia';
-import type { Media, MediaFolder } from '@/types/media.types';
-import type { OffsetPaginationResponse } from '@/api/api-factory';
+  type Media,
+  type MediaFolder,
+} from '@classytic/commerce-sdk/content';
+
+interface OffsetPaginationResponse<T> {
+  docs: T[];
+  total: number;
+  pages: number;
+  page: number;
+  limit: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
 
 interface UseMediaLibraryOptions {
   token: string | null;
@@ -51,15 +61,14 @@ export function useMediaLibrary(options: UseMediaLibraryOptions) {
     },
     {
       enabled: !!token,
-      keepPreviousData: true, // Keep old data while fetching new page
     }
   );
 
-  // Mutations
-  const uploadMutation = useMediaUpload();
-  const deleteMutation = useMediaBulkDelete();
-  const moveMutation = useMediaMove();
-  const updateMutation = useMediaUpdate();
+  // Mutations (SDK hooks require token)
+  const uploadMutation = useMediaUpload(token || '');
+  const deleteMutation = useMediaBulkDelete(token || '');
+  const moveMutation = useMediaMove(token || '');
+  const updateMutation = useMediaUpdate(token || '');
 
   // Extract data from response with proper typing
   const typedResponse = mediaResponse as OffsetPaginationResponse<Media> | undefined;
@@ -140,8 +149,7 @@ export function useMediaLibrary(options: UseMediaLibraryOptions) {
     if (!token) return;
 
     const targetFolder = (folder === 'all' ? 'general' : folder) as MediaFolder;
-    await uploadMutation.mutateAsync({
-      token,
+    await uploadMutation.uploadAsync({
       files,
       folder: targetFolder,
     });
@@ -151,7 +159,7 @@ export function useMediaLibrary(options: UseMediaLibraryOptions) {
   const deleteMedia = useCallback(async (ids: string[]) => {
     if (!token) return;
 
-    await deleteMutation.mutateAsync({ token, ids });
+    await deleteMutation.bulkDeleteAsync(ids);
 
     // Update UI state
     setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
@@ -167,7 +175,7 @@ export function useMediaLibrary(options: UseMediaLibraryOptions) {
   ) => {
     if (!token) return;
 
-    await updateMutation.mutateAsync({ token, id, data });
+    await updateMutation.updateAsync({ id, data });
 
     // Update detail item if it's the one being updated
     if (detailItem?._id === id) {
@@ -179,9 +187,9 @@ export function useMediaLibrary(options: UseMediaLibraryOptions) {
   const moveMedia = useCallback(async (ids: string[], targetFolder: string) => {
     if (!token) return;
 
-    await moveMutation.mutateAsync({
-      token,
-      data: { ids, targetFolder: targetFolder as MediaFolder },
+    await moveMutation.moveAsync({
+      ids,
+      targetFolder: targetFolder as MediaFolder,
     });
   }, [token, moveMutation]);
 
@@ -227,9 +235,9 @@ export function useMediaLibrary(options: UseMediaLibraryOptions) {
     moveMedia,
 
     // Mutation states
-    isUploading: uploadMutation.isPending,
-    isDeleting: deleteMutation.isPending,
-    isMoving: moveMutation.isPending,
-    isUpdating: updateMutation.isPending,
+    isUploading: uploadMutation.isUploading,
+    isDeleting: deleteMutation.isDeleting,
+    isMoving: moveMutation.isMoving,
+    isUpdating: updateMutation.isUpdating,
   };
 }

@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { FinanceByMethod } from "@/types/finance.types";
+import type { FinanceByMethod } from "@/types";
 
 interface MethodBreakdownProps {
   data: FinanceByMethod[];

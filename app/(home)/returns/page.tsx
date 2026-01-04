@@ -1,9 +1,8 @@
-import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/layout/Container";
+import { Section, Container } from "@classytic/clarity/layout";
 import { Package, Clock, RefreshCw, CheckCircle, LucideIcon } from "lucide-react";
-import { getCmsPage } from "@/api/platform/cms-api";
+import { getCmsPage } from "@/lib/sdk";
 import { cmsPages } from "@/lib/cms-data";
-import type { ReturnsPageContent } from "@/types/cms.types";
+import type { ReturnsPageContent } from "@/types";
 
 export const revalidate = 3600;
 

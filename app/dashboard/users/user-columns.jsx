@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { User, Mail, Calendar, Pencil, Shield, Building2, CheckCircle, XCircle, Lock } from "lucide-react";
-import { ActionDropdown } from "@/components/custom/ui/dropdown-wrapper";
+import { ActionDropdown } from "@classytic/clarity";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 

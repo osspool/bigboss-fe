@@ -2,9 +2,9 @@
 
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { usePosLookupMutation, formatVariantLabel } from "@/hooks/query/usePos";
+import { usePosLookupMutation, formatVariantLabel } from "@/hooks/query";
 import { makeLineKey } from "./line-items";
-import type { PosLookupResponse } from "@/types/pos.types";
+import type { PosLookupResponse } from "@/types";
 
 export interface ScannedLineItemBase {
   key: string;
@@ -65,7 +65,7 @@ export function useScannedLineItems<TItem extends ScannedLineItemBase = ScannedL
     }
     const qty = Math.max(1, Number(quantity) || 1);
 
-    const res = await lookupMutation.mutateAsync({ code: c, branchId });
+    const res = await lookupMutation.lookup({ code: c, branchId });
     if (!res?.success || !res?.data?.product?._id) {
       toast.error(onNotFoundMessage?.(res) || res?.message || "Not found");
       return;
@@ -128,7 +128,7 @@ export function useScannedLineItems<TItem extends ScannedLineItemBase = ScannedL
     setQuantity,
     items,
     setItems,
-    isLookingUp: lookupMutation.isPending,
+    isLookingUp: lookupMutation.isLooking,
     add,
     updateQuantityAt,
     updateItemAt,

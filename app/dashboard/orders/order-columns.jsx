@@ -19,7 +19,7 @@ import {
   Gift,
 } from "lucide-react";
 
-import { ActionDropdown } from "@/components/custom/ui/dropdown-wrapper";
+import { ActionDropdown } from "@classytic/clarity";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/constants";
 import { ORDER_STATUS_COLORS, ORDER_STATUS_LABELS } from "@/constants/enums/monetization.enum";

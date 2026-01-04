@@ -2,12 +2,12 @@ import { z } from "zod";
 import { objectIdStringSchema, optionalObjectIdString } from "@/lib/utils/zod-utils";
 import {
   TRANSACTION_CATEGORY_VALUES,
-  TRANSACTION_TYPE_VALUES,
+  TRANSACTION_FLOW_VALUES,
   TRANSACTION_STATUS_VALUES,
-  TRANSACTION_TARGET_MODEL_VALUES,
   PAYMENT_METHOD_VALUES,
   PAYMENT_GATEWAY_TYPE_VALUES,
   COMMISSION_STATUS_VALUES,
+  ORDER_SOURCE_VALUES,
 } from "@/constants/enums/monetization.enum";
 
 /**
@@ -20,6 +20,16 @@ export const transactionPaymentDetails = z.object({
   accountNumber: z.string().optional(),
   accountName: z.string().optional(),
   proofUrl: z.string().optional(), // Screenshot or proof URL
+}).optional();
+
+/**
+ * Tax details schema matching backend structure
+ */
+export const taxDetailsSchema = z.object({
+  type: z.enum(['vat', 'gst', 'sales_tax']).optional(),
+  rate: z.number().optional(), // Decimal (0.15 = 15%)
+  isInclusive: z.boolean().optional(), // Prices include tax
+  jurisdiction: z.string().optional(), // Tax jurisdiction (e.g., 'BD')
 }).optional();
 
 /**
@@ -59,6 +69,13 @@ export const transactionUpdateSchema = z.object({
 /**
  * Transaction view schema (for displaying transaction data)
  * Includes all fields returned by backend
+ *
+ * Key fields per API docs:
+ * - flow: Direction of money ('inflow' = income, 'outflow' = expense)
+ * - type: Category string (order_purchase, refund, inventory_purchase, etc.)
+ * - amount: Gross amount in smallest unit (paisa)
+ * - net: Amount after fees (amount - fee)
+ * - sourceModel/sourceId: Polymorphic reference to source document
  */
 export const transactionViewSchema = z.object({
   _id: z.string(),
@@ -66,53 +83,96 @@ export const transactionViewSchema = z.object({
   customerId: optionalObjectIdString,
   handledBy: optionalObjectIdString,
 
-  type: z.enum(TRANSACTION_TYPE_VALUES),
-  category: z.enum(TRANSACTION_CATEGORY_VALUES).optional(),
+  // === CLASSIFICATION ===
+  // Flow: direction of money (inflow = income, outflow = expense)
+  flow: z.enum(TRANSACTION_FLOW_VALUES),
+  // Type: category of transaction (order_purchase, refund, inventory_purchase, etc.)
+  type: z.string(), // Allow any category string from backend
   status: z.enum(TRANSACTION_STATUS_VALUES),
-  amount: z.number().min(0),
-  method: z.enum(PAYMENT_METHOD_VALUES),
+
+  // === AMOUNTS (in smallest currency unit - paisa for BDT) ===
+  amount: z.number().min(0), // Gross amount
+  fee: z.number().optional().default(0), // Gateway/platform fees
+  tax: z.number().optional().default(0), // Tax amount (informational for VAT)
+  net: z.number().optional(), // Net amount after fees (amount - fee)
+  currency: z.string().optional().default('BDT'),
+
+  // Tax details for finance reporting
+  taxDetails: taxDetailsSchema,
+
+  // === PAYMENT ===
+  method: z.enum([...PAYMENT_METHOD_VALUES, 'split']),
+  // Payment gateway integration (system-managed)
+  gateway: z.object({
+    type: z.string().optional(), // manual, stripe, sslcommerz, etc.
+    paymentIntentId: z.string().optional(),
+    sessionId: z.string().optional(),
+    paymentUrl: z.string().optional(),
+    expiresAt: z.date().optional(),
+    metadata: z.any().optional(),
+  }).optional(),
+  // Customer-provided payment reference
+  reference: z.string().optional(),
+  // Payment details (wallet, bank info)
+  paymentDetails: transactionPaymentDetails,
+
+  // === SOURCE & BRANCH ===
+  // Source channel: where the transaction originated
+  source: z.enum(ORDER_SOURCE_VALUES).optional(), // 'web', 'pos', 'api'
+  // Branch reference for POS/multi-location
+  branch: optionalObjectIdString,
+
+  // === POLYMORPHIC REFERENCE ===
+  // Links to source document (Order, Purchase, etc.)
+  sourceModel: z.string().optional(), // 'Order', 'Purchase', 'Manual'
+  sourceId: optionalObjectIdString, // Source document ID
+
+  // Related transaction (for refunds linking to original)
+  relatedTransactionId: optionalObjectIdString,
+
+  // === METADATA ===
+  metadata: z.any().optional(),
+  description: z.string().optional(),
+  notes: z.string().optional(),
 
   // Idempotency key (for safe retries)
   idempotencyKey: z.string().optional(),
 
-  // Payment gateway integration (system-managed)
-  gateway: z.object({
-    type: z.enum(PAYMENT_GATEWAY_TYPE_VALUES).optional(),
-    paymentIntentId: z.string().optional(),  // Stripe: pi_xxx, SSLCommerz: session_id
-    sessionId: z.string().optional(),        // Checkout session ID
-    paymentUrl: z.string().optional(),       // Customer redirect URL
-    expiresAt: z.date().optional(),          // Payment intent expiry
-    metadata: z.any().optional(),            // Gateway-specific data
-  }).optional(),
-
   // Webhook handling (system-managed)
   webhook: z.object({
-    eventId: z.string().optional(),      // For idempotency
-    receivedAt: z.date().optional(),     // When webhook was received
-    processedAt: z.date().optional(),    // When webhook was processed
-    payload: z.any().optional(),         // Raw webhook payload
+    eventId: z.string().optional(),
+    eventType: z.string().optional(),
+    receivedAt: z.date().optional(),
+    processedAt: z.date().optional(),
+    payload: z.any().optional(),
   }).optional(),
 
-  // Customer-provided payment reference
-  reference: z.string().optional(),
-
-  // Payment details
-  paymentDetails: transactionPaymentDetails,
-
-  notes: z.string().optional(),
+  // === TIMESTAMPS ===
+  // Transaction date (when it occurred)
   date: z.date().optional(),
+  transactionDate: z.date().optional(),
 
-  // Verification tracking (system-managed)
+  // Verification tracking
   verifiedAt: z.date().optional(),
   verifiedBy: optionalObjectIdString,
 
-  // Commission tracking (system-managed)
+  // Status timestamps
+  initiatedAt: z.date().optional(),
+  completedAt: z.date().optional(),
+  failedAt: z.date().optional(),
+  failureReason: z.string().optional(),
+
+  // Refund tracking
+  refundedAt: z.date().optional(),
+  refundedAmount: z.number().optional().default(0),
+
+  // === COMMISSION (for marketplace use) ===
   commission: z.object({
-    rate: z.number().optional(),           // Commission rate (0.05 = 5%, 0.10 = 10%)
-    grossAmount: z.number().optional(),    // Gross commission amount
-    gatewayFeeRate: z.number().optional(), // Gateway fee rate
-    gatewayFeeAmount: z.number().optional(), // Gateway fee amount
-    netAmount: z.number().optional(),      // Actual platform revenue
+    rate: z.number().optional(),
+    grossAmount: z.number().optional(),
+    gatewayFeeRate: z.number().optional(),
+    gatewayFeeAmount: z.number().optional(),
+    netAmount: z.number().optional(),
     status: z.enum(COMMISSION_STATUS_VALUES).optional(),
     dueDate: z.date().optional(),
     paidDate: z.date().optional(),
@@ -120,12 +180,13 @@ export const transactionViewSchema = z.object({
     notes: z.string().optional(),
   }).optional(),
 
-  // Polymorphic reference
-  referenceId: optionalObjectIdString,
-  referenceModel: z.enum(TRANSACTION_TARGET_MODEL_VALUES).optional(),
-
-  // Additional metadata (system-managed)
-  metadata: z.any().optional(),
+  // === RECONCILIATION ===
+  reconciliation: z.object({
+    isReconciled: z.boolean().optional(),
+    reconciledAt: z.date().optional(),
+    reconciledBy: optionalObjectIdString,
+    bankStatementRef: z.string().optional(),
+  }).optional(),
 
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),

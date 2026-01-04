@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { usePaymentMethods } from "@/hooks/query/usePlatformConfig";
-import type { PaymentMethodConfig } from "@/types/common.types";
+import { usePaymentMethods } from "@/hooks/query";
+import type { PaymentMethodConfig } from "@classytic/commerce-sdk/platform";
 import type {
   PosPaymentMethod,
   PaymentOption,
   SplitPaymentEntry,
   PaymentState,
-} from "@/types/pos.types";
+} from "@/types";
 import { parseCashReceived, calculateChange, calculateAmountDue, parsePositiveNumber } from "../utils";
 
 // ============= Payment Mapping (consolidated from pos-payment.ts) =============

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, Loader2, ArrowLeft, ArrowRight } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useProducts } from "@/hooks/query/useProducts";
+import { useProducts } from "@/hooks/query";
 import {
   InputGroup,
   InputGroupAddon,
@@ -110,7 +110,7 @@ export function MobileSearchOverlay({ isOpen, onClose }: MobileSearchOverlayProp
               type="text"
               placeholder="Search products..."
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
               className="text-base"
             />
 

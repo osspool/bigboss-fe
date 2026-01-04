@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatPrice } from "@/lib/constants";
-import type { PaymentMethodConfig } from "@/types/common.types";
+import type { PaymentMethodConfig } from "@/types";
 import { cn } from "@/lib/utils";
 
 /**

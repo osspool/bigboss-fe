@@ -5,13 +5,13 @@ import { useForm } from "react-hook-form";
 import { Loader2, PackageSearch, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useBranch } from "@/contexts/BranchContext";
-import { usePurchaseActions } from "@/hooks/query/usePurchases";
-import { useSuppliers } from "@/hooks/query/useSuppliers";
+import { usePurchaseActions } from "@/hooks/query";
+import { useSuppliers } from "@/hooks/query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormGenerator } from "@/components/form/form-system";
-import type { Supplier } from "@/types/supplier.types";
-import { SheetWrapper } from "@/components/custom/ui/sheet-wrapper";
+import type { Supplier } from "@/types";
+import { SheetWrapper } from "@classytic/clarity";
 import { useScannedLineItems } from "@/feature/inventory/ui/useScannedLineItems";
 import { InventoryScanSection } from "@/feature/inventory/forms/inventory-scan-section";
 import { createPurchaseFormSchema, type PurchaseFormValues } from "@/feature/inventory/forms/inventory-form-schemas";
@@ -34,7 +34,7 @@ type PurchaseLineItem = {
 
 export function PurchaseCreateDialog({ token, disabled }: PurchaseCreateDialogProps) {
   const { selectedBranch } = useBranch();
-  const { create, isCreating } = usePurchaseActions(token);
+  const { create, isCreating } = usePurchaseActions();
 
   const [open, setOpen] = useState(false);
 
@@ -122,20 +122,23 @@ export function PurchaseCreateDialog({ token, disabled }: PurchaseCreateDialogPr
         return;
       }
 
-      await create.mutateAsync({
-        supplierId: data.supplierId || undefined,
-        purchaseOrderNumber: data.purchaseOrderNumber?.trim() || undefined,
-        paymentTerms: data.paymentTerms,
-        creditDays: data.paymentTerms === "credit" ? data.creditDays : undefined,
-        autoApprove: data.autoApprove,
-        autoReceive: data.autoReceive,
-        notes: data.notes?.trim() || undefined,
-        items: scan.items.map((i) => ({
-          productId: i.productId,
-          variantSku: i.variantSku,
-          quantity: i.quantity,
-          costPrice: Number(i.costPrice),
-        })),
+      await create({
+        token,
+        data: {
+          supplierId: data.supplierId || undefined,
+          purchaseOrderNumber: data.purchaseOrderNumber?.trim() || undefined,
+          paymentTerms: data.paymentTerms,
+          creditDays: data.paymentTerms === "credit" ? data.creditDays : undefined,
+          autoApprove: data.autoApprove,
+          autoReceive: data.autoReceive,
+          notes: data.notes?.trim() || undefined,
+          items: scan.items.map((i) => ({
+            productId: i.productId,
+            variantSku: i.variantSku,
+            quantity: i.quantity,
+            costPrice: Number(i.costPrice),
+          })),
+        },
       });
 
       setOpen(false);

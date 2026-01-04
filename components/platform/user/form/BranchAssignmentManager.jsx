@@ -4,8 +4,8 @@ import { Plus, Trash2, Building2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import SelectInput from "@/components/form/form-utils/select-input";
-import { useBranches } from "@/hooks/query/useBranches";
+import { SelectInput } from "@classytic/clarity";
+import { useBranches } from "@/hooks/query";
 import { BRANCH_ROLE_OPTIONS } from "./user-form-schema";
 
 /**

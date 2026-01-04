@@ -1,8 +1,9 @@
 import { auth } from "@/app/(auth)/auth";
-import { PageHeader } from "@/components/custom/dashboard/page-header";
 import { UsersClient } from "./UsersClient";
 import { AccessDenied } from "../components/AccessDenied";
 import { isAdminUser, normalizeRoles } from "@/lib/access-control";
+import { PageHeader } from "@classytic/clarity/dashboard";
+import { ModeToggle } from "@classytic/clarity";
 
 export default async function UsersPage() {
   const session = await auth();
@@ -26,7 +27,7 @@ export default async function UsersPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-2">
-      <PageHeader items={breadcrumbItems} />
+      <PageHeader items={breadcrumbItems} actions={<ModeToggle />} />
       <div className="flex-1">
         <UsersClient token={token} userRoles={userRoles} />
       </div>

@@ -16,21 +16,21 @@
  * @see feature/pos/README.md for architecture details
  */
 
-import { useDeferredValue, useMemo, useCallback, useEffect, useState } from "react";
+import { useMemo, useCallback, useEffect, useState } from "react";
 import { Package, Loader2, ShoppingCart, AlertTriangle, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ResponsiveSplitLayout } from "@/components/custom/ui/ResponsiveSplitLayout";
+import { ResponsiveSplitLayout } from "@classytic/clarity";
 import { useBranch } from "@/contexts/BranchContext";
-import { useCategoryTree } from "@/hooks/query/useCategories";
+import { useCategoryTree } from "@/hooks/query";
 import {
   usePosProducts,
   usePosOrders,
   usePosLookupMutation,
   generateIdempotencyKey,
-} from "@/hooks/query/usePos";
-import type { PosProduct, PosPaymentMethod, PosReceiptData } from "@/types/pos.types";
+} from "@/hooks/query";
+import type { PosProduct, PosPaymentMethod, PosReceiptData } from "@/types";
 import { toast } from "sonner";
 import { VariantSelectorDialog } from "./components/VariantSelectorDialog";
 import { CartPanel } from "./components/CartPanel";
@@ -43,9 +43,9 @@ import { usePosCart, usePosCustomer, usePosPayment } from "../hooks";
 import { useManagerAuth } from "../hooks/useManagerAuth";
 import { calculateOrderTotals, isValidBDPhone, parsePositiveNumber, transformOrderToReceipt } from "../utils";
 import { ManagerAuthDialog } from "./components/ManagerAuthDialog";
-import { useMembershipConfig } from "@/hooks/query/usePlatformConfig";
+import { useMembershipConfig } from "@/hooks/query";
 import { getReadableTextColor, getTierColor } from "@/lib/loyalty-utils";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 
 interface PosClientProps {
   token: string;
@@ -57,8 +57,8 @@ export function PosClient({ token }: PosClientProps) {
 
   // Search & filter state
   const [searchQuery, setSearchQuery] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState(""); // Only updates on button click
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   // Variant selector state
   const [variantSelectorOpen, setVariantSelectorOpen] = useState(false);
@@ -103,15 +103,15 @@ export function PosClient({ token }: PosClientProps) {
   const cartMembershipCardId = cart.membershipCardId;
   const setCartMembershipCardId = cart.setMembershipCardId;
 
-  // Product filters
+  // Product filters - only updates when appliedSearch changes (on button click)
   const productFilters = useMemo(
     () => ({
-      search: deferredSearchQuery.trim() || undefined,
+      search: appliedSearch.trim() || undefined,
       category: selectedCategory !== "all" ? selectedCategory : undefined,
       inStockOnly: true,
       limit: 50,
     }),
-    [deferredSearchQuery, selectedCategory]
+    [appliedSearch, selectedCategory]
   );
 
   // Queries
@@ -124,7 +124,7 @@ export function PosClient({ token }: PosClientProps) {
   } = usePosProducts(token, branchId, productFilters, { enabled: !!branchId });
 
   const lookupMutation = usePosLookupMutation(token);
-  const isLookingUp = lookupMutation.isPending;
+  const isLookingUp = lookupMutation.isLooking;
 
   const { createOrder, isCreatingOrder } = usePosOrders(token);
 
@@ -167,7 +167,7 @@ export function PosClient({ token }: PosClientProps) {
 
       setBarcodeInput("");
 
-      const result = await lookupMutation.mutateAsync({ code, branchId });
+      const result = await lookupMutation.lookup({ code, branchId });
       if (!result.success || !result.data?.product) {
         toast.error(result.message || "Product not found");
         return;
@@ -499,8 +499,11 @@ export function PosClient({ token }: PosClientProps) {
                 productsLoading={productsLoading}
                 searchQuery={searchQuery}
                 selectedCategory={selectedCategory}
-                onSearchChange={setSearchQuery}
-                onSearchSubmit={() => refetch()}
+                onSearchChange={(value) => {
+                  setSearchQuery(value);
+                  if (!value.trim()) setAppliedSearch(""); // Clear results when input cleared
+                }}
+                onSearchSubmit={() => setAppliedSearch(searchQuery)}
               />
             ),
           }}

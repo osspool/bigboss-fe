@@ -30,12 +30,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FormErrorSummary } from "@/components/form/form-utils/FormErrorSummary";
-import { DynamicTabs } from "@/components/custom/ui/tabs-wrapper";
+import { FormErrorSummary } from "@classytic/clarity";
+import { DynamicTabs } from "@classytic/clarity";
 import { FormGenerator, FormSection } from "@/components/form/form-system";
 
-import { useAdminCrudActions, useAdminOrderActions } from "@/hooks/query/useOrders";
-import { useVerifyPayment, useRejectPayment } from "@/hooks/query/usePaymentVerification";
+import { useOrderActions, useAdminOrderActions, usePaymentActions } from "@/hooks/query";
 import { useBranchOptional } from "@/contexts/BranchContext";
 import { formatPrice } from "@/lib/constants";
 import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
@@ -79,8 +78,7 @@ export function OrderForm({
   const [rejectReason, setRejectReason] = useState("");
   
   // Payment verification hooks
-  const { verifyPayment, isVerifying } = useVerifyPayment(token);
-  const { rejectPayment, isRejecting } = useRejectPayment(token);
+  const { verifyPayment, isVerifying, rejectPayment, isRejecting } = usePaymentActions(token);
 
   // Branch context for fulfillment (uses selected branch for inventory decrement)
   const branchContext = useBranchOptional();
@@ -110,7 +108,7 @@ export function OrderForm({
     form.reset(normalizedDefaults);
   }, [normalizedDefaults, form]);
 
-  const { update: updateOrder, isUpdating } = useAdminCrudActions();
+  const { update: updateOrder, isUpdating } = useOrderActions(token);
   const { 
     updateStatus, 
     cancelOrder,

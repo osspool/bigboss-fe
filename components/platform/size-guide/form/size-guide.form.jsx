@@ -5,9 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { sizeGuideCreateSchema, sizeGuideUpdateSchema } from "@/schemas/size-guide.schema";
 import { FormGenerator } from "@/components/form/form-system";
-import { FormErrorSummary } from "@/components/form/form-utils/FormErrorSummary";
+import { FormErrorSummary } from "@classytic/clarity";
 import { createSizeGuideFormSchema } from "./size-guide-form-schema";
-import { useSizeGuideActions } from "@/hooks/query/useSizeGuides";
+import { useSizeGuideActions } from "@/hooks/query";
 import { useNotifySubmitState } from "@/hooks/use-form-submit-state";
 
 export function SizeGuideForm({

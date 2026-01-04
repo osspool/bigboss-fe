@@ -4,21 +4,21 @@ import { useMemo, useCallback, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ClipboardList, ShoppingBag, Filter, Printer } from "lucide-react";
 import { toast } from "sonner";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { useBranch } from "@/contexts/BranchContext";
 import { PurchaseCreateDialog } from "./purchase-create-dialog";
 import { PurchaseDetailSheet } from "./purchase-detail-sheet";
-import { usePurchases, usePurchaseActions } from "@/hooks/query/usePurchases";
-import { useSuppliers } from "@/hooks/query/useSuppliers";
+import { usePurchases, usePurchaseStateActions } from "@/hooks/query";
+import { useSuppliers } from "@/hooks/query";
 import { purchaseColumns } from "./purchase-columns";
 import { printDocument } from "@/lib/utils/print-utils";
 import { formatPrice } from "@/lib/constants";
 import { getSupplierInfo } from "@/lib/commerce-utils";
-import type { Purchase } from "@/types/inventory.types";
-import type { Supplier } from "@/types/supplier.types";
-import SelectInput from "@/components/form/form-utils/select-input";
+import type { Purchase } from "@/types";
+import type { Supplier } from "@/types";
+import { SelectInput } from "@classytic/clarity";
 import {
   Dialog,
   DialogContent,
@@ -108,7 +108,7 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
   // Fetch suppliers for detail sheet (reuses same query as PurchaseCreateDialog)
   const { items: suppliers = [] } = useSuppliers(token, { isActive: true, limit: 100 });
 
-  const { receive, pay, cancel, isReceiving, isPaying, isCancelling } = usePurchaseActions(token);
+  const { receive, pay, cancel, isReceiving, isPaying, isCancelling } = usePurchaseStateActions(token);
 
   // Detail sheet state
   const [detailSheet, setDetailSheet] = useState<{ open: boolean; purchase: Purchase | null }>({
@@ -301,7 +301,7 @@ export function PurchasesClient({ token }: PurchasesClientProps) {
       </ErrorBoundaryWrapper>
 
       {/* Payment Dialog */}
-      <Dialog open={payDialog.open} onOpenChange={(open) => setPayDialog({ open, purchase: open ? payDialog.purchase : null })}>
+      <Dialog open={payDialog.open} onOpenChange={(open: boolean) => setPayDialog({ open, purchase: open ? payDialog.purchase : null })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Record Payment</DialogTitle>

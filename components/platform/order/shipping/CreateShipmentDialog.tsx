@@ -36,11 +36,11 @@ import {
 import {
   usePickupStores,
   useLogisticsActions,
-} from "@/hooks/query/useLogistics";
+} from "@/hooks/query";
 import { formatPrice } from "@/lib/constants";
 import { calculateDefaultCodAmount, getCodStatusInfo } from "@/lib/commerce-utils";
-import type { Order } from "@/types/order.types";
-import type { PickupStore, LogisticsProvider } from "@/types/logistics.types";
+import type { Order } from "@/types";
+import type { PickupStore, LogisticsProvider } from "@/types";
 
 // ==================== Props ====================
 
@@ -116,34 +116,34 @@ export function CreateShipmentDialog({
   const handleSubmit = async () => {
     try {
       if (isManualMode) {
-        // For manual mode, we use the order API directly
-        // This will be handled by useAdminOrderActions.requestShipping
-        // For now, just show what would be sent
-        console.log("Manual shipment:", {
+        // Manual mode: Just record tracking info without provider API
+        await createShipment({
           orderId: order._id,
-          provider: "other",
-          trackingNumber: manualTracking,
-          trackingUrl: manualTrackingUrl,
+          data: {
+            provider: "manual",
+            trackingNumber: manualTracking,
+            trackingUrl: manualTrackingUrl || undefined,
+          },
         });
-        // TODO: Call order API for manual shipping entry
         onSuccess?.();
+        onOpenChange(false);
         return;
       }
 
-      // Create shipment via logistics API
+      // Provider API mode: Create shipment via logistics provider (e.g., RedX)
       await createShipment({
         orderId: order._id,
-        provider,
-        pickupStoreId: selectedStoreId ? parseInt(selectedStoreId) : undefined,
-        deliveryAreaId: deliveryAddress?.areaId,
-        deliveryAreaName: deliveryAddress?.areaName,
-        providerAreaId,
-        weight: weight ? parseInt(weight) : 500,
-        codAmount: codAmount ? parseInt(codAmount) : 0,
-        instructions: instructions || undefined,
+        data: {
+          provider,
+          useProviderApi: true,
+          pickupStoreId: selectedStoreId ? parseInt(selectedStoreId) : undefined,
+          weight: weight ? parseInt(weight) : 500,
+          instructions: instructions || undefined,
+        },
       });
 
       onSuccess?.();
+      onOpenChange(false);
     } catch (error) {
       console.error("Failed to create shipment:", error);
     }
@@ -313,7 +313,7 @@ export function CreateShipmentDialog({
           <Label>Logistics Provider</Label>
           <Select
             value={provider}
-            onValueChange={(v) => {
+            onValueChange={(v: string) => {
               setProvider(v as LogisticsProvider);
               setSelectedStoreId("");
             }}

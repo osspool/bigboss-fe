@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/constants";
-import type { PaymentOption, PaymentState, SplitPaymentEntry, PosPaymentMethod } from "@/types/pos.types";
+import type { PaymentOption, PaymentState, SplitPaymentEntry, PosPaymentMethod } from "@/types";
 import { SplitPaymentPanel } from "../SplitPaymentPanel";
 
 interface PaymentSectionProps {

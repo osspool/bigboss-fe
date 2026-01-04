@@ -1,10 +1,24 @@
 "use client";
 
 import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { SessionProvider } from "next-auth/react";
 import TanstackProvider from "./react-query";
-import { ThemeProvider } from "./theme-provider";
 import { TooltipProvider } from "../ui/tooltip";
+
+// SDK Configuration
+import { configureSDK, configureToast } from "@classytic/commerce-sdk";
+
+// Configure SDK at module load (runs once)
+configureSDK({
+  baseUrl: process.env.NEXT_PUBLIC_API_URL,
+});
+
+// Configure toast handlers
+configureToast({
+  success: toast.success,
+  error: toast.error,
+});
 
 const Providers = ({ children }) => {
   return (

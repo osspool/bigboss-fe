@@ -1,6 +1,5 @@
 import { Star, Quote } from "lucide-react";
-import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/layout/Container";
+import { Section, Container } from "@classytic/clarity/layout";
 import { getCMSSection } from "@/lib/cms-data";
 
 interface Testimonial {

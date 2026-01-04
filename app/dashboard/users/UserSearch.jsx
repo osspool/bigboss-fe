@@ -1,8 +1,7 @@
 "use client";
 
-import * as Search from "@/components/shared/search";
+import { Search, SelectInput } from "@classytic/clarity";
 import { useUserSearch } from "@/hooks/filter/use-user-search";
-import SelectInput from "@/components/form/form-utils/select-input";
 import { USER_ROLE_OPTIONS, STATUS_OPTIONS } from "@/components/platform/user/form/user-form-schema";
 
 const SEARCH_TYPE_OPTIONS = [

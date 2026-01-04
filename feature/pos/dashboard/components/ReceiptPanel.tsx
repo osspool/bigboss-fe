@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/constants";
 import { printReceipt } from "@/lib/utils/print-utils";
-import type { PosReceiptData } from "@/types/pos.types";
+import type { PosReceiptData } from "@/types";
 
 interface ReceiptPanelProps {
   receipt: PosReceiptData | null;

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Container } from "@/components/layout/Container";
+import { Container } from "@classytic/clarity/layout";
 
 interface HeroData {
   badge?: string;
@@ -69,13 +69,13 @@ export function Hero({ data }: HeroProps) {
             </p>
 
             <div className="flex flex-wrap gap-4">
-              <Button variant="hero" size="lg" asChild>
+              <Button variant="default" size="lg" asChild>
                 <Link href={primaryCTA.href}>
                   {primaryCTA.label}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button variant="hero-outline" size="lg" asChild>
+              <Button variant="outline" size="lg" asChild>
                 <Link href={secondaryCTA.href}>
                   {secondaryCTA.label}
                 </Link>

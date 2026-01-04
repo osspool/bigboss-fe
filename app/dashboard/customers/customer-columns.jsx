@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { User, Phone, Mail, Calendar, Pencil, Award } from "lucide-react";
-import { ActionDropdown } from "@/components/custom/ui/dropdown-wrapper";
+import { ActionDropdown } from "@classytic/clarity";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getReadableTextColor, getTierColor } from "@/lib/loyalty-utils";
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Container } from "@/components/layout/Container";
+import { Container } from "@classytic/clarity/layout";
 import { getCMSSection } from "@/lib/cms-data";
 
 export function PromoBanner() {
@@ -42,7 +42,7 @@ export function PromoBanner() {
             {data.description}
           </p>
           <div className="animate-fade-up" style={{ animationDelay: '400ms' }}>
-            <Button variant="hero" size="lg" asChild>
+            <Button variant="default" size="lg" asChild>
               <Link href={data.cta.href}>
                 {data.cta.label}
                 <ArrowRight className="ml-2 h-5 w-5" />

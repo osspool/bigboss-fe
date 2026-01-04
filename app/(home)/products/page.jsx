@@ -3,10 +3,9 @@ import Link from "next/link";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { ChevronRight, Home } from "lucide-react";
 import { getQueryClient } from "@/lib/get-query-client";
-import { productApi } from "@/api/platform/product-api";
+import { productApi } from "@/lib/sdk";
 import { ProductsUI } from "@/components/platform/product/ProductsUI";
-import { Container } from "@/components/layout/Container";
-import { Section } from "@/components/layout/Section";
+import { Section, Container } from "@classytic/clarity/layout";
 import { Spinner } from "@/components/ui/spinner";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 

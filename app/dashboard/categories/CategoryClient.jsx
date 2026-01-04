@@ -1,14 +1,14 @@
 "use client";
 import { useMemo, useState, useCallback } from "react";
 import { CategorySheet } from "@/components/platform/category/category-sheet";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CategorySearch } from "./CategorySearch";
 import { categoryColumns } from "./category-columns";
 import { Plus, FolderTree } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useCategories, useCategoryActions } from "@/hooks/query/useCategories";
+import { useCategories, useCategoryActions } from "@/hooks/query";
 
 
 export function CategoriesClient({ token, userRoles = [] }) {

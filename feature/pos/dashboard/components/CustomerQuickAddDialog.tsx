@@ -5,8 +5,8 @@ import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { customerApi } from "@/api/platform/customer-api";
-import type { Customer } from "@/types/customer.types";
+import { customerApi } from "@classytic/commerce-sdk/sales";
+import type { Customer } from "@/types";
 import { toast } from "sonner";
 
 interface CustomerQuickAddDialogProps {

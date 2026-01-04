@@ -1,13 +1,13 @@
 "use client";
 import { useMemo, useState, useCallback } from "react";
 import { BranchSheet } from "@/components/platform/branch/branch-sheet";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { useRouter, useSearchParams } from "next/navigation";
 import { branchColumns } from "./branch-columns";
 import { Plus, Store } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useBranchActions, useBranches } from "@/hooks/query/useBranches";
+import { useBranchActions, useBranches } from "@/hooks/query";
 
 export function BranchesClient({ token }) {
   const router = useRouter();

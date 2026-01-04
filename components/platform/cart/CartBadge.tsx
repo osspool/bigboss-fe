@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCartCount } from "@/hooks/query/useCart";
+import { useCartCount } from "@/hooks/query";
 
 interface CartBadgeProps {
   token?: string | null;

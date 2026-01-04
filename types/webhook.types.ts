@@ -5,7 +5,7 @@
  * Matches backend routes/webhooks/payment-webhook.plugin.js
  */
 
-import type { TransactionStatus, TransactionCategory } from './transaction.types';
+import type { TransactionStatus, TransactionCategory } from './index';
 
 // ==================== Payment Gateway Types ====================
 

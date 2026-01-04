@@ -5,9 +5,8 @@ export type {
   PaymentOption,
   SplitPaymentEntry,
   PaymentState,
-} from "@/types/pos.types";
-
-export type { PaymentMethodConfig as PlatformPaymentMethod } from "@/types/common.types";
+  PaymentMethodConfig as PlatformPaymentMethod,
+} from "@/types";
 
 // Local UI-specific types
 export interface CategoryOption {

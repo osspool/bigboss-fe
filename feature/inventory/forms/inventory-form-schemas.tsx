@@ -3,7 +3,7 @@
 import { ArrowRightLeft, CreditCard, Factory, FileText, Flag, Settings, Store, Truck, Warehouse } from "lucide-react";
 import { field, section, type FormSchema } from "@/components/form/form-system";
 import type { FieldOption } from "@/components/form/form-system";
-import type { StockRequestPriority, PurchasePaymentTerms } from "@/types/inventory.types";
+import type { StockRequestPriority, PurchasePaymentTerms } from "@/types";
 
 export type TransferFormValues = {
   senderLabel: string;

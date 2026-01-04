@@ -5,7 +5,7 @@ import { Barcode, Loader2, Package, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { PosProduct } from "@/types/pos.types";
+import type { PosProduct } from "@/types";
 import type { CategoryOption } from "../pos.types";
 import { ProductCard } from "./ProductCard";
 

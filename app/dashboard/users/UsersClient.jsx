@@ -1,14 +1,14 @@
 "use client";
 import { useMemo, useState, useCallback } from "react";
 import { UserSheet } from "@/components/platform/user/user-sheet";
-import { DataTable } from "@/components/custom/ui/data-table";
+import { DataTable } from "@classytic/clarity";
 import { useRouter, useSearchParams } from "next/navigation";
 import { UserSearch } from "./UserSearch";
 import { usersColumns } from "./user-columns";
 import { Users } from "lucide-react";
-import HeaderSection from "@/components/custom/dashboard/header-section";
+import { HeaderSection } from "@classytic/clarity/dashboard";
 import ErrorBoundaryWrapper from "@/components/custom/error/error-boundary-wrapper";
-import { useUserActions, useUsers } from "@/hooks/query/useUsers";
+import { useUserActions, useUsers } from "@/hooks/query";
 import { toast } from "sonner";
 
 export function UsersClient({ token, userRoles = [] }) {

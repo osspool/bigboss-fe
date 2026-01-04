@@ -1,7 +1,7 @@
 // components/auth/register-form.jsx
 import { cn } from "@/lib/utils";
 import { Eye, EyeOff, Lock, Mail, User, Phone } from "lucide-react";
-import { PhoneInput as IntlPhoneInput } from "@/components/custom/ui/phone-input";
+import { PhoneInput as IntlPhoneInput } from "@classytic/clarity";
 import { Suspense, useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
